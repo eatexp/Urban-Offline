@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { dataManager } from '../services/dataManager';
 import L from 'leaflet';
 import { AlertTriangle } from 'lucide-react';
+import OfflineTileLayer from './OfflineTileLayer';
 
 // Fix Leaflet default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -56,11 +57,7 @@ const MapComponent = () => {
             )}
 
             <MapContainer center={position} zoom={zoom} style={{ height: '100%', width: '100%', background: '#0f172a' }}>
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    className="map-tiles"
-                />
+                <OfflineTileLayer />
 
                 {regions.map((region, index) => (
                     <Circle

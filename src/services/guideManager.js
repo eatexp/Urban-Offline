@@ -1,28 +1,16 @@
 import { db } from './db';
 
+import blsContent from '../data/guides/basic-life-support.md?raw';
+
 // Mock available guides
 const AVAILABLE_GUIDES = [
     {
         id: 'first-aid-basic',
-        name: 'Basic First Aid',
-        description: 'Essential first aid procedures for common emergencies.',
-        size: '0.5 MB',
+        name: 'Basic Life Support (BLS)',
+        description: 'WHO & ILCOR aligned guide for CPR, AED, and emergency response.',
+        size: '2.5 KB',
         type: 'markdown',
-        content: `
-# Basic First Aid
-
-## CPR
-1. Call emergency services.
-2. Push hard and fast in the center of the chest.
-
-## Burns
-1. Cool the burn with cool running water for at least 10 minutes.
-2. Cover with cling film or a clean plastic bag.
-
-## Bleeding
-1. Apply pressure to the wound.
-2. Elevate the injury if possible.
-        `
+        content: blsContent
     },
     {
         id: 'survival-urban',

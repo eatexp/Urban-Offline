@@ -7,6 +7,8 @@ const Resources = () => {
     const [storage, setStorage] = useState({ used: 0, total: 500 });
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(null);
+    const [progress, setProgress] = useState({});
+    const [userLocation, setUserLocation] = useState(null);
 
     const loadData = async () => {
         try {
@@ -27,19 +29,66 @@ const Resources = () => {
         loadData();
     }, []);
 
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    const handleSortByLocation = () => {
+        if (!navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ latitude, longitude });
+
+            const sorted = [...regions].sort((a, b) => {
+                const distA = calculateDistance(latitude, longitude, a.coordinates[0], a.coordinates[1]);
+                const distB = calculateDistance(latitude, longitude, b.coordinates[0], b.coordinates[1]);
+                return distA - distB;
+            });
+            setRegions(sorted);
+        }, (err) => {
+            console.error('Geolocation error:', err);
+        });
+    };
+
     const handleAction = async (id, action) => {
         setProcessing(id);
         try {
             if (action === 'install') {
-                await dataManager.installRegion(id);
+                // Pass progress callback
+                await dataManager.installRegion(id, (percent) => {
+                    setProgress(prev => ({ ...prev, [id]: percent }));
+                });
             } else {
                 await dataManager.uninstallRegion(id);
+                setProgress(prev => {
+                    const newProgress = { ...prev };
+                    delete newProgress[id];
+                    return newProgress;
+                });
             }
             await loadData();
         } catch (error) {
             console.error('Action failed:', error);
         } finally {
             setProcessing(null);
+            // Clear progress after short delay if installed
+            if (action === 'install') {
+                setTimeout(() => {
+                    setProgress(prev => {
+                        const newProgress = { ...prev };
+                        delete newProgress[id];
+                        return newProgress;
+                    });
+                }, 1000);
+            }
         }
     };
 
@@ -66,7 +115,6 @@ const Resources = () => {
                         </div>
                     </div>
                     <div style={{ width: '80px', height: '80px', position: 'relative' }}>
-                        {/* Simple Circular Progress Placeholder */}
                         <svg width="80" height="80" viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="40" fill="none" stroke="#334155" strokeWidth="8" />
                             <circle
@@ -85,7 +133,13 @@ const Resources = () => {
             </header>
 
             <section className="mb-4">
-                <h2 className="text-sm text-muted mb-2 uppercase tracking-wider">Available Regions</h2>
+                <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-sm text-muted uppercase tracking-wider">Available Regions</h2>
+                    <button onClick={handleSortByLocation} className="text-xs text-primary flex items-center gap-1 hover:underline">
+                        <MapPin size={12} />
+                        Sort by Nearby
+                    </button>
+                </div>
                 <div className="flex flex-col gap-md">
                     {loading ? (
                         <div className="text-center p-4 text-muted">Loading regions...</div>
@@ -103,6 +157,11 @@ const Resources = () => {
                                         <div className="flex items-center gap-sm text-xs text-muted mt-1">
                                             <MapPin size={12} />
                                             <span>{region.coordinates.join(', ')}</span>
+                                            {userLocation && (
+                                                <span className="text-primary ml-1">
+                                                    ({Math.round(calculateDistance(userLocation.latitude, userLocation.longitude, region.coordinates[0], region.coordinates[1]))} km)
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <span className="badge font-mono">{region.size}</span>
@@ -127,14 +186,28 @@ const Resources = () => {
                                         <span>Offload Region</span>
                                     </button>
                                 ) : (
-                                    <button
-                                        onClick={() => handleAction(region.id, 'install')}
-                                        disabled={processing === region.id}
-                                        className="btn btn-primary w-full"
-                                    >
-                                        {processing === region.id ? <Loader className="spin" /> : <Download size={18} />}
-                                        <span>Download Region</span>
-                                    </button>
+                                    <div className="w-full">
+                                        {processing === region.id && progress[region.id] !== undefined ? (
+                                            <div className="w-full bg-slate-700 rounded-full h-9 relative overflow-hidden">
+                                                <div
+                                                    className="absolute top-0 left-0 h-full bg-primary transition-all duration-300"
+                                                    style={{ width: `${progress[region.id]}%` }}
+                                                />
+                                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold z-10">
+                                                    Downloading {progress[region.id]}%
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleAction(region.id, 'install')}
+                                                disabled={processing === region.id}
+                                                className="btn btn-primary w-full"
+                                            >
+                                                {processing === region.id ? <Loader className="spin" /> : <Download size={18} />}
+                                                <span>Download Region</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ))

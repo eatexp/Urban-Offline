@@ -23,6 +23,10 @@ export const initDB = async () => {
             if (!db.objectStoreNames.contains('guide_content')) {
                 db.createObjectStore('guide_content', { keyPath: 'id' });
             }
+            // Store for map tiles (key: z-x-y, value: blob)
+            if (!db.objectStoreNames.contains('map_tiles')) {
+                db.createObjectStore('map_tiles');
+            }
         },
     });
 };

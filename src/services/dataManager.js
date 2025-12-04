@@ -43,12 +43,9 @@ export const dataManager = {
         }));
     },
 
-    async installRegion(regionId) {
+    async installRegion(regionId, onProgress) {
         const region = AVAILABLE_REGIONS.find(r => r.id === regionId);
         if (!region) throw new Error('Region not found');
-
-        // Simulate download delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Save metadata
         await db.put('datasets', {
@@ -62,15 +59,22 @@ export const dataManager = {
             installedAt: new Date().toISOString()
         });
 
-        // In a real app, we would download and store tiles/data here.
-        // For now, we just mark it as installed in the metadata.
+        // Trigger tile download
+        if (region.modules.includes('map-tiles')) {
+            // Await the download to track progress
+            const { tileManager } = await import('./tileManager');
+            await tileManager.downloadRegion(region, onProgress);
+        }
 
         return true;
     },
 
     async uninstallRegion(regionId) {
         await db.delete('datasets', regionId);
-        // Clean up content would happen here
+        // Clean up tiles
+        import('./tileManager').then(({ tileManager }) => {
+            tileManager.clearAllTiles();
+        });
         return true;
     },
 
