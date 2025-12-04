@@ -7,11 +7,24 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
+    "@vitejs/plugin-legacy": "^7.2.1",
+    "idb": "^8.0.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.555.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.10.0",
+    "terser": "^5.44.1",
     "vite-plugin-pwa": "^1.2.0"
   },
   "devDependencies": {
