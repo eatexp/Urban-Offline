@@ -32,12 +32,8 @@ const Search = () => {
     const handleResultClick = (result) => {
         setIsOpen(false);
         setQuery('');
-        // Navigate based on result type
-        // For now assuming result.doc.id or similar.
-        // Needs alignment with SearchService return structure.
-        // If SearchService returns list of matches, we might need to fetch the doc.
-        // Assuming we store category/type in the index.
-        const target = result.doc ? `/guides/${result.doc.id}` : '#';
+        // Navigate to article using slug
+        const target = result.slug ? `/article/${result.slug}` : '#';
         navigate(target);
     };
 

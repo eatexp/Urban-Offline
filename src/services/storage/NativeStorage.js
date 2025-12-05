@@ -132,3 +132,17 @@ export const deleteItem = async (storeName, key) => {
     if (!db) await initDB();
     await db.run(`DELETE FROM kv_store WHERE store_name = ? AND key = ?`, [storeName, key]);
 };
+
+export const getArticleBySlug = async (slug) => {
+    if (!db) await initDB();
+    try {
+        // Query the 'articles' table
+        const res = await db.query(`SELECT * FROM articles WHERE slug = ? LIMIT 1`, [slug]);
+        if (res.values && res.values.length > 0) {
+            return res.values[0];
+        }
+    } catch (e) {
+        console.error("SQLite getArticleBySlug Error", e);
+    }
+    return null;
+};
