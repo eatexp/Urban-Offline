@@ -1,0 +1,201 @@
+{
+    "inkVersion": 21,
+    "root": [
+        [
+            "^Is the person conscious and responsive?",
+            "\n",
+            "ev",
+            "str",
+            "^Yes, they're awake and talking",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-0"
+            },
+            "ev",
+            "str",
+            "^They're confused or drowsy",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-1"
+            },
+            "ev",
+            "str",
+            "^They're unconscious or unresponsive",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-2"
+            },
+            {
+                "c-0": [
+                    "\n",
+                    "ev",
+                    "str",
+                    "^mild",
+                    "/str",
+                    "/ev",
+                    {
+                        "VAR=": "severity",
+                        "re": true
+                    },
+                    {
+                        "->": "mild_hypothermia"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-1": [
+                    "\n",
+                    "ev",
+                    "str",
+                    "^moderate",
+                    "/str",
+                    "/ev",
+                    {
+                        "VAR=": "severity",
+                        "re": true
+                    },
+                    {
+                        "->": "moderate_hypothermia"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-2": [
+                    "\n",
+                    "ev",
+                    "str",
+                    "^severe",
+                    "/str",
+                    "/ev",
+                    {
+                        "VAR=": "severity",
+                        "re": true
+                    },
+                    {
+                        "->": "severe_hypothermia"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ]
+            }
+        ],
+        {
+            "mild_hypothermia": [
+                {
+                    "#": "SEVERITY: MILD"
+                },
+                {
+                    "#": "ACTION: REWARM"
+                },
+                "^**Mild Hypothermia - Act Now**",
+                "\n",
+                "^Move them to shelter immediately. Remove wet clothing.",
+                "\n",
+                "^Wrap in dry blankets. Cover their head.",
+                "\n",
+                "^Give warm (not hot) drinks if they can swallow safely.",
+                "\n",
+                "ev",
+                "str",
+                "^What are the warning signs?",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^They're improving",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "warning_signs"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "recovery"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "moderate_hypothermia": [
+                "^**Moderate Hypothermia - Call Emergency**",
+                "\n",
+                "^Handle gently. Active warming required.",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "severe_hypothermia": [
+                "^**Severe Hypothermia - Critical**",
+                "\n",
+                "^Assess breathing. Start CPR if no breathing.",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "warning_signs": [
+                "^Watch for: Shivering stops, Blue lips, Confusion.",
+                "\n",
+                {
+                    "->": "mild_hypothermia"
+                },
+                {
+                    "#f": 1
+                }
+            ],
+            "recovery": [
+                "^Keep monitoring. Full recovery takes time.",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "#f": 1
+        }
+    ],
+    "listDefs": {},
+    "globalDecl": [
+        "ev",
+        "str",
+        "^unknown",
+        "/str",
+        {
+            "VAR=": "severity"
+        },
+        "str",
+        "^hypothermia",
+        "/str",
+        {
+            "VAR=": "linked_article"
+        },
+        "/ev",
+        "end",
+        null
+    ]
+}

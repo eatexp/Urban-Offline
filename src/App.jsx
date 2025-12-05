@@ -5,6 +5,10 @@ import Guides from './pages/Guides';
 import Map from './pages/Map';
 import Resources from './pages/Resources';
 
+import Health from './pages/Health';
+import Survival from './pages/Survival';
+import Law from './pages/Law';
+
 function App() {
   return (
     <BrowserRouter>
@@ -14,6 +18,10 @@ function App() {
           <Route path="guides" element={<Guides />} />
           <Route path="map" element={<Map />} />
           <Route path="resources" element={<Resources />} />
+
+          <Route path="health" element={<Health />} />
+          <Route path="survival" element={<Survival />} />
+          <Route path="law" element={<Law />} />
         </Route>
       </Routes>
     </BrowserRouter>

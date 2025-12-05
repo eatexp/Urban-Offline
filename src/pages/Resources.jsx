@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { Download, Trash2, HardDrive, MapPin, Globe, Loader, CheckCircle } from 'lucide-react';
+import { Download, Trash2, HardDrive, MapPin, Globe, Loader, CheckCircle, Database } from 'lucide-react';
 import { dataManager } from '../services/dataManager';
+import { ContentImporter } from '../services/ContentImporter';
 
 const Resources = () => {
     const [regions, setRegions] = useState([]);
@@ -62,7 +64,6 @@ const Resources = () => {
         setProcessing(id);
         try {
             if (action === 'install') {
-                // Pass progress callback
                 await dataManager.installRegion(id, (percent) => {
                     setProgress(prev => ({ ...prev, [id]: percent }));
                 });
@@ -79,7 +80,6 @@ const Resources = () => {
             console.error('Action failed:', error);
         } finally {
             setProcessing(null);
-            // Clear progress after short delay if installed
             if (action === 'install') {
                 setTimeout(() => {
                     setProgress(prev => {
@@ -92,6 +92,37 @@ const Resources = () => {
         }
     };
 
+    const handleSeedData = async () => {
+        try {
+            await ContentImporter.importHealthContent({
+                id: 'wiki-cpr',
+                title: 'Cardiopulmonary resuscitation',
+                summary: 'Emergency procedure that combines chest compressions...',
+                content: 'Full CPR content here...',
+                tags: ['first-aid', 'emergency']
+            });
+
+            await ContentImporter.importSurvivalContent({
+                id: 'flood-zone-1',
+                title: 'Thames Flood Zone',
+                searchableText: 'Flood risk area for Greater London...',
+                description: 'High risk area'
+            });
+
+            await ContentImporter.importLawContent({
+                id: 'pace-code-a',
+                title: 'PACE Code A',
+                fullText: 'Code of Practice for the exercise by: police officers of statutory powers of stop and search.',
+                summary: 'Stop and Search powers'
+            });
+
+            alert('Debug data seeded successfully!');
+        } catch (e) {
+            console.error(e);
+            alert('Seeding failed: ' + e.message);
+        }
+    };
+
     const getUsageColor = (percentage) => {
         if (percentage > 90) return 'var(--color-danger)';
         if (percentage > 70) return 'var(--color-warning)';
@@ -101,135 +132,129 @@ const Resources = () => {
     const usagePercentage = (storage.used / storage.total) * 100;
 
     return (
-        <div className="page-container">
-            <header className="mb-4">
-                <h1 className="text-lg mb-2">Offline Resources</h1>
-                <div className="glass-card flex items-center justify-between">
-                    <div className="flex items-center gap-md">
-                        <div className="p-2 rounded-full bg-slate-700">
-                            <HardDrive size={20} className="text-primary" />
+        <div className="page-container p-4 pb-20">
+            <header className="mb-6">
+                <h1 className="text-xl font-bold mb-4 text-slate-800">Offline Resources</h1>
+
+                {/* Storage Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-full bg-slate-100 text-slate-600">
+                            <HardDrive size={24} />
                         </div>
                         <div>
-                            <p className="text-xs text-muted">Storage Used</p>
-                            <p className="font-bold font-mono">{storage.used} MB <span className="text-muted">/ {storage.total} MB</span></p>
+                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Storage Used</p>
+                            <p className="font-bold text-slate-900 font-mono text-lg">
+                                {storage.used} <span className="text-sm text-slate-400">/ {storage.total} MB</span>
+                            </p>
                         </div>
                     </div>
-                    <div style={{ width: '80px', height: '80px', position: 'relative' }}>
-                        <svg width="80" height="80" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="40" fill="none" stroke="#334155" strokeWidth="8" />
-                            <circle
-                                cx="50" cy="50" r="40"
-                                fill="none"
-                                stroke={getUsageColor(usagePercentage)}
-                                strokeWidth="8"
-                                strokeDasharray={`${usagePercentage * 2.51} 251`}
-                                transform="rotate(-90 50 50)"
-                                strokeLinecap="round"
-                            />
-                            <text x="50" y="55" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{Math.round(usagePercentage)}%</text>
-                        </svg>
-                    </div>
+                </div>
+
+                {/* Debug Actions */}
+                <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Developer Tools</h2>
+                    <button
+                        onClick={handleSeedData}
+                        className="w-full sm:w-auto px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Database size={16} />
+                        Seed Test Data (Health/Survival/Law)
+                    </button>
+                    <p className="text-xs text-slate-400 mt-2">
+                        Injects dummy data into IndexedDB for search testing.
+                    </p>
                 </div>
             </header>
 
-            <section className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-sm text-muted uppercase tracking-wider">Available Regions</h2>
-                    <button onClick={handleSortByLocation} className="text-xs text-primary flex items-center gap-1 hover:underline">
-                        <MapPin size={12} />
+            <section className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Available Regions</h2>
+                    <button onClick={handleSortByLocation} className="text-xs text-blue-600 font-medium flex items-center gap-1 hover:underline">
+                        <MapPin size={14} />
                         Sort by Nearby
                     </button>
                 </div>
-                <div className="flex flex-col gap-md">
+
+                <div className="space-y-4">
                     {loading ? (
-                        <div className="text-center p-4 text-muted">Loading regions...</div>
+                        <div className="text-center p-8 text-slate-400">Loading regions...</div>
                     ) : (
                         regions.map(region => (
-                            <div key={region.id} className="card relative overflow-hidden">
+                            <div key={region.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                 {region.isInstalled && (
-                                    <div className="absolute top-0 right-0 p-1 bg-green-500/20 rounded-bl-lg">
-                                        <CheckCircle size={16} className="text-success" />
+                                    <div className="bg-green-50 border-b border-green-100 px-4 py-2 flex items-center gap-2">
+                                        <CheckCircle size={14} className="text-green-600" />
+                                        <span className="text-xs font-bold text-green-700 uppercase">Installed</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h3 className="text-lg">{region.name}</h3>
-                                        <div className="flex items-center gap-sm text-xs text-muted mt-1">
-                                            <MapPin size={12} />
-                                            <span>{region.coordinates.join(', ')}</span>
-                                            {userLocation && (
-                                                <span className="text-primary ml-1">
-                                                    ({Math.round(calculateDistance(userLocation.latitude, userLocation.longitude, region.coordinates[0], region.coordinates[1]))} km)
-                                                </span>
-                                            )}
+
+                                <div className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">{region.name}</h3>
+                                            <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                                                <MapPin size={12} />
+                                                <span>{region.coordinates.join(', ')}</span>
+                                                {userLocation && (
+                                                    <span className="text-blue-600 font-medium ml-1">
+                                                        ({Math.round(calculateDistance(userLocation.latitude, userLocation.longitude, region.coordinates[0], region.coordinates[1]))} km)
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="px-2 py-1 bg-slate-100 rounded text-xs font-mono font-medium text-slate-600">
+                                            {region.size}
                                         </div>
                                     </div>
-                                    <span className="badge font-mono">{region.size}</span>
-                                </div>
-                                <p className="text-sm text-muted mb-4">{region.description}</p>
 
-                                <div className="flex gap-sm flex-wrap mb-4">
-                                    {region.modules.map(mod => (
-                                        <span key={mod} className="text-xs px-2 py-1 rounded bg-slate-700/50 text-slate-300 border border-slate-600">
-                                            {mod.replace('-', ' ')}
-                                        </span>
-                                    ))}
-                                </div>
+                                    <p className="text-sm text-slate-600 mb-4">{region.description}</p>
 
-                                {region.isInstalled ? (
-                                    <button
-                                        onClick={() => handleAction(region.id, 'uninstall')}
-                                        disabled={processing === region.id}
-                                        className="btn btn-danger-outline w-full"
-                                    >
-                                        {processing === region.id ? <Loader className="spin" /> : <Trash2 size={18} />}
-                                        <span>Offload Region</span>
-                                    </button>
-                                ) : (
-                                    <div className="w-full">
-                                        {processing === region.id && progress[region.id] !== undefined ? (
-                                            <div className="w-full bg-slate-700 rounded-full h-9 relative overflow-hidden">
-                                                <div
-                                                    className="absolute top-0 left-0 h-full bg-primary transition-all duration-300"
-                                                    style={{ width: `${progress[region.id]}%` }}
-                                                />
-                                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold z-10">
-                                                    Downloading {progress[region.id]}%
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleAction(region.id, 'install')}
-                                                disabled={processing === region.id}
-                                                className="btn btn-primary w-full"
-                                            >
-                                                {processing === region.id ? <Loader className="spin" /> : <Download size={18} />}
-                                                <span>Download Region</span>
-                                            </button>
-                                        )}
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {region.modules.map(mod => (
+                                            <span key={mod} className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200 capitalize">
+                                                {mod.replace('-', ' ')}
+                                            </span>
+                                        ))}
                                     </div>
-                                )}
+
+                                    {region.isInstalled ? (
+                                        <button
+                                            onClick={() => handleAction(region.id, 'uninstall')}
+                                            disabled={processing === region.id}
+                                            className="w-full py-2.5 rounded-lg border border-red-200 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            {processing === region.id ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                            Offload Region
+                                        </button>
+                                    ) : (
+                                        <div className="w-full">
+                                            {processing === region.id && progress[region.id] !== undefined ? (
+                                                <div className="w-full bg-slate-100 rounded-lg h-10 relative overflow-hidden">
+                                                    <div
+                                                        className="absolute top-0 left-0 h-full bg-blue-600 transition-all duration-300"
+                                                        style={{ width: progress[region.id] + '%' }}
+                                                    />
+                                                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold text-white z-10">
+                                                        Downloading {progress[region.id]}%
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleAction(region.id, 'install')}
+                                                    disabled={processing === region.id}
+                                                    className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                                >
+                                                    {processing === region.id ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
+                                                    Download Region
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}
-                </div>
-            </section>
-
-            <section>
-                <h2 className="text-sm text-muted mb-2 uppercase tracking-wider">Global Resources</h2>
-                <div className="card flex items-center justify-between">
-                    <div className="flex items-center gap-md">
-                        <div className="p-2 rounded bg-blue-500/10 text-blue-400">
-                            <Globe size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-sm">Global Survival Guide</h3>
-                            <p className="text-xs text-muted">WHO & WikiDoc Aligned</p>
-                        </div>
-                    </div>
-                    <button className="btn btn-outline text-xs py-1 px-3">
-                        Update
-                    </button>
                 </div>
             </section>
         </div>

@@ -1,4 +1,4 @@
-import { Shield, Book, Map, HardDrive, CheckCircle, AlertTriangle, Navigation } from 'lucide-react';
+import { Shield, Book, Map, HardDrive, CheckCircle, AlertTriangle, Navigation, Heart, Tent, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { dataManager } from '../services/dataManager';
@@ -11,8 +11,6 @@ const Home = () => {
         const checkStatus = async () => {
             try {
                 const regions = await dataManager.getInstalledRegions();
-                // In a real app, we'd check geolocation here to find the "active" region.
-                // For now, we just pick the first installed one, or null.
                 if (regions.length > 0) {
                     setStatus('prepared');
                     setActiveRegion(regions[0]);
@@ -29,48 +27,36 @@ const Home = () => {
     }, []);
 
     return (
-        <div className="home-page">
-            <header className="header flex justify-between items-center">
-                <div>
-                    <h1 className="text-lg font-bold tracking-tight">URBAN OFFLINE</h1>
-                    <p className="text-xs text-muted font-mono uppercase">Intelligence System</p>
-                </div>
-                <div className={`px-2 py-1 rounded text-xs font-bold ${status === 'prepared' ? 'bg-green-500/20 text-success' : 'bg-orange-500/20 text-primary'}`}>
-                    {status === 'prepared' ? 'ONLINE' : 'STANDBY'}
-                </div>
-            </header>
-
-            <section className="mb-6">
-                <div className="glass-card relative overflow-hidden">
+        <div className="home-page space-y-6">
+            {/* Status Section */}
+            <section>
+                <div className="glass-card relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-xl shadow-lg">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Shield size={120} />
+                        <Shield size={100} />
                     </div>
 
                     {status === 'prepared' && activeRegion ? (
                         <div>
-                            <div className="flex items-center gap-sm mb-2 text-success">
+                            <div className="flex items-center gap-2 mb-2 text-green-400">
                                 <CheckCircle size={18} />
                                 <span className="text-sm font-bold uppercase">System Ready</span>
                             </div>
-                            <h2 className="text-2xl font-bold mb-1">{activeRegion.name}</h2>
-                            <p className="text-sm text-muted mb-4">Offline assets secured. Map tiles and emergency places available.</p>
-                            <div className="flex gap-sm">
-                                <Link to="/map" className="btn btn-primary text-xs py-2">
-                                    <Navigation size={16} />
-                                    Open Map
-                                </Link>
-                            </div>
+                            <h2 className="text-xl font-bold mb-1">{activeRegion.name} Active</h2>
+                            <p className="text-xs text-slate-300 mb-3">Offline assets secured.</p>
+                            <Link to="/map" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                <Navigation size={14} />
+                                Open Map
+                            </Link>
                         </div>
                     ) : (
                         <div>
-                            <div className="flex items-center gap-sm mb-2 text-primary">
+                            <div className="flex items-center gap-2 mb-2 text-orange-400">
                                 <AlertTriangle size={18} />
                                 <span className="text-sm font-bold uppercase">Setup Required</span>
                             </div>
-                            <h2 className="text-xl font-bold mb-2">No Region Active</h2>
-                            <p className="text-sm text-muted mb-4">Download a region to enable offline intelligence.</p>
-                            <Link to="/resources" className="btn btn-primary text-xs py-2">
-                                <HardDrive size={16} />
+                            <p className="text-xs text-slate-300 mb-3">Download a region to enable offline intelligence.</p>
+                            <Link to="/resources" className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                <HardDrive size={14} />
                                 Download Region
                             </Link>
                         </div>
@@ -78,16 +64,37 @@ const Home = () => {
                 </div>
             </section>
 
-            <div className="grid-menu">
-                <Link to="/guides" className="menu-card glass-card hover:bg-slate-800/50 transition-colors">
-                    <Book size={32} className="text-accent" />
-                    <h3 className="mt-2">Survival Guides</h3>
-                    <p>Medical & Tactical</p>
+            {/* Core Pillars */}
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Emergency Modules</h2>
+            <div className="grid gap-4">
+                <Link to="/health" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:border-red-300 transition-all group">
+                    <div className="bg-red-50 p-3 rounded-lg mr-4 group-hover:bg-red-100 transition-colors">
+                        <Heart className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900">Health & First Aid</h3>
+                        <p className="text-xs text-slate-500">Medical guides, Hospitals, ICD-11</p>
+                    </div>
                 </Link>
-                <Link to="/resources" className="menu-card glass-card hover:bg-slate-800/50 transition-colors">
-                    <HardDrive size={32} className="text-primary" />
-                    <h3 className="mt-2">Data Manager</h3>
-                    <p>Regions & Storage</p>
+
+                <Link to="/survival" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-orange-100 hover:border-orange-300 transition-all group">
+                    <div className="bg-orange-50 p-3 rounded-lg mr-4 group-hover:bg-orange-100 transition-colors">
+                        <Tent className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900">Survival & Prep</h3>
+                        <p className="text-xs text-slate-500">Flood zones, Water, Shelter</p>
+                    </div>
+                </Link>
+
+                <Link to="/law" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-blue-100 hover:border-blue-300 transition-all group">
+                    <div className="bg-blue-50 p-3 rounded-lg mr-4 group-hover:bg-blue-100 transition-colors">
+                        <Scale className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900">Law & Rights</h3>
+                        <p className="text-xs text-slate-500">PACE Codes, Legislation</p>
+                    </div>
                 </Link>
             </div>
         </div>
