@@ -59,11 +59,20 @@ const TriageScreen = ({ storyFile, onClose }) => {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div className="prose prose-slate max-w-none">
-                    {storyState.text.split('\n').map((line, i) => (
-                        <p key={i} className="text-lg leading-relaxed text-slate-800 font-medium">
-                            {line}
-                        </p>
-                    ))}
+                    {storyState.text.split('\n').map((line, i) => {
+                        // Simple Markdown Parser for **bold**
+                        const parts = line.split(/(\*\*.*?\*\*)/g);
+                        return (
+                            <p key={i} className="text-lg leading-relaxed text-slate-800 font-medium">
+                                {parts.map((part, index) => {
+                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                        return <strong key={index} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+                                    }
+                                    return part;
+                                })}
+                            </p>
+                        );
+                    })}
                 </div>
 
                 {/* Tags Debug (Optional) */}

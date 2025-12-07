@@ -1,0 +1,24 @@
+{
+    "inkVersion": 21,
+    "root": [
+        [
+            "^PLACEHOLDER: This story needs to be compiled.",
+            "\n",
+            "^Please compile public/assets/ink/source/legal/stop-and-search.ink",
+            "\n",
+            [
+                "done",
+                {
+                    "#f": 5,
+                    "#n": "g-0"
+                }
+            ],
+            null
+        ],
+        "done",
+        {
+            "#f": 1
+        }
+    ],
+    "listDefs": {}
+}

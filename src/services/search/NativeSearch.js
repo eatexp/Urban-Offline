@@ -8,12 +8,9 @@ export const NativeSearch = {
 
     async addDocument(doc) {
         const db = await getDBConnection();
-        const { id, title, content, category, description } = doc;
+        const { id, title, content, description } = doc;
 
         // FTS INSERT
-        // Note: FTS tables don't support "INSERT OR REPLACE" cleanly on the rowid without more work, 
-        // but for app purposes simple INSERT is often okay.
-        // We delete first to avoid duplicates in FTS
         const deleteQuery = `DELETE FROM articles_fts WHERE rowid = ?`;
         await db.run(deleteQuery, [id]);
 

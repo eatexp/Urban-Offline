@@ -82,7 +82,7 @@ export const tileManager = {
                         try {
                             response = await fetch(url);
                             if (response.ok) break;
-                        } catch (e) {
+                        } catch {
                             console.warn(`Attempt ${attempts + 1} failed for ${url}`);
                         }
                         attempts++;

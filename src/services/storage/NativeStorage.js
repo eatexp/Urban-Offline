@@ -126,7 +126,7 @@ export const deleteItem = async (storeName, key) => {
                 path: `${storeName}/${key}`,
                 directory: Directory.Documents
             });
-        } catch (e) { }
+        } catch (error) { }
     }
 
     if (!db) await initDB();

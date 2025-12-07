@@ -1,10 +1,13 @@
+/**
+ * Storage Provider Interface Concept
+ * 
+ * @typedef {Object} StorageProvider
+ * @property {() => Promise<void>} init
+ * @property {(path: string) => Promise<Blob | null>} getFile
+ * @property {(path: string, blob: Blob) => Promise<string>} saveFile
+ * @property {(table: string, id: string) => Promise<any>} getMeta
+ * @property {(table: string, data: any) => Promise<void>} saveMeta
+ * @property {(query: string) => Promise<any[]>} search
+ */
 
-// Interface Concept
-export interface StorageProvider {
-    init(): Promise<void>;
-    getFile(path: string): Promise<Blob | null>;
-    saveFile(path: string, blob: Blob): Promise<string>; // Returns path/url
-    getMeta(table: string, id: string): Promise<any>;
-    saveMeta(table: string, data: any): Promise<void>;
-    search(query: string): Promise<any[]>;
-}
+export default {};

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Tent, Droplets, Map as MapIcon, ShieldAlert } from 'lucide-react';
+import { Tent, Droplets, Map as MapIcon, ShieldAlert, Flame } from 'lucide-react';
+import { TriageRouter } from '../services/triage/TriageRouter';
 
 const Survival = () => {
+    const survivalStories = TriageRouter.getStoriesByCategory('survival');
+
     return (
         <div className="p-4 space-y-4">
             <h1 className="text-2xl font-bold text-orange-600 flex items-center gap-2">
@@ -14,6 +17,30 @@ const Survival = () => {
             </p>
 
             <div className="grid gap-4 md:grid-cols-2">
+                {/* Interactive Skills Section */}
+                <div className="bg-white p-4 rounded-lg shadow border border-orange-200 col-span-1 md:col-span-2">
+                    <h2 className="font-semibold text-lg flex items-center gap-2 mb-3">
+                        <Flame className="w-5 h-5 text-orange-500" />
+                        Interactive Survival Skills
+                    </h2>
+                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                        {survivalStories.map((item, index) => (
+                            <Link
+                                key={index}
+                                to={`/triage/${item.story}`}
+                                className="block p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors border border-orange-100"
+                            >
+                                <span className="font-medium text-orange-800 capitalize">
+                                    {item.keywords[0]} Guide
+                                </span>
+                                <span className="block text-xs text-orange-600">
+                                    {item.story.split('/').pop().replace('.ink.json', '').replace(/-/g, ' ')}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
                     <h2 className="font-semibold text-lg flex items-center gap-2">
                         <Droplets className="w-5 h-5 text-orange-500" />

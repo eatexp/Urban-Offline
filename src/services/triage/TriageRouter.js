@@ -1,24 +1,48 @@
 export const TRIAGE_ROUTES = [
+    // --- HEALTH (Medical) ---
     {
         story: 'hypothermia.ink.json',
         keywords: ['cold', 'freezing', 'shivering', 'blue lips', 'hypothermia', 'exposure', 'wet'],
         category: 'health'
     },
-    // Placeholders for future stories
+
+    // --- LEGAL RIGHTS (UK) ---
     {
-        story: 'bleeding.ink.json',
-        keywords: ['bleeding', 'blood', 'cut', 'wound', 'laceration', 'hemorrhage'],
-        category: 'health'
-    },
-    {
-        story: 'choking.ink.json',
-        keywords: ['choking', 'cant breathe', 'airway', 'heimlich', 'obstruction'],
-        category: 'health'
-    },
-    {
-        story: 'stop_and_search.ink.json',
-        keywords: ['stop and search', 'police search', 'searched by police', 'pace code a'],
+        story: 'legal/stop-and-search.ink.json',
+        keywords: ['stop', 'search', 'police', 'grounds', 'warrant', 'gowisely', 'detained'],
         category: 'legal'
+    },
+    {
+        story: 'legal/arrest-rights.ink.json',
+        keywords: ['arrest', 'rights', 'custody', 'solicitor', 'lawyer', 'silent', 'caution'],
+        category: 'legal'
+    },
+    {
+        story: 'legal/custody-rights.ink.json',
+        keywords: ['cell', 'station', 'phone', 'call', 'review', 'detention', 'time'],
+        category: 'legal'
+    },
+
+    // --- SURVIVAL SKILLS ---
+    {
+        story: 'survival/water-purification.ink.json',
+        keywords: ['water', 'drink', 'thirsty', 'purify', 'filter', 'boil', 'hydration'],
+        category: 'survival'
+    },
+    {
+        story: 'survival/shelter-building.ink.json',
+        keywords: ['shelter', 'house', 'roof', 'rain', 'cold', 'wind', 'sleep', 'camp'],
+        category: 'survival'
+    },
+    {
+        story: 'survival/fire-making.ink.json',
+        keywords: ['fire', 'flame', 'heat', 'warm', 'cook', 'light', 'match', 'burn'],
+        category: 'survival'
+    },
+    {
+        story: 'survival/signaling.ink.json',
+        keywords: ['signal', 'rescue', 'help', 'aircraft', 'whistle', 'mirror', 'found'],
+        category: 'survival'
     }
 ];
 
