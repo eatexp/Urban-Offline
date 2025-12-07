@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getArticleBySlug } from '../services/storage/NativeStorage';
+import { getArticleBySlug } from '../services/db';
 import { ArrowLeft, BookOpen, AlertTriangle } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 
