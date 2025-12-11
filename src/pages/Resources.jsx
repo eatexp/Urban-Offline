@@ -123,96 +123,86 @@ const Resources = () => {
         }
     };
 
-    const getUsageColor = (percentage) => {
-        if (percentage > 90) return 'var(--color-danger)';
-        if (percentage > 70) return 'var(--color-warning)';
-        return 'var(--color-success)';
-    };
-
-    const usagePercentage = (storage.used / storage.total) * 100;
-
     return (
-        <div className="page-container p-4 pb-20">
+        <div className="page-container">
             <header className="mb-6">
-                <h1 className="text-xl font-bold mb-4 text-slate-800">Offline Resources</h1>
+                <h1 className="text-xl font-bold mb-4">Offline Resources</h1>
 
                 {/* Storage Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-slate-100 text-slate-600">
-                            <HardDrive size={24} />
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Storage Used</p>
-                            <p className="font-bold text-slate-900 font-mono text-lg">
-                                {storage.used} <span className="text-sm text-slate-400">/ {storage.total} MB</span>
-                            </p>
-                        </div>
+                <div className="storage-card mb-6">
+                    <div className="storage-icon">
+                        <HardDrive size={24} />
+                    </div>
+                    <div className="storage-info">
+                        <p className="label">Storage Used</p>
+                        <p className="value">
+                            {storage.used} <span>/ {storage.total} MB</span>
+                        </p>
                     </div>
                 </div>
 
                 {/* Debug Actions */}
-                <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Developer Tools</h2>
+                <div className="dev-tools-card">
+                    <h2>Developer Tools</h2>
                     <button
                         onClick={handleSeedData}
-                        className="w-full sm:w-auto px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                        className="btn-dev"
                     >
                         <Database size={16} />
                         Seed Test Data (Health/Survival/Law)
                     </button>
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p>
                         Injects dummy data into IndexedDB for search testing.
                     </p>
                 </div>
             </header>
 
-            <section className="mb-8">
+            <section className="mb-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Available Regions</h2>
-                    <button onClick={handleSortByLocation} className="text-xs text-blue-600 font-medium flex items-center gap-1 hover:underline">
+                    <h2 className="section-header" style={{ marginBottom: 0 }}>Available Regions</h2>
+                    <button onClick={handleSortByLocation} className="text-link flex items-center gap-sm text-sm">
                         <MapPin size={14} />
                         Sort by Nearby
                     </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="flex flex-col gap-md">
                     {loading ? (
-                        <div className="text-center p-8 text-slate-400">Loading regions...</div>
+                        <div className="text-center p-8 text-muted">Loading regions...</div>
                     ) : (
                         regions.map(region => (
-                            <div key={region.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div key={region.id} className="region-card">
                                 {region.isInstalled && (
-                                    <div className="bg-green-50 border-b border-green-100 px-4 py-2 flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-600" />
-                                        <span className="text-xs font-bold text-green-700 uppercase">Installed</span>
+                                    <div className="region-card-installed-badge">
+                                        <CheckCircle size={14} />
+                                        <span>Installed</span>
                                     </div>
                                 )}
 
-                                <div className="p-4">
+                                <div className="region-card-body">
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
-                                            <h3 className="text-lg font-bold text-slate-900">{region.name}</h3>
-                                            <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                                            <h3>{region.name}</h3>
+                                            <div className="coordinates">
                                                 <MapPin size={12} />
                                                 <span>{region.coordinates.join(', ')}</span>
                                                 {userLocation && (
-                                                    <span className="text-blue-600 font-medium ml-1">
+                                                    <span className="text-primary font-medium ml-1">
                                                         ({Math.round(calculateDistance(userLocation.latitude, userLocation.longitude, region.coordinates[0], region.coordinates[1]))} km)
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="px-2 py-1 bg-slate-100 rounded text-xs font-mono font-medium text-slate-600">
+                                        <div className="size-badge">
                                             {region.size}
                                         </div>
                                     </div>
 
-                                    <p className="text-sm text-slate-600 mb-4">{region.description}</p>
+                                    <p className="description">{region.description}</p>
 
-                                    <div className="flex flex-wrap gap-2 mb-4">
+                                    <div className="module-tags">
                                         {region.modules.map(mod => (
-                                            <span key={mod} className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200 capitalize">
+                                            <span key={mod} className="module-tag">
                                                 {mod.replace('-', ' ')}
                                             </span>
                                         ))}
@@ -222,20 +212,20 @@ const Resources = () => {
                                         <button
                                             onClick={() => handleAction(region.id, 'uninstall')}
                                             disabled={processing === region.id}
-                                            className="w-full py-2.5 rounded-lg border border-red-200 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                            className="btn-delete"
                                         >
-                                            {processing === region.id ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                            {processing === region.id ? <Loader size={16} className="spin" /> : <Trash2 size={16} />}
                                             Offload Region
                                         </button>
                                     ) : (
                                         <div className="w-full">
                                             {processing === region.id && progress[region.id] !== undefined ? (
-                                                <div className="w-full bg-slate-100 rounded-lg h-10 relative overflow-hidden">
+                                                <div className="progress-bar">
                                                     <div
-                                                        className="absolute top-0 left-0 h-full bg-blue-600 transition-all duration-300"
+                                                        className="progress-bar-fill"
                                                         style={{ width: progress[region.id] + '%' }}
                                                     />
-                                                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold text-white z-10">
+                                                    <div className="progress-bar-text">
                                                         Downloading {progress[region.id]}%
                                                     </div>
                                                 </div>
@@ -243,9 +233,9 @@ const Resources = () => {
                                                 <button
                                                     onClick={() => handleAction(region.id, 'install')}
                                                     disabled={processing === region.id}
-                                                    className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                                    className="btn-download"
                                                 >
-                                                    {processing === region.id ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
+                                                    {processing === region.id ? <Loader size={16} className="spin" /> : <Download size={16} />}
                                                     Download Region
                                                 </button>
                                             )}

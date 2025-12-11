@@ -27,35 +27,35 @@ const Home = () => {
     }, []);
 
     return (
-        <div className="home-page space-y-6">
+        <div className="page-container space-y-6">
             {/* Status Section */}
             <section>
-                <div className="glass-card relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-xl shadow-lg">
+                <div className="glass-card relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Shield size={100} />
                     </div>
 
                     {status === 'prepared' && activeRegion ? (
                         <div>
-                            <div className="flex items-center gap-2 mb-2 text-green-400">
-                                <CheckCircle size={18} />
-                                <span className="text-sm font-bold uppercase">System Ready</span>
+                            <div className="status-pill success mb-2">
+                                <CheckCircle size={14} />
+                                <span>System Ready</span>
                             </div>
                             <h2 className="text-xl font-bold mb-1">{activeRegion.name} Active</h2>
-                            <p className="text-xs text-slate-300 mb-3">Offline assets secured.</p>
-                            <Link to="/map" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                            <p className="text-xs text-muted mb-3">Offline assets secured.</p>
+                            <Link to="/map" className="btn btn-outline" style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}>
                                 <Navigation size={14} />
                                 Open Map
                             </Link>
                         </div>
                     ) : (
                         <div>
-                            <div className="flex items-center gap-2 mb-2 text-orange-400">
-                                <AlertTriangle size={18} />
-                                <span className="text-sm font-bold uppercase">Setup Required</span>
+                            <div className="status-pill warning mb-2">
+                                <AlertTriangle size={14} />
+                                <span>Setup Required</span>
                             </div>
-                            <p className="text-xs text-slate-300 mb-3">Download a region to enable offline intelligence.</p>
-                            <Link to="/resources" className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                            <p className="text-xs text-muted mb-3">Download a region to enable offline intelligence.</p>
+                            <Link to="/resources" className="btn btn-primary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem' }}>
                                 <HardDrive size={14} />
                                 Download Region
                             </Link>
@@ -65,35 +65,35 @@ const Home = () => {
             </section>
 
             {/* Core Pillars */}
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Emergency Modules</h2>
-            <div className="grid gap-4">
-                <Link to="/health" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:border-red-300 transition-all group">
-                    <div className="bg-red-50 p-3 rounded-lg mr-4 group-hover:bg-red-100 transition-colors">
-                        <Heart className="w-6 h-6 text-red-600" />
+            <h2 className="section-header">Emergency Modules</h2>
+            <div className="flex flex-col gap-md">
+                <Link to="/health" className="module-card">
+                    <div className="module-card-icon red">
+                        <Heart size={24} />
                     </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900">Health & First Aid</h3>
-                        <p className="text-xs text-slate-500">Medical guides, Hospitals, ICD-11</p>
-                    </div>
-                </Link>
-
-                <Link to="/survival" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-orange-100 hover:border-orange-300 transition-all group">
-                    <div className="bg-orange-50 p-3 rounded-lg mr-4 group-hover:bg-orange-100 transition-colors">
-                        <Tent className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900">Survival & Prep</h3>
-                        <p className="text-xs text-slate-500">Flood zones, Water, Shelter</p>
+                    <div className="module-card-content">
+                        <h3>Health & First Aid</h3>
+                        <p>Medical guides, Hospitals, ICD-11</p>
                     </div>
                 </Link>
 
-                <Link to="/law" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-blue-100 hover:border-blue-300 transition-all group">
-                    <div className="bg-blue-50 p-3 rounded-lg mr-4 group-hover:bg-blue-100 transition-colors">
-                        <Scale className="w-6 h-6 text-blue-600" />
+                <Link to="/survival" className="module-card">
+                    <div className="module-card-icon orange">
+                        <Tent size={24} />
                     </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900">Law & Rights</h3>
-                        <p className="text-xs text-slate-500">PACE Codes, Legislation</p>
+                    <div className="module-card-content">
+                        <h3>Survival & Prep</h3>
+                        <p>Flood zones, Water, Shelter</p>
+                    </div>
+                </Link>
+
+                <Link to="/law" className="module-card">
+                    <div className="module-card-icon blue">
+                        <Scale size={24} />
+                    </div>
+                    <div className="module-card-content">
+                        <h3>Law & Rights</h3>
+                        <p>PACE Codes, Legislation</p>
                     </div>
                 </Link>
             </div>

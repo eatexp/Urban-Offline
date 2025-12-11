@@ -7,33 +7,35 @@ const Survival = () => {
     const survivalStories = TriageRouter.getStoriesByCategory('survival');
 
     return (
-        <div className="p-4 space-y-4">
-            <h1 className="text-2xl font-bold text-orange-600 flex items-center gap-2">
-                <Tent className="w-8 h-8" />
-                Survival & Preparedness
-            </h1>
-            <p className="text-gray-600">
-                Guides for flood risks, shelter, water safety, and emergency planning.
-            </p>
+        <div className="page-container">
+            <header className="page-header">
+                <h1>
+                    <div className="module-card-icon orange" style={{ marginRight: '0.75rem' }}>
+                        <Tent size={24} />
+                    </div>
+                    Survival & Preparedness
+                </h1>
+                <p>Guides for flood risks, shelter, water safety, and emergency planning.</p>
+            </header>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid-2">
                 {/* Interactive Skills Section */}
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-200 col-span-1 md:col-span-2">
-                    <h2 className="font-semibold text-lg flex items-center gap-2 mb-3">
-                        <Flame className="w-5 h-5 text-orange-500" />
-                        Interactive Survival Skills
+                <div className="content-card col-span-2">
+                    <h2 className="flex items-center gap-sm mb-3">
+                        <Flame size={18} className="text-primary" />
+                        <span className="font-bold">Interactive Survival Skills</span>
                     </h2>
-                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                    <div className="grid-2">
                         {survivalStories.map((item, index) => (
                             <Link
                                 key={index}
                                 to={`/triage/${item.story}`}
-                                className="block p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors border border-orange-100"
+                                className="interactive-item orange"
                             >
-                                <span className="font-medium text-orange-800 capitalize">
+                                <span className="font-medium capitalize">
                                     {item.keywords[0]} Guide
                                 </span>
-                                <span className="block text-xs text-orange-600">
+                                <span className="block text-xs text-muted mt-1">
                                     {item.story.split('/').pop().replace('.ink.json', '').replace(/-/g, ' ')}
                                 </span>
                             </Link>
@@ -41,35 +43,35 @@ const Survival = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <Droplets className="w-5 h-5 text-orange-500" />
-                        Flood Risk & Zones
+                <div className="content-card">
+                    <h2 className="flex items-center gap-sm mb-2">
+                        <Droplets size={18} className="text-primary" />
+                        <span className="font-bold">Flood Risk & Zones</span>
                     </h2>
-                    <p className="text-sm text-gray-500 mb-2">Environment Agency Flood Maps</p>
-                    <Link to="/map?category=flood" className="text-orange-600 font-medium hover:underline">
+                    <p className="text-sm text-muted mb-3">Environment Agency Flood Maps</p>
+                    <Link to="/map?category=flood" className="text-link">
                         View Flood Map
                     </Link>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <ShieldAlert className="w-5 h-5 text-orange-500" />
-                        Emergency Plan
+                <div className="content-card">
+                    <h2 className="flex items-center gap-sm mb-2">
+                        <ShieldAlert size={18} className="text-primary" />
+                        <span className="font-bold">Emergency Plan</span>
                     </h2>
-                    <p className="text-sm text-gray-500 mb-2">Create your offline plan</p>
-                    <button className="text-orange-600 font-medium hover:underline text-left">
+                    <p className="text-sm text-muted mb-3">Create your offline plan</p>
+                    <button className="text-link text-left">
                         Manage Plan (Coming Soon)
                     </button>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <MapIcon className="w-5 h-5 text-orange-500" />
-                        Water Safety (RNLI)
+                <div className="content-card">
+                    <h2 className="flex items-center gap-sm mb-2">
+                        <MapIcon size={18} className="text-primary" />
+                        <span className="font-bold">Water Safety (RNLI)</span>
                     </h2>
-                    <p className="text-sm text-gray-500 mb-2">Sea and urban water safety guides</p>
-                    <Link to="/guides/water-safety" className="text-orange-600 font-medium hover:underline">
+                    <p className="text-sm text-muted mb-3">Sea and urban water safety guides</p>
+                    <Link to="/guides/water-safety" className="text-link">
                         Read Guide
                     </Link>
                 </div>
