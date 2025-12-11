@@ -1,3 +1,4 @@
+/* global process */
 // scripts/fetch-content.js
 // MVP Content Pipeline - Fetches curated articles from Wikipedia API
 
@@ -184,7 +185,7 @@ function cleanHtml(rawHtml) {
     elementsToRemove.forEach(selector => {
         try {
             doc.querySelectorAll(selector).forEach(el => el.remove());
-        } catch (e) { }
+        } catch { /* ignore invalid selectors */ }
     });
 
     sectionsToRemove.forEach(selector => {
@@ -196,7 +197,7 @@ function cleanHtml(rawHtml) {
                     el.remove();
                 }
             });
-        } catch (e) { }
+        } catch { /* ignore invalid selectors */ }
     });
 
     // Remove data-mw attributes (MediaWiki metadata)

@@ -1,8 +1,8 @@
+/* global process */
 // scripts/process-zim.js
 // import { Archive } from '@openzim/libzim';
 import Database from 'better-sqlite3';
 import { JSDOM } from 'jsdom';
-import { createHash } from 'crypto';
 
 const INPUT_ZIM = process.argv[2];
 const OUTPUT_DB = process.argv[3] || 'content.db';
@@ -15,17 +15,17 @@ if (!INPUT_ZIM) {
 import { SCHEMA_SQL } from '../src/services/storage/schema.js';
 
 // Phase 2: import { Archive } from '@openzim/libzim'; // Requires native compilation/WSL
-// const INPUT_ZIM = process.argv[2]; 
+// const INPUT_ZIM = process.argv[2];
 
 
-function slugify(path) {
+function _slugify(path) {
     return path
         .replace(/^A\//, '')
         .replace(/[^a-zA-Z0-9-_]/g, '_')
         .toLowerCase();
 }
 
-function extractPlainText(html) {
+function _extractPlainText(html) {
     const dom = new JSDOM(html);
     // Remove script/style tags
     dom.window.document.querySelectorAll('script, style').forEach(el => el.remove());
@@ -57,7 +57,7 @@ async function main() {
         }
     });
 
-    let processed = 0;
+    let _processed = 0;
     let skipped = 0;
     const batch = [];
     const BATCH_SIZE = 100;
@@ -123,7 +123,7 @@ async function main() {
     // Final batch
     if (batch.length > 0) {
         insertMany(batch);
-        processed += batch.length;
+        _processed += batch.length;
     }
 
     console.log(`\n\nRebuilding FTS index...`);
