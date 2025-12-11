@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* global process */
 // scripts/process-zim.js
 // import { Archive } from '@openzim/libzim';

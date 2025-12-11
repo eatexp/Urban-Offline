@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "fetch-content": "node scripts/fetch-content.js content.db",
-    "prebuild": "npm run fetch-content && if not exist public\\assets mkdir public\\assets && copy /Y content.db public\\assets\\",
+    "prebuild": "node scripts/prebuild.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "cap:sync": "cap sync",

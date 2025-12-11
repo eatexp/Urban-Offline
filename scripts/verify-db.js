@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* global process */
 import Database from 'better-sqlite3';
 import path from 'path';

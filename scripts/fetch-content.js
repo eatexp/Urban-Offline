@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* global process */
 // scripts/fetch-content.js
 // MVP Content Pipeline - Fetches curated articles from Wikipedia API
