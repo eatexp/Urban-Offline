@@ -1,8 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Download, Trash2, HardDrive, MapPin, Globe, Loader, CheckCircle, Database } from 'lucide-react';
+import { Download, Trash2, HardDrive, MapPin, Loader, CheckCircle, Database } from 'lucide-react';
 import { dataManager } from '../services/dataManager';
 import { ContentImporter } from '../services/ContentImporter';
+
+// Feature flag for development tools - only enabled in dev mode
+const DEV_TOOLS_ENABLED = import.meta.env.DEV;
 
 const Resources = () => {
     const [regions, setRegions] = useState([]);
@@ -141,20 +144,22 @@ const Resources = () => {
                     </div>
                 </div>
 
-                {/* Debug Actions */}
-                <div className="dev-tools-card">
-                    <h2>Developer Tools</h2>
-                    <button
-                        onClick={handleSeedData}
-                        className="btn-dev"
-                    >
-                        <Database size={16} />
-                        Seed Test Data (Health/Survival/Law)
-                    </button>
-                    <p>
-                        Injects dummy data into IndexedDB for search testing.
-                    </p>
-                </div>
+                {/* Debug Actions - Only visible in development mode */}
+                {DEV_TOOLS_ENABLED && (
+                    <div className="dev-tools-card">
+                        <h2>Developer Tools</h2>
+                        <button
+                            onClick={handleSeedData}
+                            className="btn-dev"
+                        >
+                            <Database size={16} />
+                            Seed Test Data (Health/Survival/Law)
+                        </button>
+                        <p>
+                            Injects dummy data into IndexedDB for search testing.
+                        </p>
+                    </div>
+                )}
             </header>
 
             <section className="mb-6">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getArticleBySlug } from '../services/db';
 import { ArrowLeft, BookOpen, AlertTriangle } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
+import DOMPurify from 'dompurify';
 
 const ArticleView = () => {
     const { slug } = useParams();
@@ -21,8 +22,6 @@ const ArticleView = () => {
 
                 // Check for related triage story
                 if (data) {
-                    // Simple keyword matching against title/content for now
-                    // Ideally this comes from the database triage_entry_points
                     const story = TriageRouter.findTriageStory(data.title + " " + (data.body_plain || ""));
                     setTriageStory(story);
                 }
@@ -36,23 +35,38 @@ const ArticleView = () => {
         loadArticle();
     }, [slug]);
 
+    // Sanitize HTML to prevent XSS attacks
+    const sanitizeHtml = (html) => {
+        if (!html) return '';
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                          'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody',
+                          'tr', 'th', 'td', 'img', 'figure', 'figcaption', 'span', 'div', 'section', 'article'],
+            ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+            ALLOW_DATA_ATTR: false,
+            ADD_ATTR: ['target'],
+            FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'button'],
+            FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+        });
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="page-container flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                <div className="spin" style={{ width: '32px', height: '32px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%' }}></div>
             </div>
         );
     }
 
     if (!article) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center justify-center text-center">
-                <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Article Not Found</h2>
-                <p className="text-gray-600 mb-6">The content likely hasn't been downloaded or was moved.</p>
+            <div className="page-container flex flex-col items-center justify-center text-center" style={{ minHeight: '50vh' }}>
+                <BookOpen size={48} className="text-muted mb-4" />
+                <h2 className="text-xl font-bold mb-2">Article Not Found</h2>
+                <p className="text-muted mb-6">The content likely hasn't been downloaded or was moved.</p>
                 <button
                     onClick={() => navigate(-1)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="btn btn-primary"
                 >
                     Go Back
                 </button>
@@ -61,33 +75,36 @@ const ArticleView = () => {
     }
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="page-container">
             {/* Header */}
-            <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center shadow-sm">
+            <header className="flex items-center gap-sm mb-4">
                 <button
                     onClick={() => navigate(-1)}
-                    className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                    className="btn btn-outline"
+                    style={{ padding: '0.5rem' }}
+                    aria-label="Go back"
                 >
-                    <ArrowLeft className="h-6 w-6" />
+                    <ArrowLeft size={20} />
                 </button>
-                <h1 className="ml-2 text-lg font-semibold text-gray-900 truncate">
+                <h1 className="text-lg font-bold truncate">
                     {article.title}
                 </h1>
             </header>
 
             {/* Triage Call-to-Action */}
             {triageStory && (
-                <div className="bg-red-50 border-b border-red-100 p-4">
-                    <div className="flex items-start">
-                        <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="ml-3 flex-1">
-                            <h3 className="text-sm font-medium text-red-800">Emergency Situation?</h3>
-                            <p className="mt-1 text-sm text-red-700">
+                <div className="card mb-4" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                    <div className="flex items-start gap-sm">
+                        <AlertTriangle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+                        <div className="flex-1">
+                            <h3 className="font-bold" style={{ color: 'var(--color-danger)' }}>Emergency Situation?</h3>
+                            <p className="text-sm text-muted mt-1">
                                 Start an interactive guide for {triageStory.category} assessment.
                             </p>
                             <button
-                                onClick={() => navigate(`/triage/${triageStory.story}`)} // Assuming Triage route is /triage/:storyId
-                                className="mt-3 w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 shadow-sm transition-colors"
+                                onClick={() => navigate(`/triage/${triageStory.story}`)}
+                                className="btn btn-primary mt-3"
+                                style={{ background: 'var(--color-danger)' }}
                             >
                                 Start Guided Help
                             </button>
@@ -96,17 +113,18 @@ const ArticleView = () => {
                 </div>
             )}
 
-            {/* Article Content */}
-            <main className="max-w-3xl mx-auto px-4 py-6">
-                <article className="prose prose-blue max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: article.body_html }} />
-                </article>
+            {/* Article Content - SANITIZED */}
+            <article className="content-card">
+                <div
+                    className="article-content"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.body_html) }}
+                />
+            </article>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-400">
-                    <p>Source: {article.source}</p>
-                    <p>Last Updated: {new Date(article.last_updated).toLocaleDateString()}</p>
-                </div>
-            </main>
+            <footer className="mt-6 pt-4 text-xs text-muted" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <p>Source: {article.source}</p>
+                <p>Last Updated: {new Date(article.last_updated).toLocaleDateString()}</p>
+            </footer>
         </div>
     );
 };

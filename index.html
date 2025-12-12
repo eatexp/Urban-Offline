@@ -9,6 +9,21 @@
   <meta name="theme-color" content="#f97316" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org;
+    connect-src 'self' https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://en.wikipedia.org;
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+  ">
+
   <title>Urban-Offline</title>
 </head>
 
