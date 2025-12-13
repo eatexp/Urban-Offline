@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inkService } from '../services/InkService';
 import { ArrowLeft, PlayCircle, RefreshCw, AlertCircle, RotateCcw } from 'lucide-react';
+import { renderMarkdown } from '../utils/markdownRenderer';
 
 const TriageScreen = ({ storyFile, onClose }) => {
     const [storyState, setStoryState] = useState(null);
@@ -184,21 +185,7 @@ const TriageScreen = ({ storyFile, onClose }) => {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div className="prose prose-slate max-w-none">
-                    {storyState.text.split('\n').map((line, i) => {
-                        if (!line.trim()) return null;
-                        // Simple Markdown Parser for **bold**
-                        const parts = line.split(/(\*\*.*?\*\*)/g);
-                        return (
-                            <p key={i} className="text-lg leading-relaxed text-slate-800 font-medium">
-                                {parts.map((part, index) => {
-                                    if (part.startsWith('**') && part.endsWith('**')) {
-                                        return <strong key={index} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
-                                    }
-                                    return part;
-                                })}
-                            </p>
-                        );
-                    })}
+                    {renderMarkdown(storyState.text)}
                 </div>
 
                 {/* Tags */}
