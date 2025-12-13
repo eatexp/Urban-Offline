@@ -4,12 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "vite --open",
     "dev": "vite",
     "build": "vite build",
+    "preview": "vite preview --open",
     "fetch-content": "node scripts/fetch-content.js content.db",
     "prebuild": "node scripts/prebuild.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
+    "android": "npm run build && npx cap sync android && npx cap open android",
+    "ios": "npm run build && npx cap sync ios && npx cap open ios",
     "cap:sync": "cap sync",
     "cap:open": "cap open"
   },
