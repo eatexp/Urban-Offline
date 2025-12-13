@@ -20,8 +20,13 @@ const OfflineIndicator = () => {
     if (!isOffline) return null;
 
     return (
-        <div className="offline-indicator">
-            <WifiOff size={20} />
+        <div
+            className="offline-indicator"
+            role="status"
+            aria-live="polite"
+            aria-label="Network status: offline"
+        >
+            <WifiOff size={20} aria-hidden="true" />
             <span>You are currently offline</span>
         </div>
     );

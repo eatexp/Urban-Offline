@@ -58,6 +58,18 @@ export const dataManager = {
         const region = AVAILABLE_REGIONS.find(r => r.id === regionId);
         if (!region) throw new Error('Region not found');
 
+        // Check storage quota before starting
+        const usage = await this.getStorageUsage();
+        const regionSize = parseFloat(region.size) || 0;
+        const projectedUsage = parseFloat(usage.used) + regionSize;
+
+        if (projectedUsage > usage.total) {
+            throw new StorageQuotaError(
+                `Not enough storage space. This region requires ${region.size}, ` +
+                `but only ${(usage.total - parseFloat(usage.used)).toFixed(1)} MB available.`
+            );
+        }
+
         // 1. Save metadata with DOWNLOADING status (atomic start)
         const metadata = {
             id: region.id,
