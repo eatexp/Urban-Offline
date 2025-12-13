@@ -25,22 +25,26 @@ const Survival = () => {
                         <Flame size={18} className="text-primary" />
                         <span className="font-bold">Interactive Survival Skills</span>
                     </h2>
-                    <div className="grid-2">
-                        {survivalStories.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={`/triage/${item.story}`}
-                                className="interactive-item orange"
-                            >
-                                <span className="font-medium capitalize">
-                                    {item.keywords[0]} Guide
-                                </span>
-                                <span className="block text-xs text-muted mt-1">
-                                    {item.story.split('/').pop().replace('.ink.json', '').replace(/-/g, ' ')}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
+                    {survivalStories.length > 0 ? (
+                        <div className="grid-2">
+                            {survivalStories.map((item, index) => (
+                                <Link
+                                    key={item.story || index}
+                                    to={`/triage/${item.story}`}
+                                    className="interactive-item orange"
+                                >
+                                    <span className="font-medium capitalize">
+                                        {item.keywords[0]} Guide
+                                    </span>
+                                    <span className="block text-xs text-muted mt-1">
+                                        {item.story.split('/').pop().replace('.ink.json', '').replace(/-/g, ' ')}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted">No survival guides available yet.</p>
+                    )}
                 </div>
 
                 <div className="content-card">
@@ -60,9 +64,7 @@ const Survival = () => {
                         <span className="font-bold">Emergency Plan</span>
                     </h2>
                     <p className="text-sm text-muted mb-3">Create your offline plan</p>
-                    <button className="text-link text-left">
-                        Manage Plan (Coming Soon)
-                    </button>
+                    <span className="text-muted text-sm italic">Coming soon</span>
                 </div>
 
                 <div className="content-card">
@@ -71,9 +73,7 @@ const Survival = () => {
                         <span className="font-bold">Water Safety (RNLI)</span>
                     </h2>
                     <p className="text-sm text-muted mb-3">Sea and urban water safety guides</p>
-                    <Link to="/guides/water-safety" className="text-link">
-                        Read Guide
-                    </Link>
+                    <span className="text-muted text-sm italic">Coming soon</span>
                 </div>
             </div>
         </div>

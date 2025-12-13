@@ -26,9 +26,22 @@ export const getArticleBySlug = async (slug) => {
     if (isNative) {
         return await NativeStorage.getArticleBySlug(slug);
     }
-    // Web fallback: query from health_content or other stores
-    // This would need implementation based on web data structure
-    console.warn('getArticleBySlug not fully implemented for web');
+
+    // Web: search across all content stores for matching slug
+    const contentStores = ['health_content', 'survival_content', 'law_content', 'guide_content'];
+
+    for (const storeName of contentStores) {
+        try {
+            const allItems = await WebStorage.db.getAll(storeName);
+            const article = allItems.find(item => item.slug === slug || item.id === slug);
+            if (article) {
+                return article;
+            }
+        } catch (error) {
+            console.warn(`Error searching ${storeName} for slug:`, error);
+        }
+    }
+
     return null;
 };
 

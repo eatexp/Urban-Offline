@@ -104,11 +104,11 @@ class InkService {
         }
     }
 
-    reset() {
+    async reset() {
         if (this.story) {
             this.story.ResetState();
             // Clear saved state on reset
-            this.clearSavedState();
+            await this.clearSavedState();
         }
     }
 

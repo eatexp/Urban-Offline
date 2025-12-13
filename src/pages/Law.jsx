@@ -25,22 +25,26 @@ const Law = () => {
                         <Shield size={18} className="text-primary" />
                         <span className="font-bold">Interactive Legal Guides</span>
                     </h2>
-                    <div className="flex flex-col gap-sm">
-                        {legalStories.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={`/triage/${item.story}`}
-                                className="interactive-item blue"
-                            >
-                                <span className="font-medium">
-                                    {item.story.includes('stop-and-search') ? 'Stop & Search (GOWISELY)' :
-                                        item.story.includes('arrest') ? 'Arrest Rights & Custody' :
-                                            item.story.includes('custody') ? 'Custody Welfare' :
-                                                'Legal Guide'}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
+                    {legalStories.length > 0 ? (
+                        <div className="flex flex-col gap-sm">
+                            {legalStories.map((item, index) => (
+                                <Link
+                                    key={item.story || index}
+                                    to={`/triage/${item.story}`}
+                                    className="interactive-item blue"
+                                >
+                                    <span className="font-medium">
+                                        {item.story.includes('stop-and-search') ? 'Stop & Search (GOWISELY)' :
+                                            item.story.includes('arrest') ? 'Arrest Rights & Custody' :
+                                                item.story.includes('custody') ? 'Custody Welfare' :
+                                                    'Legal Guide'}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted">No legal guides available yet.</p>
+                    )}
                 </div>
 
                 <div className="content-card">
@@ -49,9 +53,7 @@ const Law = () => {
                         <span className="font-bold">PACE Codes of Practice</span>
                     </h2>
                     <p className="text-sm text-muted mb-3">Police And Criminal Evidence Act Codes A-I</p>
-                    <Link to="/guides/pace-codes" className="text-link">
-                        Browse Codes
-                    </Link>
+                    <span className="text-muted text-sm italic">Coming soon</span>
                 </div>
 
                 <div className="content-card">
@@ -60,9 +62,7 @@ const Law = () => {
                         <span className="font-bold">Key Legislation</span>
                     </h2>
                     <p className="text-sm text-muted mb-3">Public Order Act, Human Rights Act</p>
-                    <Link to="/guides/legislation" className="text-link">
-                        View Acts
-                    </Link>
+                    <span className="text-muted text-sm italic">Coming soon</span>
                 </div>
             </div>
         </div>

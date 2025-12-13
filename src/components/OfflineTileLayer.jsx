@@ -46,6 +46,8 @@ const OfflineTileLayer = () => {
 
         return () => {
             map.removeLayer(layer);
+            // Clean up blob URLs to prevent memory leaks
+            tileManager.revokeAllTileUrls();
         };
     }, [map]);
 

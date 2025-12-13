@@ -218,14 +218,22 @@ const Resources = () => {
                                             onClick={() => handleAction(region.id, 'uninstall')}
                                             disabled={processing === region.id}
                                             className="btn-delete"
+                                            aria-label={`Offload ${region.name} region`}
                                         >
-                                            {processing === region.id ? <Loader size={16} className="spin" /> : <Trash2 size={16} />}
+                                            {processing === region.id ? <Loader size={16} className="spin" aria-hidden="true" /> : <Trash2 size={16} aria-hidden="true" />}
                                             Offload Region
                                         </button>
                                     ) : (
                                         <div className="w-full">
                                             {processing === region.id && progress[region.id] !== undefined ? (
-                                                <div className="progress-bar">
+                                                <div
+                                                    className="progress-bar"
+                                                    role="progressbar"
+                                                    aria-valuenow={progress[region.id]}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                    aria-label={`Downloading ${region.name}`}
+                                                >
                                                     <div
                                                         className="progress-bar-fill"
                                                         style={{ width: progress[region.id] + '%' }}
@@ -239,8 +247,9 @@ const Resources = () => {
                                                     onClick={() => handleAction(region.id, 'install')}
                                                     disabled={processing === region.id}
                                                     className="btn-download"
+                                                    aria-label={`Download ${region.name} region`}
                                                 >
-                                                    {processing === region.id ? <Loader size={16} className="spin" /> : <Download size={16} />}
+                                                    {processing === region.id ? <Loader size={16} className="spin" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
                                                     Download Region
                                                 </button>
                                             )}

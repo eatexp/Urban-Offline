@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { inkService } from '../services/InkService';
 import { ArrowLeft, PlayCircle, RefreshCw, AlertCircle, RotateCcw } from 'lucide-react';
 import { renderMarkdown } from '../utils/markdownRenderer';
@@ -8,6 +8,8 @@ const TriageScreen = ({ storyFile, onClose }) => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showResumePrompt, setShowResumePrompt] = useState(false);
+    const [focusedChoice, setFocusedChoice] = useState(0);
+    const choiceRefs = useRef([]);
 
     const loadStoryCallback = useCallback(async (resume = true) => {
         setError(null);
@@ -49,11 +51,46 @@ const TriageScreen = ({ storyFile, onClose }) => {
     const handleChoice = (index) => {
         const next = inkService.choose(index);
         setStoryState(next);
+        setFocusedChoice(0); // Reset focus to first choice
     };
 
     const handleRestart = async () => {
         inkService.reset();
         await loadStoryCallback(false);
+    };
+
+    // Keyboard navigation for choices
+    const handleChoiceKeyDown = (e, choiceIndex) => {
+        const choices = storyState?.choices || [];
+        const numChoices = choices.length;
+
+        switch (e.key) {
+            case 'ArrowDown':
+            case 'ArrowRight':
+                e.preventDefault();
+                const nextIndex = (choiceIndex + 1) % numChoices;
+                setFocusedChoice(nextIndex);
+                choiceRefs.current[nextIndex]?.focus();
+                break;
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                e.preventDefault();
+                const prevIndex = (choiceIndex - 1 + numChoices) % numChoices;
+                setFocusedChoice(prevIndex);
+                choiceRefs.current[prevIndex]?.focus();
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                handleChoice(choices[choiceIndex].index);
+                break;
+            case 'Escape':
+                e.preventDefault();
+                onClose();
+                break;
+            default:
+                break;
+        }
     };
 
     // Resume prompt screen
@@ -201,13 +238,21 @@ const TriageScreen = ({ storyFile, onClose }) => {
             </div>
 
             {/* Choices */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+            <div
+                className="p-4 bg-slate-50 border-t border-slate-200 space-y-3"
+                role="group"
+                aria-label="Available choices"
+            >
                 {storyState.choices.length > 0 ? (
-                    storyState.choices.map((choice) => (
+                    storyState.choices.map((choice, idx) => (
                         <button
                             key={choice.index}
+                            ref={el => choiceRefs.current[idx] = el}
                             onClick={() => handleChoice(choice.index)}
-                            className="w-full text-left p-4 bg-white border border-slate-300 rounded-lg shadow-sm hover:border-blue-500 hover:ring-1 hover:ring-blue-500 hover:shadow-md transition-all active:bg-blue-50"
+                            onKeyDown={(e) => handleChoiceKeyDown(e, idx)}
+                            className="w-full text-left p-4 bg-white border border-slate-300 rounded-lg shadow-sm hover:border-blue-500 hover:ring-1 hover:ring-blue-500 hover:shadow-md transition-all active:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            aria-label={`Choice ${idx + 1}: ${choice.text}`}
+                            tabIndex={idx === focusedChoice ? 0 : -1}
                         >
                             <span className="font-semibold text-slate-700">{choice.text}</span>
                         </button>

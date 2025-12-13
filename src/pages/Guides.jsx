@@ -88,25 +88,28 @@ const Guides = () => {
                                         <button
                                             onClick={() => handleView(guide.id)}
                                             className="btn btn-primary"
+                                            aria-label={`Read ${guide.name}`}
                                             title="Read Guide"
                                         >
-                                            <BookOpen size={18} />
+                                            <BookOpen size={18} aria-hidden="true" />
                                         </button>
                                         <button
                                             onClick={() => handleUninstall(guide.id)}
                                             className="btn btn-danger-outline"
+                                            aria-label={`Remove ${guide.name}`}
                                             title="Remove Guide"
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={18} aria-hidden="true" />
                                         </button>
                                     </div>
                                 ) : (
                                     <button
                                         onClick={() => handleInstall(guide.id)}
                                         className="btn btn-primary"
+                                        aria-label={`Download ${guide.name}`}
                                         title="Download Guide"
                                     >
-                                        <Download size={18} />
+                                        <Download size={18} aria-hidden="true" />
                                     </button>
                                 )}
                             </div>
