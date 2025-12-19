@@ -7,14 +7,18 @@ const Law = () => {
     const legalStories = TriageRouter.getStoriesByCategory('legal');
 
     return (
-        <div className="p-4 space-y-4">
-            <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-                <Scale className="w-8 h-8" />
-                Law & Rights
-            </h1>
-            <p className="text-gray-600">
-                Offline access to UK legislation, PACE codes, and your rights.
-            </p>
+        <div className="page-container space-y-4">
+            <header className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                        <Scale className="w-6 h-6" />
+                    </div>
+                    <h1 className="text-2xl font-bold">Law & Rights</h1>
+                </div>
+                <p className="text-sm text-muted">
+                    Offline access to UK legislation, PACE codes, and your rights.
+                </p>
+            </header>
 
             <div className="grid gap-4 md:grid-cols-2">
                 {/* Interactive Triage Section */}

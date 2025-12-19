@@ -7,14 +7,18 @@ const Survival = () => {
     const survivalStories = TriageRouter.getStoriesByCategory('survival');
 
     return (
-        <div className="p-4 space-y-4">
-            <h1 className="text-2xl font-bold text-orange-600 flex items-center gap-2">
-                <Tent className="w-8 h-8" />
-                Survival & Preparedness
-            </h1>
-            <p className="text-gray-600">
-                Guides for flood risks, shelter, water safety, and emergency planning.
-            </p>
+        <div className="page-container space-y-4">
+            <header className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                        <Tent className="w-6 h-6" />
+                    </div>
+                    <h1 className="text-2xl font-bold">Survival & Preparedness</h1>
+                </div>
+                <p className="text-sm text-muted">
+                    Guides for flood risks, shelter, water safety, and emergency planning.
+                </p>
+            </header>
 
             <div className="grid gap-4 md:grid-cols-2">
                 {/* Interactive Skills Section */}

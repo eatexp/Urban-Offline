@@ -58,7 +58,7 @@ const Guides = () => {
                 >
                     &larr; Back to Guides
                 </button>
-                <div className="card bg-surface p-4 rounded-md shadow-sm prose">
+                <div className="card prose">
                     <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
                         {viewingGuide.content}
                     </pre>
@@ -72,17 +72,20 @@ const Guides = () => {
             <h1 className="text-lg font-bold mb-4">Emergency Guides</h1>
 
             {loading ? (
-                <p>Loading guides...</p>
+                <p className="text-muted text-sm">Loading guides...</p>
             ) : (
-                <div className="dataset-list">
+                <div className="dataset-list space-y-3">
                     {guides.map(guide => (
-                        <div key={guide.id} className="dataset-item">
+                        <div
+                            key={guide.id}
+                            className="dataset-item card flex items-start justify-between gap-md"
+                        >
                             <div className="dataset-info">
                                 <h3 className="font-bold">{guide.name}</h3>
                                 <p className="text-sm text-muted">{guide.description}</p>
                                 <span className="badge">{guide.size}</span>
                             </div>
-                            <div className="dataset-actions">
+                            <div className="dataset-actions flex gap-sm">
                                 {guide.isInstalled ? (
                                     <div className="flex gap-sm">
                                         <button

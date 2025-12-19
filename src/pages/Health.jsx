@@ -5,15 +5,15 @@ import { Heart, Activity, Thermometer } from 'lucide-react';
 const Health = () => {
 
     return (
-        <div className="page-container p-4">
+        <div className="page-container">
             <header className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 bg-red-100 text-red-600 rounded-lg">
                         <Heart size={24} />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">Health & First Aid</h1>
+                    <h1 className="text-2xl font-bold">Health & First Aid</h1>
                 </div>
-                <p className="text-slate-600">Emergency medical protocols and triage.</p>
+                <p className="text-sm text-muted">Emergency medical protocols and triage.</p>
             </header>
 
             <div className="grid gap-4">

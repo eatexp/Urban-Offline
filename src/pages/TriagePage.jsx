@@ -7,7 +7,7 @@ const TriagePage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
+        <div className="page-container py-4 flex justify-center">
             <div className="w-full max-w-lg">
                 <TriageScreen
                     storyFile={storyId}
