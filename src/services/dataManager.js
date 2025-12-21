@@ -1,0 +1,150 @@
+import { db } from './db';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('DataManager');
+
+// Mock Regions (Simulating a server response)
+const AVAILABLE_REGIONS = [
+    {
+        id: 'region-london',
+        name: 'London, UK',
+        type: 'region',
+        coordinates: [51.5074, -0.1278],
+        size: '125 MB',
+        description: 'Greater London area. Includes hospitals, shelters, and offline map tiles.',
+        modules: ['map-tiles', 'places-medical', 'places-shelter']
+    },
+    {
+        id: 'region-nyc',
+        name: 'New York City, USA',
+        type: 'region',
+        coordinates: [40.7128, -74.0060],
+        size: '140 MB',
+        description: 'NYC Metro area. Includes evacuation routes and medical centers.',
+        modules: ['map-tiles', 'places-medical', 'places-evac']
+    },
+    {
+        id: 'region-sf',
+        name: 'San Francisco, USA',
+        type: 'region',
+        coordinates: [37.7749, -122.4194],
+        size: '95 MB',
+        description: 'Bay Area. Includes seismic safety zones and water points.',
+        modules: ['map-tiles', 'places-water', 'places-seismic']
+    }
+];
+
+export const dataManager = {
+    async getAvailableRegions() {
+        try {
+            const installed = await db.getAll('datasets'); // Reusing 'datasets' store for regions
+            const installedIds = new Set((installed || []).map(d => d.id));
+
+            return AVAILABLE_REGIONS.map(r => ({
+                ...r,
+                isInstalled: installedIds.has(r.id),
+                installedAt: installedIds.has(r.id) ? (installed || []).find(d => d.id === r.id)?.installedAt : null
+            }));
+        } catch (_dbError) {
+            // If getAll fails, return regions with none installed
+            return AVAILABLE_REGIONS.map(r => ({
+                ...r,
+                isInstalled: false,
+                installedAt: null
+            }));
+        }
+    },
+
+    async installRegion(regionId, onProgress) {
+        const region = AVAILABLE_REGIONS.find(r => r.id === regionId);
+        if (!region) throw new Error('Region not found');
+
+        try {
+            // Save metadata first
+            await db.put('datasets', {
+                id: region.id,
+                name: region.name,
+                type: region.type,
+                size: region.size,
+                description: region.description,
+                coordinates: region.coordinates,
+                modules: region.modules,
+                installedAt: new Date().toISOString()
+            });
+
+            // Trigger tile download if needed
+            if (region.modules.includes('map-tiles')) {
+                try {
+                    const { tileManager } = await import('./tileManager');
+                    await tileManager.downloadRegion(region, onProgress);
+                } catch (tileError) {
+                    log.error('Tile download failed', tileError);
+                    // Don't fail the whole installation if tiles fail
+                    // User can retry later
+                }
+            }
+
+            // Report completion
+            if (onProgress) {
+                onProgress(100);
+            }
+
+            return true;
+        } catch (error) {
+            log.error('Region installation failed', error);
+            // Clean up partial installation
+            try {
+                await db.delete('datasets', regionId);
+            } catch (cleanupError) {
+                log.error('Failed to cleanup after installation error', cleanupError);
+            }
+            throw error;
+        }
+    },
+
+    async uninstallRegion(regionId) {
+        try {
+            // Delete metadata
+            await db.delete('datasets', regionId);
+            
+            // Clean up tiles (async, don't wait)
+            import('./tileManager').then(({ tileManager }) => {
+                tileManager.clearAllTiles().catch(err => {
+                    log.warn('Failed to clear tiles', err);
+                });
+            });
+            
+            return true;
+        } catch (error) {
+            log.error('Region uninstallation failed', error);
+            throw error;
+        }
+    },
+
+    async getInstalledRegions() {
+        return await db.getAll('datasets');
+    },
+
+    // Helper to calculate total storage used (mock)
+    async getStorageUsage() {
+        const installed = await db.getAll('datasets');
+        const guides = await db.getAll('guides');
+
+        let totalMB = 0;
+
+        installed.forEach(item => {
+            const size = parseFloat(item.size);
+            if (!isNaN(size)) totalMB += size;
+        });
+
+        guides.forEach(item => {
+            const size = parseFloat(item.size);
+            if (!isNaN(size)) totalMB += size;
+        });
+
+        return {
+            used: totalMB.toFixed(1),
+            total: 500 // 500MB Budget
+        };
+    }
+};

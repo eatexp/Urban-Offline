@@ -1,0 +1,156 @@
+{
+  "timestamp": "2025-12-21T00:52:00.557Z",
+  "database": {
+    "path": "C:\\Users\\ieatexp\\Desktop\\Projects\\247s\\Urban-Offline\\content.db",
+    "size": 0,
+    "exists": true
+  },
+  "articles": {
+    "total": 89,
+    "byCategory": {
+      "Medical Emergencies": 36,
+      "Trauma": 15,
+      "Environmental Emergencies": 9,
+      "Medications": 9,
+      "Legal Rights UK": 8,
+      "Anatomy Reference": 6,
+      "Survival Skills": 6,
+      "Emergency First Aid": 0
+    },
+    "quality": {
+      "excellent": 77,
+      "good": 7,
+      "fair": 1,
+      "poor": 4
+    },
+    "issues": [
+      {
+        "type": "short_content",
+        "article": "Burns",
+        "chars": 1148,
+        "slug": "burns"
+      },
+      {
+        "type": "short_content",
+        "article": "Suture",
+        "chars": 1124,
+        "slug": "suture"
+      },
+      {
+        "type": "short_content",
+        "article": "Carotid artery",
+        "chars": 690,
+        "slug": "carotid-artery"
+      },
+      {
+        "type": "stub_article",
+        "article": "Carotid artery",
+        "chars": 690
+      },
+      {
+        "type": "short_content",
+        "article": "Stop and search",
+        "chars": 659,
+        "slug": "stop-and-search"
+      },
+      {
+        "type": "stub_article",
+        "article": "Stop and search",
+        "chars": 659
+      }
+    ]
+  },
+  "search": {
+    "ftsEnabled": true,
+    "testQueries": [
+      {
+        "query": "cardiac arrest",
+        "results": 21
+      },
+      {
+        "query": "bleeding",
+        "results": 24
+      },
+      {
+        "query": "fracture",
+        "results": 20
+      },
+      {
+        "query": "stroke",
+        "results": 28
+      },
+      {
+        "query": "choking",
+        "results": 6
+      },
+      {
+        "query": "burns",
+        "results": 35
+      },
+      {
+        "query": "hypothermia",
+        "results": 15
+      },
+      {
+        "query": "anaphylaxis",
+        "results": 5
+      }
+    ]
+  },
+  "licensing": {
+    "attributions": [
+      {
+        "source_name": "Wikipedia",
+        "license_type": "CC-BY-SA-4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution_text": "Content from Wikipedia, the free encyclopedia. Available under Creative Commons Attribution-ShareAlike 4.0 International License."
+      }
+    ],
+    "compliance": true
+  },
+  "coverage": {
+    "critical": [
+      {
+        "topic": "CPR",
+        "covered": true,
+        "articles": 23
+      },
+      {
+        "topic": "Bleeding Control",
+        "covered": true,
+        "articles": 32
+      },
+      {
+        "topic": "Choking",
+        "covered": true,
+        "articles": 17
+      },
+      {
+        "topic": "Stroke",
+        "covered": true,
+        "articles": 28
+      },
+      {
+        "topic": "Anaphylaxis",
+        "covered": true,
+        "articles": 12
+      },
+      {
+        "topic": "Burns",
+        "covered": true,
+        "articles": 35
+      },
+      {
+        "topic": "Fractures",
+        "covered": true,
+        "articles": 26
+      },
+      {
+        "topic": "Hypothermia",
+        "covered": true,
+        "articles": 30
+      }
+    ],
+    "missing": []
+  }
+}

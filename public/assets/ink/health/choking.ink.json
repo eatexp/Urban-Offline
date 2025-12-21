@@ -1,0 +1,275 @@
+{
+    "inkVersion": 21,
+    "root": [
+        [
+            "^**Choking Emergency Guide**",
+            "\n",
+            "^Is the person able to cough or speak?",
+            "\n",
+            "ev",
+            "str",
+            "^No, they cannot cough or speak",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-0"
+            },
+            "ev",
+            "str",
+            "^Yes, they can cough weakly",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-1"
+            },
+            "ev",
+                "str",
+                "^They're unconscious",
+                "/str",
+                "/ev",
+            {
+                "*": "0.c-2"
+            },
+            {
+                "c-0": [
+                    "\n",
+                    {
+                        "->": "severe_choking"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-1": [
+                    "\n",
+                    {
+                        "->": "mild_choking"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-2": [
+                    "\n",
+                    {
+                        "->": "unconscious_choking"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ]
+            }
+        ],
+        {
+            "severe_choking": [
+                {
+                    "#": "EMERGENCY: SEVERE CHOKING"
+                },
+                {
+                    "#": "ACTION: HEIMLICH MANEUVER"
+                },
+                "^**Call Emergency Services: 999 (UK) or 112 (EU)**",
+                "\n",
+                "^**For Adults and Children Over 1 Year:**",
+                "\n",
+                "^**Step 1: Stand Behind Person**",
+                "\n",
+                "^Position yourself behind them, slightly to one side.",
+                "\n",
+                "^**Step 2: Place Hands**",
+                "\n",
+                "^Make fist with one hand. Place thumb side against abdomen, just above navel, below ribcage.",
+                "\n",
+                "^**Step 3: Grasp Fist**",
+                "\n",
+                "^Cover fist with other hand.",
+                "\n",
+                "^**Step 4: Thrust Upward**",
+                "\n",
+                "^Press inward and upward with quick, forceful thrusts.",
+                "\n",
+                "^Repeat until object is expelled or person becomes unconscious.",
+                "\n",
+                "ev",
+                "str",
+                "^Object came out",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^Still choking after 5 thrusts",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "success"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "continue_heimlich"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "mild_choking": [
+                "^**Mild Choking - Encourage Coughing**",
+                "\n",
+                "^If person can cough or speak:",
+                "\n",
+                "^• Encourage them to keep coughing",
+                "\n",
+                "^• Do NOT perform Heimlich maneuver",
+                "\n",
+                "^• Stay with them and monitor",
+                "\n",
+                "^**If coughing becomes weak or stops: Treat as severe choking.**",
+                "\n",
+                "ev",
+                "str",
+                "^They're getting worse",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^Object came out",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "severe_choking"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "success"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "unconscious_choking": [
+                "^**Unconscious Choking Victim**",
+                "\n",
+                "^**Step 1: Lower to Ground**",
+                "\n",
+                "^Carefully lower person to floor on their back.",
+                "\n",
+                "^**Step 2: Call Emergency Services**",
+                "\n",
+                "^**Step 3: Open Airway**",
+                "\n",
+                "^Tilt head back, lift chin. Look for object in mouth.",
+                "\n",
+                "^**Step 4: Remove Visible Object**",
+                "\n",
+                "^Only if you can see it. Use finger sweep (hook motion).",
+                "\n",
+                "^**Step 5: Attempt Rescue Breaths**",
+                "\n",
+                "^If airway still blocked, start CPR with chest compressions.",
+                "\n",
+                "^**Continue cycles until help arrives or object is removed.**",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "continue_heimlich": [
+                "^**Continue Heimlich Maneuver**",
+                "\n",
+                "^Keep performing abdominal thrusts.",
+                "\n",
+                "^**Alternate with Back Blows if needed:**",
+                "\n",
+                "^1. Stand to side and slightly behind",
+                "\n",
+                "^2. Support chest with one hand",
+                "\n",
+                "^3. Give 5 sharp blows between shoulder blades",
+                "\n",
+                "^4. Alternate: 5 back blows, then 5 abdominal thrusts",
+                "\n",
+                "^**Continue until object is expelled or person becomes unconscious.**",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "success": [
+                "^**Object Removed Successfully**",
+                "\n",
+                "^**After-Care:**",
+                "\n",
+                "^• Check person is breathing normally",
+                "\n",
+                "^• Stay with them and monitor",
+                "\n",
+                "^• Seek medical attention if:",
+                "\n",
+                "^  - They have difficulty breathing",
+                "\n",
+                "^  - They continue to cough",
+                "\n",
+                "^  - They show signs of distress",
+                "\n",
+                "^**Even if they seem fine, medical evaluation is recommended.**",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "#f": 1
+        }
+    ],
+    "listDefs": {},
+    "globalDecl": [
+        "ev",
+        "str",
+        "^choking",
+        "/str",
+        {
+            "VAR=": "linked_article"
+        },
+        "/ev",
+        "end",
+        null
+    ]
+}
+
+
+
+
+

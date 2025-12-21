@@ -1,0 +1,72 @@
+{
+  "inkVersion": 21,
+  "root": [
+    [
+      "^Is the person conscious and responsive?\n",
+      "ev", "str", "^Yes, they're awake and talking", "/str", "/ev",
+      {"*": ".^.c-0", "flg": 20},
+      "ev", "str", "^They're confused or drowsy", "/str", "/ev",
+      {"*": ".^.c-1", "flg": 20},
+      "ev", "str", "^They're unconscious or unresponsive", "/str", "/ev",
+      {"*": ".^.c-2", "flg": 20},
+      {
+        "c-0": ["\n", {"->": "mild_hypothermia"}, {"#f": 5}],
+        "c-1": ["\n", {"->": "moderate_hypothermia"}, {"#f": 5}],
+        "c-2": ["\n", {"->": "severe_hypothermia"}, {"#f": 5}]
+      }
+    ],
+    {
+      "mild_hypothermia": [
+        {"#": "SEVERITY: MILD"},
+        {"#": "ACTION: REWARM"},
+        "^**Mild Hypothermia - Act Now**\n",
+        "^Move them to shelter immediately. Remove wet clothing.\n",
+        "^Wrap in dry blankets. Cover their head.\n",
+        "^Give warm (not hot) drinks if they can swallow safely.\n",
+        "ev", "str", "^What are the warning signs?", "/str", "/ev",
+        {"*": ".^.c-0", "flg": 20},
+        "ev", "str", "^They're improving", "/str", "/ev",
+        {"*": ".^.c-1", "flg": 20},
+        {
+          "c-0": ["\n", {"->": "warning_signs"}, {"#f": 5}],
+          "c-1": ["\n", {"->": "recovery"}, {"#f": 5}]
+        }
+      ],
+      "moderate_hypothermia": [
+        "^**Moderate Hypothermia - Call Emergency (999/911)**\n",
+        "^Handle gently - sudden movements can cause heart problems.\n",
+        "^Keep them horizontal. Do NOT rub their limbs.\n",
+        "^Apply warm packs to chest, neck, groin (not limbs).\n",
+        "^Monitor breathing closely.\n",
+        "end", {"#f": 1}
+      ],
+      "severe_hypothermia": [
+        {"#": "CRITICAL"},
+        "^**Severe Hypothermia - CRITICAL EMERGENCY**\n",
+        "^Call 999/911 IMMEDIATELY\n",
+        "^Check for breathing - it may be very slow.\n",
+        "^If no breathing, begin CPR.\n",
+        "^Handle VERY gently - the heart is unstable.\n",
+        "end", {"#f": 1}
+      ],
+      "warning_signs": [
+        "^**Warning Signs of Worsening:**\n",
+        "^- Shivering stops (bad sign)\n",
+        "^- Lips or skin turning blue\n",
+        "^- Increasing confusion\n",
+        "^If you see these, call 999/911 immediately.\n",
+        {"->": "mild_hypothermia"}, {"#f": 1}
+      ],
+      "recovery": [
+        "^**Recovery Phase**\n",
+        "^Keep monitoring - hypothermia can return.\n",
+        "^Continue gentle warming.\n",
+        "^Full recovery takes time.\n",
+        "^Seek medical evaluation even if they seem fine.\n",
+        "end", {"#f": 1}
+      ],
+      "#f": 1
+    }
+  ],
+  "listDefs": {}
+}

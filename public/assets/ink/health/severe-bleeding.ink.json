@@ -1,0 +1,285 @@
+{
+    "inkVersion": 21,
+    "root": [
+        [
+            "^**Severe Bleeding Control Guide**",
+            "\n",
+            "^Is there active, heavy bleeding?",
+            "\n",
+            "ev",
+            "str",
+            "^Yes, blood is flowing heavily",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-0"
+            },
+            "ev",
+            "str",
+            "^Bleeding has slowed or stopped",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-1"
+            },
+            "ev",
+            "str",
+            "^I'm not sure how severe it is",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-2"
+            },
+            {
+                "c-0": [
+                    "\n",
+                    {
+                        "->": "immediate_action"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-1": [
+                    "\n",
+                    {
+                        "->": "wound_care"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-2": [
+                    "\n",
+                    {
+                        "->": "assess_severity"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ]
+            }
+        ],
+        {
+            "immediate_action": [
+                {
+                    "#": "EMERGENCY: SEVERE BLEEDING"
+                },
+                {
+                    "#": "ACTION: STOP BLEEDING IMMEDIATELY"
+                },
+                "^**Call Emergency Services: 999 (UK) or 112 (EU)**",
+                "\n",
+                "^**Step 1: Apply Direct Pressure**",
+                "\n",
+                "^Use clean cloth, bandage, or your hands.",
+                "\n",
+                "^Press firmly directly on the wound.",
+                "\n",
+                "^**Do not remove if blood soaks through - add more layers on top.**",
+                "\n",
+                "ev",
+                "str",
+                    "^Pressure applied - bleeding continues",
+                    "/str",
+                    "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^Bleeding has slowed",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "elevate_and_pressure"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "maintain_pressure"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "elevate_and_pressure": [
+                "^**Step 2: Elevate the Wound**",
+                "\n",
+                "^Raise injured area above heart level (if possible).",
+                "\n",
+                "^Continue applying direct pressure.",
+                "\n",
+                "^**Step 3: If Bleeding Continues - Pressure Points**",
+                "\n",
+                "^For arm: Press brachial artery (inside upper arm).",
+                "\n",
+                "^For leg: Press femoral artery (groin area).",
+                "\n",
+                "ev",
+                "str",
+                "^Bleeding still not controlled",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^Bleeding is slowing",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "tourniquet_consideration"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "maintain_pressure"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "tourniquet_consideration": [
+                "^**Tourniquet - Last Resort**",
+                "\n",
+                "^Only use if:",
+                "\n",
+                "^• Direct pressure fails",
+                "\n",
+                "^• Life-threatening bleeding",
+                "\n",
+                "^• Limb injury (not torso/neck)",
+                "\n",
+                "^**How to Apply:**",
+                "\n",
+                "^1. Place 5-7cm above wound (not on joint)",
+                "\n",
+                "^2. Tighten until bleeding stops",
+                "\n",
+                "^3. Note time applied",
+                "\n",
+                "^4. Do NOT remove until medical help arrives",
+                "\n",
+                "^**Warning: Tourniquets can cause tissue damage if left too long.**",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "maintain_pressure": [
+                "^**Continue Pressure Until Help Arrives**",
+                "\n",
+                "^• Keep pressure constant",
+                "\n",
+                "^• Do not peek to check wound",
+                "\n",
+                "^• Keep person calm and still",
+                "\n",
+                "^• Monitor for signs of shock",
+                "\n",
+                "^**Watch for:**",
+                "\n",
+                "^• Pale, cold, clammy skin",
+                "\n",
+                "^• Rapid, weak pulse",
+                "\n",
+                "^• Dizziness or confusion",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "wound_care": [
+                "^**Wound Care for Controlled Bleeding**",
+                "\n",
+                "^1. Clean wound with clean water if available",
+                "\n",
+                "^2. Apply sterile dressing if possible",
+                "\n",
+                "^3. Keep wound elevated",
+                "\n",
+                "^4. Monitor for signs of infection",
+                "\n",
+                "^**Seek medical attention if:**",
+                "\n",
+                "^• Wound is deep or gaping",
+                "\n",
+                "^• Foreign object in wound",
+                "\n",
+                "^• Signs of infection develop",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "assess_severity": [
+                "^**Signs of Severe Bleeding:**",
+                "\n",
+                "^• Blood spurting or flowing continuously",
+                "\n",
+                "^• Blood soaking through bandages quickly",
+                "\n",
+                "^• Large amount of blood loss",
+                "\n",
+                "^• Person feels faint or dizzy",
+                "\n",
+                "^**If any of these apply: Treat as severe bleeding.**",
+                "\n",
+                {
+                    "->": "immediate_action"
+                },
+                {
+                    "#f": 1
+                }
+            ],
+            "#f": 1
+        }
+    ],
+    "listDefs": {},
+    "globalDecl": [
+        "ev",
+        "str",
+        "^bleeding",
+        "/str",
+        {
+            "VAR=": "linked_article"
+        },
+        "/ev",
+        "end",
+        null
+    ]
+}
+
+
+
+
+

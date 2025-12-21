@@ -1,0 +1,144 @@
+
+1.0 Vision and Strategic Mandate
+
+This project's core mission is to develop a fully "airgapped" emergency preparedness application that remains operational when modern, cloud-centric infrastructure fails. In a crisis—be it a natural disaster, grid failure, or network outage—reliance on connected services becomes a critical vulnerability. This application is designed as a resilient, necessary alternative, providing life-saving intelligence on a user's device without any dependency on external networks.
+
+The strategic value of this application is centered on its absolute reliability in the most challenging circumstances. Its core value proposition is to serve as a single-download resource that works anywhere, under any conditions.
+
+* Complete Offline Functionality: All critical features, from medical triage to mapping, are self-contained and function without an internet connection.
+* Universal Accessibility: A "download once, use anywhere" model ensures the app is a dependable tool for international travel, remote area operations, or local emergencies.
+* Comprehensive Emergency Reference: A single, trusted source for medical, legal, and survival information, consolidating a ~150MB compressed knowledge base to eliminate reliance on external sources.
+
+The primary development target for the initial release is iOS 16.1+, specifically optimized for the performance and efficiency of iPhone 16 and iPhone 17 Pro devices equipped with the Apple A18 Pro silicon.
+
+This vision is made possible by a novel hybrid intelligence architecture designed to balance deterministic safety, semantic flexibility, and extreme resource efficiency.
+
+2.0 Core Product Architecture: A Three-Layer Hybrid Intelligence Model
+
+The project's life-or-death context renders conventional solutions inadequate. Static PDFs are inert and pure generative AI is an unacceptable liability due to hallucination risk. Therefore, this three-layer architecture is not an innovation for its own sake; it is a deliberate and necessary construct to mitigate these risks while delivering a dynamic, trustworthy user experience. It balances the instant responsiveness of a classifier, the deterministic safety of pre-authored scripts, and the deep knowledge access of a hybrid search engine.
+
+1. Layer 1: The Intent Router
+  * Function: Acts as the application's "triage nurse." It performs an ultra-fast analysis of the user's natural language query to classify it into a structured, predefined intent (e.g., classifying "my arm is cut bad" as injury.hemorrhage.arm).
+  * Technology: Apple NaturalLanguage framework using a custom-trained MLTextClassifier model.
+  * Characteristics: Ultra-low latency (3-10ms), minimal power consumption, and extremely high accuracy (99%+) for a well-defined set of 20-50 emergency intents.
+2. Layer 2: The Narrative Engine
+  * Function: Acts as the "specialist clinician." Once a critical intent is identified, this layer executes a pre-authored, branching conversation tree to guide the user through a validated protocol, such as CPR or severe bleeding control.
+  * Technology: Ink scripting language to create deterministic, state-aware narrative flows.
+  * Characteristics: Zero hallucination risk, logically verifiable by medical professionals, and capable of providing a supportive, non-robotic user experience through state persistence and conditional logic.
+3. Layer 3: The Knowledge Engine
+  * Function: Acts as the "reference library," powered by a hybrid search engine. This layer combines the keyword precision of FTS5 with the contextual understanding of sqlite-vec semantic search, ensuring high-recall information retrieval for ambiguous or non-technical user queries.
+  * Technology: SQLite augmented with the FTS5 extension for full-text search and the sqlite-vec extension for semantic vector search.
+  * Characteristics: High recall for broad information retrieval, enabling users to find relevant content using both keywords and context-based queries.
+
+This architecture forms the foundation of the on-device intelligence strategy, which prioritizes lightweight, efficient, and platform-native models to meet the project's strict constraints.
+
+3.0 On-Device Intelligence Strategy
+
+The strategic decision to prioritize lightweight, platform-native machine learning models is a direct response to the project's non-negotiable constraints: a total application size under 500MB, minimal battery impact, and absolute offline reliability. This choice is not merely about size; it is a deliberate strategy to leverage the power efficiency of the Apple A18 Pro's Neural Engine, ensuring battery longevity in a crisis. This approach rejects large, general-purpose models, which are too large and power-intensive, in favor of highly optimized, task-specific models that deliver exceptional performance within a minimal resource footprint.
+
+On-Device Model Selection Analysis
+
+Recommended Model (MLTextClassifier)	Rejected Alternative (MobileLLM-350M)
+Model Size: 1-10MB	Estimated Size: ~590MB (INT4 quantized)
+Latency: 3-10ms on A18 Pro Neural Engine	Licensing: FAIR non-commercial license restricts deployment
+Accuracy: 99%+ on a well-defined set of 20-50 intents	Budget Conflict: Exceeds the total 500MB app budget on its own
+
+Sustained Performance and Negligible Battery Impact
+
+The on-device intelligence strategy is designed for sustained performance with negligible impact on device longevity, a critical factor in a prolonged power outage.
+
+* Power Consumption: Running inference on the Apple A18 Pro chip is exceptionally efficient, with a power draw ranging from 0.072W sustained to 0.454W peak. This translates to a negligible battery impact of only 1-2 mAh per 1,000 inferences. Users can interact with the app's intelligent features continuously without fear of rapidly draining their battery.
+* Android Parity: To ensure a consistent, high-performance experience on the Android platform, the architecture will utilize ONNX Runtime Mobile with the NNAPI delegate. This allows the same optimized models to leverage hardware acceleration on Android devices, achieving performance and efficiency comparable to the iOS implementation.
+
+This intelligent, low-impact system relies on a carefully curated and legally compliant content ecosystem to provide its value.
+
+4.0 Content and Data Ecosystem Strategy
+
+The application's content is as critical as its technology. The strategic pivot away from National Health Service (NHS) content was a necessary decision to mitigate significant legal risks. The geographic restrictions tied to NHS licensing fundamentally conflict with the app's "download once, use anywhere" value proposition. Therefore, the content strategy is built on a foundation of globally licensed, open-source, and public domain information to ensure legal compliance and universal accessibility.
+
+Multi-Source Content Bundle
+
+Content Type	Primary Source(s)	Governing License
+Medical Reference	WikiProject Medicine (ZIM), OpenWHO, WikiDoc	CC-BY-SA, CC-BY-NC
+Mapping & Geolocation	OpenStreetMap via OpenMapTiles	ODbL
+UK Legal & Procedural	legislation.gov.uk, UK Civil Contingencies Act	OGL
+General Emergency Guidance	CDC, FEMA, Red Cross guidelines	Public Domain
+
+Justification for OpenStreetMap
+
+The selection of OpenStreetMap (OSM) over proprietary alternatives like Mapbox is a direct consequence of the project's "airgapped" mandate. Proprietary mapping services explicitly prohibit the offline redistribution of their data, making it impossible to bundle map tiles within the application. Therefore, the project is mandated to use OpenStreetMap, as its ODbL license is the sole option that aligns with the non-negotiable "airgapped" requirement.
+
+This diverse content bundle will be managed by a highly optimized offline data infrastructure designed to meet the app's stringent performance and size requirements.
+
+5.0 Offline Data Infrastructure and Optimization
+
+The ability to deliver a rich, responsive experience within the 500MB size constraint is entirely dependent on a highly optimized offline data infrastructure. The core of this strategy involves using SQLite augmented with advanced extensions for hybrid search, combined with aggressive, domain-specific compression techniques. These are not merely optimizations; they are the only logical choices to meet the project's hard constraints.
+
+Hybrid Search Architecture
+
+The application will employ a powerful hybrid search model, combining the strengths of traditional full-text search with modern semantic search to deliver fast and highly relevant results.
+
+* Full-Text Search: Leveraging SQLite's FTS5 extension, the app will provide fast keyword-based search. By using a contentless table configuration, the search index size is reduced to just 20-30% of the original text size, a critical optimization for the storage budget.
+* Semantic Search: Using the sqlite-vec extension, the app will perform similarity searches on pre-computed 384-dimension vector embeddings. These embeddings, generated from the all-MiniLM-L6-v2 model, allow the app to understand the meaning of a user's query, returning contextually relevant results even if the exact keywords are not present.
+
+Data Optimization and Compression
+
+To fit gigabytes of raw information into the app's tight budget, a multi-layered optimization strategy is essential.
+
+* Text Compression: Instead of generic compression, the app will use Zstandard (zstd) with custom-trained dictionaries. By training dictionaries on samples of the medical and legal text, the algorithm can achieve compression ratios of 50:1 or higher on this repetitive content, drastically reducing its storage footprint.
+* Data Serialization: For frequently accessed structured data, such as the indexes for the conversation trees, the app will use FlatBuffers. This zero-copy serialization library provides near-instantaneous data access (~77ns) compared to traditional JSON parsing (~500ns), ensuring the conversational interface remains fluid and responsive.
+
+This technical infrastructure provides the foundation for the phased development plan designed to build and validate the application.
+
+6.0 Phased Development Roadmap and Execution Plan
+
+The development strategy adopts an agile, de-risked approach, prioritizing rapid validation of core assumptions before committing to a full-scale build. This phased plan begins with targeted, low-cost prototypes to test the most critical technical and user experience hypotheses, ensuring the project is built on a proven foundation.
+
+Pre-Development Validation Phase
+
+1. Natural Language UX Validation ("Weekend Spike"):
+  * Task: Build a rapid prototype to test the MLTextClassifier model.
+  * Success Criteria: Achieve >95% classification accuracy on a core set of 20-30 emergency intents and receive positive user satisfaction scores on whether the interaction feels "smart enough" to be trusted in a crisis.
+2. Conversation Tree Quality Assessment ("One-Week Authoring Sprint"):
+  * Task: Author a complete, end-to-end medical triage script for a critical scenario (e.g., breathing difficulties) using the Ink language.
+  * Success Criteria: The script must demonstrate a clear, non-robotic flow, incorporate robust escalation logic, and be validated by emergency response professionals for clinical accuracy and usability under stress.
+
+MVP Development Timeline and Resource Plan
+
+Following successful validation, an iOS-first Minimum Viable Product (MVP) will be developed.
+
+* Estimated Timeline: 3-6 months
+* Team Composition: A lean team of 2-3 engineers
+
+Planned Resource Budget Allocation
+
+Component	Estimated Size (MB)	Description
+Mapping Data	150 - 200	OpenStreetMap vector tiles for the UK (zoom levels 0-12), packaged using OpenMapTiles.
+Medical & Legal Content	~150	Compressed medical content (WikiProject Medicine ZIM), UK legal texts (OGL), and procedural guides from sources like FEMA and the CDC.
+Code, ML Models, & Assets	~50	Application binary, lightweight ML models (MLTextClassifier, all-MiniLM-L6-v2 embeddings), and core assets.
+Total Estimated Size	~400	Leaves a ~100MB buffer within the 500MB budget.
+
+Key Success Metrics
+
+* Technical Metrics
+  * Total app size under 480MB (to allow for App Store overhead).
+  * End-to-end intent classification latency under 500ms.
+  * Cold start launch time under 2 seconds on target hardware.
+  * Negligible battery impact (<1% additional drain per hour of active use).
+* User Experience Metrics
+  * Emergency scenario success rate >90% (users find critical information within 30 seconds).
+  * User confidence rating >4/5 on "I would trust this app in a real emergency."
+  * Frustration rate <10% (sessions requiring abandonment of natural language for manual search).
+
+This plan is subject to the following risk assessment, which identifies and prepares for potential challenges.
+
+7.0 Risk Assessment and Mitigation Plan
+
+A proactive risk management strategy is essential to navigate the technical and legal complexities of this project. This section identifies the most critical risks to project success and outlines the corresponding plans to mitigate them.
+
+Key Project Risks and Mitigation Strategies
+
+Risk Category	Risk Description	Mitigation Plan
+Content Licensing (Critical Risk)	The geographic restrictions of the NHS content license fundamentally conflict with the app's global, offline-first value proposition, posing a legal barrier to distribution.	Proceed with the alternative content strategy using globally licensed sources (WikiProject Medicine, OGL, Public Domain). Maintain a separate development branch for a potential UK-only version should an NHS partnership become viable in the future.
+User Experience (High Risk)	The lightweight MLTextClassifier may be perceived as too literal or not "smart enough" to handle ambiguous user queries in a high-stress situation, leading to user frustration and loss of confidence.	Execute the planned "weekend spike" prototype with clear, quantitative success/failure criteria. A pre-designed fallback plan to a hybrid search model (classifier for broad categories + FTS5 search within them) will be implemented if the prototype fails to meet user satisfaction targets.
+Performance (Medium Risk)	Sustained use of the on-device AI for semantic search and the GPU for map rendering could lead to excessive battery drain or thermal throttling, degrading the user experience.	Leverage the A18 Pro's highly efficient Neural Engine for all ML inference. Implement a "Thermal Awareness" protocol that uses system APIs to monitor the device's thermal state and dynamically downgrades non-essential, power-intensive features (e.g., disabling vector search in favor of FTS5) under load.

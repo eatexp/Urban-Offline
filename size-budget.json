@@ -1,0 +1,89 @@
+{
+  "timestamp": "2025-12-21T00:51:17.110Z",
+  "targets": {
+    "total": 524288000,
+    "code": 52428800,
+    "content": 157286400,
+    "maps": 209715200,
+    "buffer": 104857600
+  },
+  "actual": {
+    "dist": 1716289,
+    "contentDb": 26779648,
+    "ink": 51821,
+    "code": 1716289,
+    "content": 26831469,
+    "total": 28547758
+  },
+  "breakdown": {
+    "dist": {
+      "size": 1716289,
+      "formatted": "1.64 MB"
+    },
+    "contentDb": {
+      "size": 26779648,
+      "formatted": "25.54 MB",
+      "path": "C:\\Users\\ieatexp\\Desktop\\Projects\\247s\\Urban-Offline\\public\\assets\\content.db"
+    },
+    "ink": {
+      "size": 51821,
+      "formatted": "50.61 KB"
+    },
+    "jsTotal": 1640132,
+    "cssTotal": 19817
+  },
+  "percentages": {
+    "code": "3.3",
+    "content": "17.1",
+    "total": "5.4"
+  },
+  "status": {
+    "code": "✅",
+    "content": "✅",
+    "total": "✅"
+  },
+  "history": [
+    {
+      "timestamp": "2025-12-21T00:51:09.604Z",
+      "actual": {
+        "dist": 1716289,
+        "contentDb": 26779648,
+        "ink": 51821,
+        "code": 1716289,
+        "content": 26831469,
+        "total": 28547758
+      },
+      "percentages": {
+        "code": "3.3",
+        "content": "17.1",
+        "total": "5.4"
+      },
+      "status": {
+        "code": "✅",
+        "content": "✅",
+        "total": "✅"
+      }
+    },
+    {
+      "timestamp": "2025-12-21T00:51:17.110Z",
+      "actual": {
+        "dist": 1716289,
+        "contentDb": 26779648,
+        "ink": 51821,
+        "code": 1716289,
+        "content": 26831469,
+        "total": 28547758
+      },
+      "percentages": {
+        "code": "3.3",
+        "content": "17.1",
+        "total": "5.4"
+      },
+      "status": {
+        "code": "✅",
+        "content": "✅",
+        "total": "✅"
+      }
+    }
+  ]
+}

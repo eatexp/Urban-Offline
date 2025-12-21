@@ -1,0 +1,131 @@
+{
+  "name": "Medical Core Articles",
+  "description": "Essential medical emergency articles from Wikipedia WikiProject Medicine",
+  "version": "1.0.0",
+  "source": "Wikipedia",
+  "license": "CC-BY-SA-4.0",
+  "articles": [
+    {
+      "title": "Cardiopulmonary resuscitation",
+      "slug": "cpr",
+      "url": "https://en.wikipedia.org/wiki/Cardiopulmonary_resuscitation",
+      "category": "medical"
+    },
+    {
+      "title": "First aid",
+      "slug": "first-aid",
+      "url": "https://en.wikipedia.org/wiki/First_aid",
+      "category": "medical"
+    },
+    {
+      "title": "Tourniquet",
+      "slug": "tourniquet",
+      "url": "https://en.wikipedia.org/wiki/Tourniquet",
+      "category": "medical"
+    },
+    {
+      "title": "Stroke",
+      "slug": "stroke",
+      "url": "https://en.wikipedia.org/wiki/Stroke",
+      "category": "medical"
+    },
+    {
+      "title": "Anaphylaxis",
+      "slug": "anaphylaxis",
+      "url": "https://en.wikipedia.org/wiki/Anaphylaxis",
+      "category": "medical"
+    },
+    {
+      "title": "Hypothermia",
+      "slug": "hypothermia",
+      "url": "https://en.wikipedia.org/wiki/Hypothermia",
+      "category": "medical"
+    },
+    {
+      "title": "Heat stroke",
+      "slug": "heat-stroke",
+      "url": "https://en.wikipedia.org/wiki/Heat_stroke",
+      "category": "medical"
+    },
+    {
+      "title": "Choking",
+      "slug": "choking",
+      "url": "https://en.wikipedia.org/wiki/Choking",
+      "category": "medical"
+    },
+    {
+      "title": "Burn",
+      "slug": "burns",
+      "url": "https://en.wikipedia.org/wiki/Burn",
+      "category": "medical"
+    },
+    {
+      "title": "Fracture",
+      "slug": "fracture",
+      "url": "https://en.wikipedia.org/wiki/Fracture",
+      "category": "medical"
+    },
+    {
+      "title": "Dehydration",
+      "slug": "dehydration",
+      "url": "https://en.wikipedia.org/wiki/Dehydration",
+      "category": "medical"
+    },
+    {
+      "title": "Shock (circulatory)",
+      "slug": "shock",
+      "url": "https://en.wikipedia.org/wiki/Shock_(circulatory)",
+      "category": "medical"
+    },
+    {
+      "title": "Wound",
+      "slug": "wound",
+      "url": "https://en.wikipedia.org/wiki/Wound",
+      "category": "medical"
+    },
+    {
+      "title": "Asthma",
+      "slug": "asthma",
+      "url": "https://en.wikipedia.org/wiki/Asthma",
+      "category": "medical"
+    },
+    {
+      "title": "Seizure",
+      "slug": "seizure",
+      "url": "https://en.wikipedia.org/wiki/Seizure",
+      "category": "medical"
+    },
+    {
+      "title": "Heart attack",
+      "slug": "heart-attack",
+      "url": "https://en.wikipedia.org/wiki/Myocardial_infarction",
+      "category": "medical"
+    },
+    {
+      "title": "Concussion",
+      "slug": "concussion",
+      "url": "https://en.wikipedia.org/wiki/Concussion",
+      "category": "medical"
+    },
+    {
+      "title": "Diabetic emergency",
+      "slug": "diabetic-emergency",
+      "url": "https://en.wikipedia.org/wiki/Diabetic_emergency",
+      "category": "medical"
+    },
+    {
+      "title": "Drowning",
+      "slug": "drowning",
+      "url": "https://en.wikipedia.org/wiki/Drowning",
+      "category": "medical"
+    },
+    {
+      "title": "Poisoning",
+      "slug": "poisoning",
+      "url": "https://en.wikipedia.org/wiki/Poisoning",
+      "category": "medical"
+    }
+  ]
+}
+
+

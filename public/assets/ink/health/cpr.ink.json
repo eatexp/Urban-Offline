@@ -1,0 +1,340 @@
+{
+    "inkVersion": 21,
+    "root": [
+        [
+            "^**Cardiopulmonary Resuscitation (CPR) Guide**",
+            "\n",
+            "^Is the person unresponsive and not breathing normally?",
+            "\n",
+            "ev",
+            "str",
+            "^Yes, they're unresponsive and not breathing",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-0"
+            },
+            "ev",
+            "str",
+            "^They're breathing but unconscious",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-1"
+            },
+            "ev",
+            "str",
+            "^I'm not sure",
+            "/str",
+            "/ev",
+            {
+                "*": "0.c-2"
+            },
+            {
+                "c-0": [
+                    "\n",
+                    {
+                        "->": "start_cpr"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-1": [
+                    "\n",
+                    {
+                        "->": "recovery_position"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ],
+                "c-2": [
+                    "\n",
+                    {
+                        "->": "check_breathing"
+                    },
+                    {
+                        "#f": 5
+                    }
+                ]
+            }
+        ],
+        {
+            "start_cpr": [
+                {
+                    "#": "EMERGENCY: CARDIAC ARREST"
+                },
+                {
+                    "#": "ACTION: START CPR IMMEDIATELY"
+                },
+                "^**Call Emergency Services First**",
+                "\n",
+                "^If you haven't already, call 999 (UK) or 112 (EU) immediately.",
+                "\n",
+                "^**Step 1: Check for Response**",
+                "\n",
+                "^Shake shoulders gently. Shout 'Can you hear me?'",
+                "\n",
+                "^**Step 2: Open Airway**",
+                "\n",
+                "^Tilt head back, lift chin. Remove any visible obstructions.",
+                "\n",
+                "^**Step 3: Check Breathing**",
+                "\n",
+                "^Look, listen, feel for breathing for 10 seconds.",
+                "\n",
+                "ev",
+                "str",
+                "^They're not breathing - continue CPR",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^They started breathing",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "chest_compressions"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "recovery_position"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "chest_compressions": [
+                "^**Step 4: Chest Compressions**",
+                "\n",
+                "^Place heel of hand on center of chest (breastbone).",
+                "\n",
+                "^Place other hand on top. Interlock fingers.",
+                "\n",
+                "^Press down 5-6cm (2 inches) at rate of 100-120 per minute.",
+                "\n",
+                "^**Compression Technique:**",
+                "\n",
+                "^Keep arms straight. Use body weight, not just arms.",
+                "\n",
+                "^Let chest fully recoil between compressions.",
+                "\n",
+                "^**Continue for 30 compressions, then 2 rescue breaths.**",
+                "\n",
+                "ev",
+                "str",
+                "^I've done 30 compressions - next step?",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^I need to see compression technique",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "rescue_breaths"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "compression_details"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "rescue_breaths": [
+                "^**Step 5: Rescue Breaths**",
+                "\n",
+                "^Pinch nose closed. Open mouth.",
+                "\n",
+                "^Take normal breath. Seal your mouth over theirs.",
+                "\n",
+                "^Blow steadily for 1 second. Watch chest rise.",
+                "\n",
+                "^Remove mouth. Let chest fall. Repeat once more.",
+                "\n",
+                "^**Then return to 30 compressions. Continue cycle.**",
+                "\n",
+                "ev",
+                "str",
+                "^Continue CPR cycle",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-0"
+                },
+                "ev",
+                "str",
+                "^What if I can't do rescue breaths?",
+                "/str",
+                "/ev",
+                {
+                    "*": ".^.c-1"
+                },
+                {
+                    "c-0": [
+                        "\n",
+                        {
+                            "->": "continue_cpr"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ],
+                    "c-1": [
+                        "\n",
+                        {
+                            "->": "compression_only"
+                        },
+                        {
+                            "#f": 5
+                        }
+                    ]
+                }
+            ],
+            "compression_only": [
+                "^**Compression-Only CPR is Acceptable**",
+                "\n",
+                "^If you're untrained or uncomfortable with rescue breaths:",
+                "\n",
+                "^**Do continuous chest compressions at 100-120 per minute.**",
+                "\n",
+                "^This is better than doing nothing.",
+                "\n",
+                "^Continue until help arrives or person starts breathing.",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "continue_cpr": [
+                "^**Continue CPR Until:**",
+                "\n",
+                "^• Emergency services arrive",
+                "\n",
+                "^• Person shows signs of life (breathing, movement)",
+                "\n",
+                "^• You become exhausted (switch with someone if possible)",
+                "\n",
+                "^**Do not stop unless one of these occurs.**",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "compression_details": [
+                "^**Key Points for Effective Compressions:**",
+                "\n",
+                "^• Position: Center of chest, between nipples",
+                "\n",
+                "^• Depth: 5-6cm (2 inches) for adults",
+                "\n",
+                "^• Rate: 100-120 compressions per minute",
+                "\n",
+                "^• Allow full chest recoil between compressions",
+                "\n",
+                "^• Minimize interruptions",
+                "\n",
+                {
+                    "->": "chest_compressions"
+                },
+                {
+                    "#f": 1
+                }
+            ],
+            "recovery_position": [
+                "^**Recovery Position**",
+                "\n",
+                "^If person is breathing but unconscious:",
+                "\n",
+                "^1. Place on side",
+                "\n",
+                "^2. Tilt head back to keep airway open",
+                "\n",
+                "^3. Bend top knee for stability",
+                "\n",
+                "^4. Monitor breathing until help arrives",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "check_breathing": [
+                "^**How to Check Breathing:**",
+                "\n",
+                "^1. Open airway (head tilt, chin lift)",
+                "\n",
+                "^2. Look at chest for movement",
+                "\n",
+                "^3. Listen for breath sounds",
+                "\n",
+                "^4. Feel for breath on your cheek",
+                "\n",
+                "^**Check for 10 seconds maximum.**",
+                "\n",
+                "^If no normal breathing: Start CPR",
+                "\n",
+                "^If breathing: Place in recovery position",
+                "\n",
+                "end",
+                {
+                    "#f": 1
+                }
+            ],
+            "#f": 1
+        }
+    ],
+    "listDefs": {},
+    "globalDecl": [
+        "ev",
+        "str",
+        "^cpr",
+        "/str",
+        {
+            "VAR=": "linked_article"
+        },
+        "/ev",
+        "end",
+        null
+    ]
+}
+
+
+
+

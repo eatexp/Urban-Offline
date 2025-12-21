@@ -1,0 +1,107 @@
+Strategic Memo: Offline Data Management and Asset Delivery Architecture
+
+1.0 Strategic Imperative for Offline-First Data Resilience
+
+The core value proposition of this application—providing life-saving intelligence in network-denied environments—is entirely dependent on a meticulously designed data management and asset delivery architecture. In a crisis, when connectivity fails, the app's ability to deliver accurate, comprehensive, and legally compliant information is not just a feature; it is the mission. This memo outlines the technical blueprint for ensuring the integrity, availability, and legal compliance of our offline knowledge base, all within the strict operational constraint of a 500MB storage budget. This strategy establishes the non-negotiable technical directives required to build an application that is resilient, performant, and trustworthy when it matters most.
+
+The foundational layer of this strategy is to ensure that once the critical data is delivered, it is permanently and safely stored on the user's device, immune to the very system instability it is designed to overcome.
+
+2.0 Data Persistence and Storage Architecture
+
+The on-device storage architecture is the bedrock of our resilience strategy. The primary operational risk to an offline-first application is not active user error but silent data loss caused by OS-level purging of files it deems to be "cache." This can render the application useless at the most critical moment. This section outlines the non-negotiable mandates for ensuring the permanence and security of the application's entire offline knowledge base.
+
+2.1 Core Database Technology: SQLite with Hybrid Search Extensions
+
+The selection of SQLite as the foundational database technology is a strategic choice rooted in its efficiency, reliability, and ubiquity on mobile platforms. Its lightweight, serverless nature makes it the ideal solution for local data storage. Fundamentally, SQLite competes not with server-side databases but with raw file I/O (fopen()), making it the superior choice for a self-contained, resilient application file format. To support the required advanced search capabilities, the core database will be augmented with extensions to enable a powerful hybrid search model, combining the precision of lexical search with the contextual understanding of semantic search.
+
+Search Type	Implementation and Rationale
+Lexical (Keyword) Search	Implementation: SQLite FTS5 (Full-Text Search) extension.<br>Rationale: Provides high-speed, indexed keyword search across all text-based content. A critical optimization is the use of a contentless table (detail=none), which stores only the index data. This reduces the index size to just 20-30% of the original text size, a crucial saving for the 500MB budget.
+Semantic (Vector) Search	Implementation: sqlite-vec extension.<br>Rationale: Enables the storage and querying of high-dimensional vector embeddings, allowing the app to understand the meaning behind a user's query, not just the keywords. This extension efficiently stores 384-dimensional embeddings as BLOBs and performs fast K-Nearest Neighbor searches directly within the database.
+
+2.2 Platform-Specific Storage Mandates to Prevent OS Data Purging
+
+To mitigate the critical risk of silent data loss, the application must adhere to strict platform-specific storage protocols. Placing essential data in the wrong directory is a single point of failure that compromises the entire mission.
+
+* iOS Mandate: All essential offline content—including the SQLite databases, compressed documents, and machine learning models—must be stored in the Library/Application Support/ directory. Use of the Library/Caches/ directory for this data is strictly forbidden, as its contents can be purged by the operating system under low storage pressure. To respect user cloud storage quotas, this directory must be excluded from backups by flagging it with NSURLIsExcludedFromBackupKey = YES.
+* Android Mandate: All essential offline content delivered via Play Asset Delivery is managed by Google Play and stored in the app's internal storage, where it is treated as non-ephemeral. This data is automatically excluded from cloud backups by the PAD system, ensuring both data permanence and respect for user backup quotas.
+
+2.3 Data Security and Accessibility During Emergencies
+
+On iOS, the application's critical data must be both secure and accessible. This is achieved by setting the file protection level to .completeFileProtectionUntilFirstUserAuthentication. This configuration ensures that all offline content remains encrypted until the user unlocks their device for the first time after a reboot. Crucially, after this first authentication, the data becomes accessible to the application even if the device is subsequently locked. This is a critical feature, as it allows the app to function and provide life-saving information from a locked screen in an emergency scenario.
+
+With the data securely and permanently stored on the device, the next architectural challenge is to manage its significant size, making an aggressive compression strategy essential.
+
+3.0 High-Density Data Compression Strategy
+
+Aggressive, intelligent compression is fundamental to fitting the comprehensive knowledge base within the 500MB budget. This is not simply about reducing file sizes; the chosen techniques prioritize not only the final compression ratio but also the decompression speed required to maintain a responsive, low-latency user experience during a high-stress event.
+
+3.1 Primary Algorithm: Zstandard with Custom Dictionaries
+
+Zstandard (zstd) is mandated as the primary compression algorithm for all text-based content, including medical, legal, and procedural documents. This choice is justified by Zstandard's superior performance in achieving extremely high compression ratios—up to 50:1 or higher—when combined with custom-trained dictionaries. By training separate dictionaries on representative samples of each content category (e.g., a dictionary for medical terminology and another for legal statutes), the algorithm can learn domain-specific patterns and achieve maximum data density.
+
+3.2 Optimized Data Access: Zero-Copy Serialization
+
+For structured, read-only data that requires frequent and rapid access, such as the indexes for the Ink conversation trees, the use of FlatBuffers is mandated. Traditional data formats like JSON require a parsing step that introduces latency. FlatBuffers, in contrast, is a zero-copy serialization library that allows data to be read directly from memory without parsing. Benchmarks confirm its dramatic performance advantage, with an access time of ~77 nanoseconds compared to ~500ns for JSON. This speed is non-negotiable for maintaining a fluid and responsive conversational interface.
+
+Once compressed and optimized, this high-density data package must be delivered to the device, a task that requires a platform-aware asset delivery framework.
+
+4.0 Platform-Specific Asset Delivery and Budget Management
+
+The asset delivery strategy must be tailored to the native capabilities of iOS and Android to manage the 500MB budget effectively. A seamless user experience from the moment of installation is paramount; the user must have access to core functionality immediately, with the larger knowledge base becoming available as quickly as possible without blocking initial use.
+
+4.1 The 500MB Budget Allocation
+
+The following table details the planned allocation of the 500MB budget, providing a clear justification for each component's size.
+
+Component	Estimated Size (MB)	Justification
+Mapping Data	150 MB	UK-wide OpenMapTiles vector data (zoom levels 0-12) for comprehensive offline navigation.
+SQLite Databases	150 MB	Includes compressed medical content from ZIM files, legal text, FTS5 indexes, and vector embeddings.
+App Binary & UI Assets	15 MB	The core compiled application and essential user interface elements.
+Intent Classifier	5-10 MB	Lightweight MLTextClassifier model for natural language understanding.
+Conversation Tree Assets	25 MB	Compiled Ink scripts and associated media for guided emergency procedures.
+Compressed Docs (zstd)	100 MB	Additional reference documents compressed with Zstandard and custom dictionaries.
+Compression Dictionaries	1 MB	Small, highly optimized dictionaries for Zstandard decompression.
+Headroom for Updates	~50 MB	A critical buffer for future content updates, App Store processing overhead, and unforeseen growth.
+
+4.2 iOS Asset Delivery: Background Assets Framework
+
+The iOS strategy will leverage the Background Assets framework (iOS 16.1+), which provides granular control over the post-installation download process.
+
+* Essential Assets: Core application content, such as the initial conversation trees and intent classifier, will be handled via BAEssentialDownloadAllowance. This ensures this critical data is downloaded before the user can launch the app for the first time, guaranteeing immediate functionality.
+* Non-Essential Assets: The bulk of the offline content, including the large map and database files, will be managed via BADownloadAllowance. This allows the system to begin downloading these assets in the background immediately after installation, making them available as soon as possible without delaying the initial user experience.
+
+4.3 Android Asset Delivery: Play Asset Delivery (PAD)
+
+The Android strategy will utilize Play Asset Delivery (PAD), Google's modern solution for delivering large assets. The strategic use of its three delivery modes is key:
+
+* install-time: This mode will be used for the small, essential application core that must be available immediately upon launch.
+* fast-follow: This will be the primary delivery mode for the bulk of the offline content (maps, databases). fast-follow downloads begin automatically after the app installation is complete, allowing the user to launch the app while the large assets are downloaded in the background.
+* on-demand: This mode is reserved for highly specialized, optional content packs that a user must explicitly request, such as detailed schematics or supplementary regional data.
+
+The content being delivered is sourced from public sector bodies and open-source projects, which are subject to strict licensing that requires a dedicated compliance framework.
+
+5.0 Legal Compliance for Open Government and Public Sector Data
+
+A significant portion of the application's core content is sourced from public sector bodies and is governed by specific open licenses, such as the Open Government Licence (OGL). Failure to comply with the terms of these licenses, particularly the attribution requirements, will result in the automatic termination of the right to use the data. This poses a critical legal and operational risk to the project that must be mitigated through a dedicated technical solution.
+
+5.1 Key Content Licenses and Requirements
+
+The following table summarizes the primary data sources and their core licensing obligations.
+
+Data Source	Governing License	Key Compliance Requirement
+UK Legislation (legislation.gov.uk)	Open Government Licence (OGL)	Attribution: Must acknowledge the source of the information.
+OpenStreetMap (OSM)	Open Database License (ODbL)	Share-Alike: Derivative works (such as the vector tiles) must be shared under the same license.
+Wikipedia Medical Content	Creative Commons Attribution-ShareAlike (CC-BY-SA)	Attribution and Share-Alike: Must provide proper attribution and share modifications under the same license.
+
+5.2 Mandate: The In-App Attribution Manifest
+
+To ensure full and transparent compliance, the implementation of a dedicated and easily accessible "Attribution Manifest" screen within the application is formally mandated. This screen must dynamically list all data sources used within the app, provide their required attribution statements (e.g., "Contains public sector information licensed under the Open Government Licence v3.0"), and include hyperlinks to the full license texts. This manifest is not an optional "about" page; it is a non-negotiable technical solution designed to mitigate the legal risk of non-compliance and guarantee our continued right to use this invaluable public data. This manifest is our sole mechanism for ensuring continuous, demonstrable compliance, thereby safeguarding the project's legal right to operate.
+
+6.0 Summary of Strategic Directives
+
+This memo serves as the definitive technical blueprint for the application's offline data architecture, providing a set of actionable directives for both leadership and technical stakeholders. The successful implementation of these mandates is critical to fulfilling the application's core mission. The core directives are as follows:
+
+1. Guarantee Data Permanence: All essential offline data must be stored in the Library/Application Support/ directory on iOS to prevent automatic, OS-level purging of critical content.
+2. Maximize Data Density: Implement Zstandard compression with custom-trained, per-category dictionaries as the non-negotiable standard for all text-based assets to fit within the 500MB budget.
+3. Optimize Asset Delivery: Utilize the native Background Assets framework on iOS and the fast-follow mode of Play Asset Delivery on Android to manage the large offline dataset efficiently and provide a seamless initial user experience.
+4. Ensure Legal Compliance: Develop and integrate the in-app Attribution Manifest as a core feature to meet the strict attribution requirements of the Open Government Licence and other open licenses, thereby mitigating critical legal risk.

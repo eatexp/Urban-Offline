@@ -1,0 +1,10 @@
+{
+  "appId": "com.urbanoffline.app",
+  "appName": "UrbanOffline",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorSQLite": {
+      "iosDatabaseLocation": "Library/CapacitorDatabase"
+    }
+  }
+}

@@ -1,0 +1,167 @@
+Briefing: Architecture and Strategy for an Offline-First Emergency Application
+
+Executive Summary
+
+This briefing synthesizes the technical strategy, architecture, and validation for a proposed offline-first, "airgapped" emergency preparedness application. The core objective is to create a resilient, single-download reference tool that operates entirely without internet connectivity, providing life-saving guidance during network outages or in remote locations. The project is governed by strict constraints, including a total application size of 500MB and a primary target platform of iOS 16.1+ on high-performance devices like the iPhone 16/17 Pro.
+
+The proposed solution is an innovative three-layer hybrid intelligence architecture that balances speed, deterministic safety, and informational depth:
+
+1. Intent Layer: A lightweight, on-device classifier (Apple's MLTextClassifier) provides near-instantaneous (3-10ms) understanding of natural language queries.
+2. Narrative Layer: Deterministic, pre-authored conversation trees using the Ink scripting language guide users through high-stakes scenarios, eliminating the risk of AI "hallucination."
+3. Knowledge Layer: A powerful offline database (SQLite) with hybrid full-text (FTS5) and semantic vector (sqlite-vec) search provides access to a vast library of medical, legal, and survival content.
+
+A critical finding is that utilizing content from the UK's National Health Service (NHS) is a "dealbreaker" due to strict geographic licensing restrictions that conflict with the app's "download once, use anywhere" value proposition. The validated strategic pivot is to source content from globally licensed repositories, such as Wikipedia's WikiProject Medicine (via ZIM files), the World Health Organization (WHO), and UK government data under the Open Government Licence (OGL).
+
+The technical architecture is deemed feasible and production-ready. The 500MB budget is challenging but achievable through meticulous resource allocation and aggressive data optimization techniques, such as Zstandard compression and vector quantization. The project's success is contingent on successfully completing critical pre-development validation "spikes" to de-risk the user experience of the natural language interface and the quality of the conversational triage flows.
+
+I. Core Concept and Three-Layer Architecture
+
+The application is designed to function as a fully airgapped emergency reference, operating independently of any network infrastructure post-download. This offline-first philosophy is not merely about caching but represents a fundamental design where all critical operations are performed locally. The architecture rejects monolithic generative AI due to risks of hallucination in medical contexts, prohibitive size, and high power consumption. Instead, it employs a novel hybrid intelligence model to ensure safety, speed, and reliability.
+
+1.1. The Intent Layer: Natural Language Triage
+
+This initial layer acts as a triage router, mapping a user's natural language input (e.g., "my arm is cut bad") to a structured, machine-readable intent (e.g., injury.hemorrhage.arm).
+
+* Technology: Apple's NaturalLanguage framework with MLTextClassifier.
+* Performance: Achieves extremely low latency (3-10ms) on the A18 Pro's Neural Engine with negligible power draw (1-2 mAh per 1,000 inferences).
+* Size: The trained model is exceptionally compact, occupying only 1-10MB.
+* Accuracy: Capable of achieving over 99% accuracy for a well-defined set of 20-50 emergency intents.
+* Fallback Logic: A confidence threshold is used to handle ambiguity. High confidence (>85%) routes directly to a narrative; medium confidence (50-85%) prompts for disambiguation; low confidence (<50%) falls back to the Knowledge Layer search.
+
+1.2. The Narrative Layer: Deterministic Guidance
+
+For high-stakes, time-critical scenarios, the app transitions into an interactive guide. This layer executes pre-authored, branching scripts that provide step-by-step instructions, mimicking a validated clinical protocol.
+
+* Technology: The Ink scripting language, a mature, open-source engine designed for interactive narratives.
+* Safety: As a deterministic system akin to a Finite State Machine, it is logically verifiable and has zero risk of hallucination, ensuring clinical protocols are followed precisely.
+* Functionality: Ink's ability to track state via variables allows for context-aware guidance that can reference previous user inputs (e.g., has_tourniquet). The state can be serialized, allowing users to resume a triage protocol if the app is interrupted.
+* Implementation: Ink scripts are compiled to a lightweight JSON format, which is then executed by a runtime engine on the device (e.g., via the ink-iOS wrapper for Swift).
+
+1.3. The Knowledge Layer: Comprehensive Reference Search
+
+This layer serves as the app's vast offline library, used for lower-urgency queries or broad information retrieval.
+
+* Technology: SQLite database augmented with the FTS5 extension for keyword search and the sqlite-vec extension for semantic vector search.
+* Hybrid Search: Queries are run through both engines simultaneously, and results are merged using a Reciprocal Rank Fusion (RRF) algorithm. This ensures that results with high keyword match and high semantic relevance are prioritized.
+* Content: The database contains a large dataset derived from sources like Wikipedia ZIM files, UK legislation, and emergency guidelines.
+
+II. Critical Pre-Development Decisions and Risk Mitigation
+
+The project's success hinges on resolving three key decision points before committing to full-scale development. These decisions are designed to mitigate the highest-risk items: licensing conflicts and user experience failures.
+
+2.1. Decision Point 1: NHS Content Licensing Strategy (Critical Risk)
+
+* The Problem: The NHS Syndication License imposes strict UK geographic restrictions, requiring verification that a user is in the UK. This directly conflicts with the app's "airgapped" and global-use value proposition, making it a "dealbreaker."
+* Recommended Path: Pivot away from NHS content and utilize alternative medical sources with permissive, global licenses. This ensures legal compliance and universal accessibility.
+* Proposed Alternative Content Bundle:
+  * Medical: Wikipedia's WikiProject Medicine (via wikipedia_en_medicine_nopic ZIM file, ~200-250MB, CC-BY-SA license).
+  * Protocols: Content from OpenWHO (CC-BY-NC), CDC (public domain), and potentially a model fine-tuned on the FirstAidQA dataset.
+  * Legal: UK emergency legislation from legislation.gov.uk (Open Government Licence - OGL).
+* Action Item: Conduct a content audit of proposed alternatives against NHS standards to identify and fill any quality gaps. This decision must be finalized before building the content pipeline.
+
+2.2. Decision Point 2: Natural Language UX Validation (High Risk)
+
+* The Hypothesis: The lightweight MLTextClassifier can reliably map user queries to intents without feeling frustratingly literal or "brittle" in a high-stress situation.
+* Mitigation Plan: A low-risk, high-value "weekend spike" prototype to test the core user experience.
+* Prototype Validation Metrics:
+  * Accuracy: >95% on a test set; >85% on ambiguous queries.
+  * Latency: <2 seconds end-to-end, including UI rendering.
+  * User Satisfaction: Achieve a "smart enough" rating from testers.
+  * Fallback Rate: Less than 15% of queries should require manual search.
+* Fallback Plan: If the prototype fails, the architecture will pivot to a hybrid approach where the classifier routes to broad categories, within which a user performs a more targeted FTS5 keyword search.
+
+2.3. Decision Point 3: Conversation Tree Quality Assessment
+
+* The Risk: Poorly authored conversation trees can feel robotic, impersonal, and ineffective in a high-stress emergency.
+* Mitigation Plan: A one-week authoring sprint to create a complete, high-quality script for a single critical scenario (e.g., medical triage for breathing difficulties).
+* Quality Assessment Criteria:
+  * Natural Flow: Does the script feel human and empathetic when read aloud under pressure?
+  * Escalation Logic: Does the system correctly identify when to abandon protocol and recommend immediate emergency action (e.g., call 999)?
+  * State Persistence: Can users interrupt and resume the flow without losing context?
+* Action Item: The authored script will be tested with emergency response professionals to measure its effectiveness and time-to-critical-action.
+
+III. On-Device Intelligence and Performance
+
+The on-device AI strategy prioritizes lightweight, efficient, and platform-native models to ensure high performance and minimal battery impact, all while adhering to the 500MB size constraint.
+
+3.1. Model Selection and Alternatives
+
+Model/Framework	Role	Size	Latency	Status
+Apple MLTextClassifier	Primary Intent Classification	1-10 MB	3-10 ms	Recommended
+all-MiniLM-L6-v2	Semantic Embedding Generation	22 MB	N/A (Build-time)	Recommended
+Distilled Transformer	Fallback / help_retrieval	~50 MB	< 500 ms	Feasible
+MobileLLM-350M	Alternative for Intent Classification	~590 MB (quantized)	Higher	Rejected (Size & License)
+Gemma-2B / Large LLMs	Alternative for Intent Classification	>1 GB (quantized)	Higher	Rejected (Size & Cloud Dependency)
+
+The initial consideration of a 350M parameter MobileLLM has been rejected. Updated analysis shows its size after INT4 quantization is approximately 590MB, exceeding the entire app budget. Furthermore, its FAIR non-commercial license restricts deployment. The focus remains on smaller, task-specific models.
+
+3.2. Performance and Power Benchmarks (Apple A18 Pro)
+
+* Power Consumption: Inference on the A18 Pro Neural Engine is highly efficient, drawing between 0.072W and 0.454W.
+* Battery Impact: 1,000 inferences consume only 1-2 mAh of battery capacity, which is negligible.
+* Latency: Intent classification latency of 3-10ms is effectively instantaneous to the user.
+* Thermal Management: The app architecture must include a "Thermal Awareness" protocol. In high-temperature states (Fair/Serious), compute-intensive vector search will be disabled in favor of FTS5-only search to prevent device throttling.
+
+3.3. Android Parity
+
+To ensure a consistent experience across platforms, the Android version will leverage:
+
+* ONNX Runtime Mobile: A cross-platform inference engine.
+* NNAPI Delegate: This allows the ONNX runtime to utilize hardware acceleration on Android devices (DSP, GPU, NPU), achieving performance comparable to iOS's CoreML.
+
+IV. Content and Data Strategy
+
+The content strategy is designed to be modular and legally compliant, sourcing data exclusively from repositories with permissive licenses suitable for global, offline redistribution.
+
+4.1. Recommended Content Bundle (Approx. 300-450MB)
+
+Content Type	Primary Source	License	Size Estimate
+Medical Reference	Wikipedia ZIM (wikipedia_en_medicine_nopic)	CC-BY-SA	200-250 MB
+Mapping Data	OpenStreetMap via OpenMapTiles (UK z0-14)	ODbL	150-300 MB
+Legal Rights	legislation.gov.uk (e.g., Civil Contingencies Act)	OGL	10-20 MB
+Emergency Procedures	OpenWHO, CDC, FEMA Guidelines	CC / Public Domain	~20 MB
+Flood Data	UK Environment Agency (Static Zones)	OGL	~20 MB
+
+4.2. Innovative Content Sources
+
+A key finding is the potential to use the FirstAidQA dataset, a publicly available collection of 5,500 high-quality question-answer pairs for first aid scenarios. This dataset could be used to fine-tune a small language model to act as a domain-specific AI assistant, offering a powerful alternative to simple information retrieval.
+
+V. Offline Data Architecture and Optimization
+
+The app's data architecture is engineered for extreme efficiency to fit a comprehensive knowledge base within the 500MB budget while ensuring rapid access.
+
+5.1. Database and Search
+
+* Core Database: SQLite configured for read-heavy performance (PRAGMA journal_mode = WAL;).
+* Full-Text Search: FTS5 is used with a contentless index (detail=none), reducing the index size to 20-30% of the original text.
+* Semantic Search: The sqlite-vec extension enables efficient K-Nearest Neighbors (KNN) search on pre-computed vector embeddings directly within the database. Embeddings are generated at build-time using the all-MiniLM-L6-v2 model.
+
+5.2. Data Compression and Serialization
+
+* Text Compression: Zstandard (zstd) with trained dictionaries is used for extreme compression of text content. By training dictionaries on specific content categories (medical, legal), compression ratios of 50:1 or higher can be achieved. A 100MB text file can be reduced to just 1-2MB.
+* Data Access: FlatBuffers are used for zero-copy access to structured data like conversation tree indexes, offering ~77ns access time compared to ~500ns for JSON parsing.
+* Vector Quantization: To reduce the storage footprint of embeddings, techniques like binary quantization will be used, shrinking a 300MB float32 index to under 10MB.
+
+VI. Development Plan and Feasibility
+
+The project is considered highly feasible, with a clear path to a Minimum Viable Product (MVP).
+
+6.1. Estimated Timeline and Team
+
+* MVP Timeline: 3-6 months for an iOS-first release.
+* Development Sequence: A 12-week phased plan starting with foundational decisions (licensing, prototyping) followed by core architecture and feature implementation.
+* Team Composition: A lean team of 2-3 engineers (iOS/ML lead, data/backend, UI/UX).
+
+6.2. Final Size Budget Allocation (500MB Total)
+
+Component	Estimated Size (MB)	Notes
+UK OpenStreetMap Tiles (z0-14)	150 - 200	OpenMapTiles vector data rendered by MapLibre.
+Medical & Legal Content	~150	Compressed ZIM files, OGL legislation, and other text.
+Code, ML Models, & Core Assets	~50	App binary, MLTextClassifier, fallback model, UI assets.
+Total Estimated Size	~400	
+Buffer / Headroom	~100	For future updates and unforeseen growth.
+
+6.3. Key Success Metrics
+
+* Technical: App size <480MB, cold start <2 seconds, search queries <1 second.
+* User Experience: >90% of users can find critical information within 30 seconds; achieve a >4/5 user rating on "I would trust this app in a real emergency."

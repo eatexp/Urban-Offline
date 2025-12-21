@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-12-21T00:52:21.843Z",
+  "prerequisites": {
+    "node": {
+      "available": true,
+      "version": "v24.11.1"
+    },
+    "npm": {
+      "available": true,
+      "version": "11.6.2"
+    },
+    "capacitor": {
+      "available": true,
+      "version": "7.4.4"
+    },
+    "xcode": {
+      "available": false,
+      "note": "macOS required for iOS development"
+    },
+    "androidStudio": {
+      "available": false
+    },
+    "iosSimulator": {
+      "available": false
+    },
+    "androidEmulator": {
+      "available": false
+    }
+  },
+  "project": {
+    "capacitorConfig": true,
+    "nativeProjects": {
+      "ios": false,
+      "android": false
+    }
+  },
+  "recommendations": [
+    "Install Android Studio and set ANDROID_HOME environment variable",
+    "Run: npm run cap:sync (creates iOS project if on macOS)",
+    "Run: npm run cap:sync (creates Android project)"
+  ]
+}
