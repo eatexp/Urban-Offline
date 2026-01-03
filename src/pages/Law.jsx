@@ -1,74 +1,107 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Scale, BookOpen, Gavel, Shield } from 'lucide-react';
+import { Scale, Shield, Search, UserCheck, FileText, ChevronRight } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
+import { coreContentService } from '../services/coreContentService';
 
 const Law = () => {
-    const legalStories = TriageRouter.getStoriesByCategory('legal');
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const legalStories = TriageRouter.getStoriesByCategory('legal');
 
-    return (
-        <div className="page-container space-y-4">
-            <header className="mb-4">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                        <Scale className="w-6 h-6" />
-                    </div>
-                    <h1 className="text-2xl font-bold">Law & Rights</h1>
-                </div>
-                <p className="text-sm text-muted">
-                    Offline access to UK legislation, PACE codes, and your rights.
-                </p>
-            </header>
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const content = await coreContentService.getByCategory('law');
+        setArticles(content);
+      } catch (error) {
+        console.error('Failed to load law content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadContent();
+  }, []);
 
-            <div className="grid gap-4 md:grid-cols-2">
-                {/* Interactive Triage Section */}
-                <div className="bg-white p-4 rounded-lg shadow border border-blue-200 col-span-1 md:col-span-2">
-                    <h2 className="font-semibold text-lg flex items-center gap-2 mb-3">
-                        <Shield className="w-5 h-5 text-blue-500" />
-                        Interactive Legal Guides
-                    </h2>
-                    <div className="grid gap-2">
-                        {legalStories.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={`/triage/${item.story}`}
-                                className="block p-3 bg-blue-50 rounded hover:bg-blue-100 transition-colors border border-blue-100"
-                            >
-                                <span className="font-medium text-blue-800">
-                                    {item.story.includes('stop-and-search') ? 'Stop & Search (GOWISELY)' :
-                                        item.story.includes('arrest') ? 'Arrest Rights & Custody' :
-                                            item.story.includes('custody') ? 'Custody Welfare' :
-                                                'Legal Guide'}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+  const getIcon = (storyName) => {
+    if (storyName.includes('stop-and-search')) return Search;
+    if (storyName.includes('arrest')) return UserCheck;
+    if (storyName.includes('custody')) return Shield;
+    return Scale;
+  };
 
-                <div className="bg-white p-4 rounded-lg shadow border border-blue-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-blue-500" />
-                        PACE Codes of Practice
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-2">Police And Criminal Evidence Act Codes A-I</p>
-                    <Link to="/guides/pace-codes" className="text-blue-600 font-medium hover:underline">
-                        Browse Codes
-                    </Link>
-                </div>
+  const getTitle = (storyName) => {
+    if (storyName.includes('stop-and-search')) return 'Stop & Search (GOWISELY)';
+    if (storyName.includes('arrest')) return 'Arrest Rights';
+    if (storyName.includes('custody')) return 'Custody Welfare';
+    return 'Legal Guide';
+  };
 
-                <div className="bg-white p-4 rounded-lg shadow border border-blue-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <Gavel className="w-5 h-5 text-blue-500" />
-                        Key Legislation
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-2">Public Order Act, Human Rights Act</p>
-                    <Link to="/guides/legislation" className="text-blue-600 font-medium hover:underline">
-                        View Acts
-                    </Link>
-                </div>
-            </div>
+  return (
+    <div className="page-container">
+      <header className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
+            <Scale size={24} />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Law & Rights</h1>
         </div>
-    );
+        <p className="text-sm text-slate-400">Know your rights and legal protections.</p>
+      </header>
+
+      {/* Interactive Legal Guides Section */}
+      <section className="mb-6">
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Interactive Guides</h2>
+        <div className="grid gap-3">
+          {legalStories.map((item) => {
+            const Icon = getIcon(item.story);
+            return (
+              <Link
+                key={item.story}
+                to={`/triage/${item.story}`}
+                className="p-4 bg-slate-800 border border-slate-700 rounded-xl hover:border-blue-500/50 hover:bg-slate-800/80 transition-all flex items-center gap-4"
+              >
+                <div className="p-3 bg-blue-500/20 text-blue-400 rounded-lg">
+                  <Icon size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white">{getTitle(item.story)}</h3>
+                </div>
+                <ChevronRight size={18} className="text-slate-500" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Reference Articles Section */}
+      <section>
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Reference Guides</h2>
+        {loading ? (
+          <p className="text-slate-500 text-sm">Loading...</p>
+        ) : (
+          <div className="grid gap-3">
+            {articles.map((article) => (
+              <Link
+                key={article.id}
+                to={`/article/${article.slug}`}
+                className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:border-slate-600 hover:bg-slate-800 transition-all flex items-center gap-4"
+              >
+                <div className="p-2 bg-slate-700 text-slate-400 rounded-lg">
+                  <FileText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-white">{article.title}</h3>
+                  <p className="text-sm text-slate-500 truncate">{article.summary}</p>
+                </div>
+                <ChevronRight size={18} className="text-slate-600" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 };
 
 export default Law;

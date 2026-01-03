@@ -32,5 +32,3 @@ export const initStorage = async () => {
     }
 };
 
-// Export sync function for content
-export { contentSync } from './contentSync';

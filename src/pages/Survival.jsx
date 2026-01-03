@@ -1,85 +1,109 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Tent, Droplets, Map as MapIcon, ShieldAlert, Flame } from 'lucide-react';
+import { Tent, Droplets, Flame, Radio, FileText, ChevronRight, Zap } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
+import { coreContentService } from '../services/coreContentService';
 
 const Survival = () => {
-    const survivalStories = TriageRouter.getStoriesByCategory('survival');
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const survivalStories = TriageRouter.getStoriesByCategory('survival');
 
-    return (
-        <div className="page-container space-y-4">
-            <header className="mb-4">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                        <Tent className="w-6 h-6" />
-                    </div>
-                    <h1 className="text-2xl font-bold">Survival & Preparedness</h1>
-                </div>
-                <p className="text-sm text-muted">
-                    Guides for flood risks, shelter, water safety, and emergency planning.
-                </p>
-            </header>
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const content = await coreContentService.getByCategory('survival');
+        setArticles(content);
+      } catch (error) {
+        console.error('Failed to load survival content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadContent();
+  }, []);
 
-            <div className="grid gap-4 md:grid-cols-2">
-                {/* Interactive Skills Section */}
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-200 col-span-1 md:col-span-2">
-                    <h2 className="font-semibold text-lg flex items-center gap-2 mb-3">
-                        <Flame className="w-5 h-5 text-orange-500" />
-                        Interactive Survival Skills
-                    </h2>
-                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                        {survivalStories.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={`/triage/${item.story}`}
-                                className="block p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors border border-orange-100"
-                            >
-                                <span className="font-medium text-orange-800 capitalize">
-                                    {item.keywords[0]} Guide
-                                </span>
-                                <span className="block text-xs text-orange-600">
-                                    {item.story.split('/').pop().replace('.ink.json', '').replace(/-/g, ' ')}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+  const getIcon = (storyName) => {
+    if (storyName.includes('water')) return Droplets;
+    if (storyName.includes('shelter')) return Tent;
+    if (storyName.includes('fire')) return Flame;
+    if (storyName.includes('signal')) return Radio;
+    return Zap;
+  };
 
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <Droplets className="w-5 h-5 text-orange-500" />
-                        Flood Risk & Zones
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-2">Environment Agency Flood Maps</p>
-                    <Link to="/map?category=flood" className="text-orange-600 font-medium hover:underline">
-                        View Flood Map
-                    </Link>
-                </div>
+  const getTitle = (storyName) => {
+    if (storyName.includes('water')) return 'Water Purification';
+    if (storyName.includes('shelter')) return 'Shelter Building';
+    if (storyName.includes('fire')) return 'Fire Making';
+    if (storyName.includes('signal')) return 'Emergency Signaling';
+    return 'Survival Skill';
+  };
 
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <ShieldAlert className="w-5 h-5 text-orange-500" />
-                        Emergency Plan
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-2">Create your offline plan</p>
-                    <button className="text-orange-600 font-medium hover:underline text-left">
-                        Manage Plan (Coming Soon)
-                    </button>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg shadow border border-orange-100">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <MapIcon className="w-5 h-5 text-orange-500" />
-                        Water Safety (RNLI)
-                    </h2>
-                    <p className="text-sm text-gray-500 mb-2">Sea and urban water safety guides</p>
-                    <Link to="/guides/water-safety" className="text-orange-600 font-medium hover:underline">
-                        Read Guide
-                    </Link>
-                </div>
-            </div>
+  return (
+    <div className="page-container">
+      <header className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-orange-500/20 text-orange-400 rounded-lg">
+            <Tent size={24} />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Survival & Preparedness</h1>
         </div>
-    );
+        <p className="text-sm text-slate-400">Essential skills and emergency planning guides.</p>
+      </header>
+
+      {/* Interactive Skills Section */}
+      <section className="mb-6">
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Interactive Skills</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {survivalStories.map((item) => {
+            const Icon = getIcon(item.story);
+            return (
+              <Link
+                key={item.story}
+                to={`/triage/${item.story}`}
+                className="p-4 bg-slate-800 border border-slate-700 rounded-xl hover:border-orange-500/50 hover:bg-slate-800/80 transition-all flex items-center gap-3"
+              >
+                <div className="p-2 bg-orange-500/20 text-orange-400 rounded-lg">
+                  <Icon size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-white">{getTitle(item.story)}</span>
+                </div>
+                <ChevronRight size={18} className="text-slate-500" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Reference Guides Section */}
+      <section>
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Reference Guides</h2>
+        {loading ? (
+          <p className="text-slate-500 text-sm">Loading...</p>
+        ) : (
+          <div className="grid gap-3">
+            {articles.map((article) => (
+              <Link
+                key={article.id}
+                to={`/article/${article.slug}`}
+                className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:border-slate-600 hover:bg-slate-800 transition-all flex items-center gap-4"
+              >
+                <div className="p-2 bg-slate-700 text-slate-400 rounded-lg">
+                  <FileText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-white">{article.title}</h3>
+                  <p className="text-sm text-slate-500 truncate">{article.summary}</p>
+                </div>
+                <ChevronRight size={18} className="text-slate-600" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 };
 
 export default Survival;

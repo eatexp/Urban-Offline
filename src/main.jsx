@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import { initStorage } from './services/db';
 import { SearchService } from './services/SearchService';
+import { initializeCoreContent } from './services/coreContentService';
 import { Capacitor } from '@capacitor/core';
 import { getDBConnection } from './services/storage/NativeStorage';
 import { createLogger } from './utils/logger';
@@ -14,10 +15,18 @@ const startApp = async () => {
   try {
     await initStorage();
     log.info('Storage initialized');
-    
+
     // Initialize search service (this will index existing content)
     await SearchService.init();
-    
+
+    // Initialize core content (preloaded articles)
+    const coreResult = await initializeCoreContent();
+    if (coreResult.alreadyInitialized) {
+      log.info('Core content ready');
+    } else {
+      log.info(`Core content loaded: ${coreResult.total} articles`);
+    }
+
     // For native platform, also index articles from SQLite
     if (Capacitor.isNativePlatform()) {
       try {
