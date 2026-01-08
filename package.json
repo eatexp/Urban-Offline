@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "fetch-content": "node scripts/fetch-content.js content.db",
-    "prebuild": "npm run fetch-content && if not exist public\\assets mkdir public\\assets && copy /Y content.db public\\assets\\",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "export-content": "node scripts/export-content-json.js",
+    "prepare-build": "node scripts/prepare-build.js",
+    "prebuild": "node scripts/prepare-build.js",
+    "lint": "eslint .",
     "preview": "vite preview",
     "cap:sync": "cap sync",
-    "cap:open": "cap open"
+    "cap:open": "cap open",
+    "compile-ink": "node scripts/compile-ink.js",
+    "analyze-size": "node scripts/analyze-bundle-size.js",
+    "validate-content": "node scripts/validate-content.js"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^7.0.2",

@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-08T23:06:34.312Z",
+  "stats": {
+    "articleCount": 0,
+    "categoryCount": 8
+  },
+  "categories": [
+    {
+      "id": 7,
+      "name": "Anatomy Reference",
+      "parent_id": null
+    },
+    {
+      "id": 1,
+      "name": "Emergency First Aid",
+      "parent_id": null
+    },
+    {
+      "id": 2,
+      "name": "Environmental Emergencies",
+      "parent_id": 1
+    },
+    {
+      "id": 6,
+      "name": "Legal Rights UK",
+      "parent_id": null
+    },
+    {
+      "id": 4,
+      "name": "Medical Emergencies",
+      "parent_id": 1
+    },
+    {
+      "id": 5,
+      "name": "Medications",
+      "parent_id": null
+    },
+    {
+      "id": 8,
+      "name": "Survival Skills",
+      "parent_id": null
+    },
+    {
+      "id": 3,
+      "name": "Trauma",
+      "parent_id": 1
+    }
+  ],
+  "attributions": [
+    {
+      "source_name": "Wikipedia",
+      "license_type": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution_text": "Content from Wikipedia, the free encyclopedia. Available under Creative Commons Attribution-ShareAlike 4.0 International License."
+    }
+  ],
+  "articles": []
+}
