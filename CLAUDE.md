@@ -1,13 +1,76 @@
 # CLAUDE.md - Urban-Offline Development Guide
 
+## Vision & Mission
+
+### Core Mission
+Urban-Offline is a fully **"airgapped" emergency preparedness application** designed to remain operational when modern, cloud-centric infrastructure fails. In a crisis—natural disaster, grid failure, or network outage—reliance on connected services becomes a critical vulnerability. This app serves as a resilient, life-saving alternative providing intelligence entirely on-device.
+
+### Value Proposition
+**"Download once, use anywhere"** — A single-download resource that works under any conditions:
+- **Complete Offline Functionality**: All critical features work without internet
+- **Universal Accessibility**: Dependable for international travel, remote operations, or local emergencies
+- **Comprehensive Emergency Reference**: ~150MB compressed knowledge base eliminating external dependencies
+
+### Why This Architecture?
+The life-or-death context renders conventional solutions inadequate:
+- **Static PDFs are inert** — no interactivity, no search, no guidance
+- **Pure generative AI is dangerous** — hallucination risk is unacceptable for medical advice
+- **Cloud services fail when needed most** — network outages coincide with emergencies
+
+The **Three-Layer Hybrid Intelligence Model** solves this by balancing:
+1. **Speed** — instant intent classification (3-10ms)
+2. **Safety** — deterministic, pre-authored protocols with zero hallucination
+3. **Depth** — comprehensive knowledge retrieval via hybrid search
+
+### Key Principles
+- **Absolute reliability** in network-denied environments
+- **Zero AI hallucination** in life-or-death scenarios (Ink narrative engine)
+- **Lightweight & battery-efficient** on-device ML (~1-2 mAh per 1,000 inferences)
+- **Open-source licensed content** only (CC-BY-SA, OGL, Public Domain)
+- **500MB total size budget** for accessibility on limited storage devices
+
+### Target Success Metrics
+- **App size**: < 480MB (leaving buffer)
+- **Cold start**: < 2 seconds
+- **Search latency**: < 1 second
+- **Emergency scenario success**: >90% find critical info within 30 seconds
+- **User trust rating**: >4/5 on "I would trust this app in a real emergency"
+
+---
+
 ## Project Overview
 
 Urban-Offline is an **Offline-First Emergency Preparedness Application** that provides critical information and tools when internet connectivity is unavailable. It's a Progressive Web App (PWA) with native mobile support via Capacitor.
 
 ### Core Domains
-- **Health & First Aid**: Medical guides, ICD-11 references, interactive triage flows
-- **Law & Rights**: PACE codes, UK legislation, custody rights
-- **Survival & Prep**: Flood zones, shelter building, water purification
+- **Health & First Aid**: Medical guides (WikiProject Medicine), interactive triage flows, first aid protocols
+- **Law & Rights**: PACE codes, UK legislation, custody rights, stop-and-search guidance
+- **Survival & Prep**: Flood zones, shelter building, water purification, signaling
+
+## Three-Layer Hybrid Intelligence Architecture
+
+The app employs a deliberate architecture to ensure safety, speed, and reliability:
+
+### Layer 1: Intent Router
+- **Function**: Acts as the "triage nurse" — instantly classifies natural language queries into structured intents (e.g., "my arm is cut bad" → `injury.hemorrhage.arm`)
+- **Technology**: Lightweight ML classifier (MLTextClassifier on native, or keyword matching on web)
+- **Performance**: 3-10ms latency, 99%+ accuracy on 20-50 predefined emergency intents
+- **Fallback**: Low confidence queries route to Layer 3 search
+
+### Layer 2: Narrative Engine (Ink)
+- **Function**: Acts as the "specialist clinician" — executes pre-authored, branching conversation trees for high-stakes scenarios
+- **Technology**: Ink scripting language (deterministic state machine)
+- **Safety**: Zero hallucination risk — every response is human-authored and medically verified
+- **Examples**: CPR guidance, severe bleeding control, choking response, custody rights
+
+### Layer 3: Knowledge Engine
+- **Function**: Acts as the "reference library" — hybrid search for informational queries
+- **Technology**:
+  - Web: FlexSearch (in-memory full-text)
+  - Native: SQLite FTS5 + sqlite-vec (semantic vectors)
+- **Hybrid Search**: Combines keyword precision with semantic understanding via Reciprocal Rank Fusion
+
+---
 
 ## Tech Stack
 
@@ -16,7 +79,7 @@ Urban-Offline is an **Offline-First Emergency Preparedness Application** that pr
 - **Offline Storage**:
   - Web: IndexedDB via `idb` library
   - Native: SQLite via `@capacitor-community/sqlite` + Filesystem API
-- **Search**: FlexSearch (web) / FTS5 (native SQLite)
+- **Search**: FlexSearch (web) / FTS5 + semantic vectors (native SQLite)
 - **AI**: WebLLM architecture with RAG pipeline (optional, lazy-loaded)
 - **Interactive Stories**: Ink scripting language via `inkjs`
 - **Maps**: Leaflet + React-Leaflet with offline tile support
@@ -228,14 +291,32 @@ The app wraps routes in ErrorBoundary with dev/prod modes:
 - React Hooks rules enforced
 - Scripts folder has Node.js globals enabled
 
-## Content Sources
+## Content Strategy & Licensing
 
-The app aggregates content from:
-- WikiMed / Medical Wikipedia (CC-BY-SA)
-- UK Government OGL content (PACE codes, legislation)
-- Custom triage flows (Ink scripts)
+### Critical Licensing Decision
+**NHS content is excluded** — The NHS Syndication License requires UK geographic verification, conflicting with the "download once, use anywhere" value proposition. All content uses globally-permissive licenses.
 
-Attribution compliance is tracked in the `attributions` SQLite table.
+### Approved Content Sources
+
+| Content Type | Source | License | Est. Size |
+|-------------|--------|---------|-----------|
+| Medical Reference | WikiProject Medicine (ZIM) | CC-BY-SA | ~200-250MB |
+| Medical Protocols | OpenWHO, CDC Guidelines | CC-BY-NC / Public Domain | ~20MB |
+| UK Legal | legislation.gov.uk | OGL (Open Government) | ~10-20MB |
+| Emergency Guides | FEMA, Red Cross | Public Domain | ~10MB |
+| Mapping | OpenStreetMap | ODbL | ~150-200MB |
+| Flood Data | UK Environment Agency | OGL | ~15-20MB |
+
+### Compliance Requirements
+- **Attribution Manifest**: All sources must be attributed in-app
+- **Share-alike tracking**: `attributions` table tracks CC-BY-SA requirements
+- **No proprietary map data**: Mapbox/Google Maps licenses prohibit offline redistribution
+
+### Interactive Triage Content
+Custom Ink scripts authored for:
+- Medical emergencies (CPR, choking, bleeding, burns, stroke)
+- Legal scenarios (arrest rights, custody, stop-and-search)
+- Survival situations (shelter, fire, water, signaling)
 
 ## Testing
 
