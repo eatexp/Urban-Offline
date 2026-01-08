@@ -42,10 +42,11 @@ The **Three-Layer Hybrid Intelligence Model** solves this by balancing:
 
 Urban-Offline is an **Offline-First Emergency Preparedness Application** that provides critical information and tools when internet connectivity is unavailable. It's a Progressive Web App (PWA) with native mobile support via Capacitor.
 
-### Core Domains
+### Core Domains (4 Pillars)
 - **Health & First Aid**: Medical guides (WikiProject Medicine), interactive triage flows, first aid protocols
 - **Law & Rights**: PACE codes, UK legislation, custody rights, stop-and-search guidance
-- **Survival & Prep**: Flood zones, shelter building, water purification, signaling
+- **Survival & Prep**: Shelter building, water purification, fire-making, signaling
+- **Maps & Navigation**: Offline maps, emergency locations (hospitals, shelters, water), flood zones
 
 ## Three-Layer Hybrid Intelligence Architecture
 
