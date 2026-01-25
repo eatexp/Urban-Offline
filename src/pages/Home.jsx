@@ -85,6 +85,16 @@ const Home = () => {
             {/* Core Pillars */}
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Emergency Modules</h2>
             <div className="grid gap-5">
+                <Link to="/survival" className="flex items-center p-4 bg-white rounded-2xl shadow-sm border border-orange-100 hover:border-orange-300 hover:shadow-lg transition-all group">
+                    <div className="bg-orange-50 p-3 rounded-xl mr-4 group-hover:bg-orange-100 transition-colors">
+                        <Tent className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900">Survival & Preparedness</h3>
+                        <p className="text-xs text-slate-500">Civil unrest, Infrastructure failure, Wilderness</p>
+                    </div>
+                </Link>
+
                 <Link to="/health" className="flex items-center p-4 bg-white rounded-2xl shadow-sm border border-red-100 hover:border-red-300 hover:shadow-lg transition-all group">
                     <div className="bg-red-50 p-3 rounded-xl mr-4 group-hover:bg-red-100 transition-colors">
                         <Heart className="w-6 h-6 text-red-600" />
@@ -102,16 +112,6 @@ const Home = () => {
                     <div>
                         <h3 className="font-bold text-slate-900">Law & Rights</h3>
                         <p className="text-xs text-slate-500">PACE Codes, Legislation</p>
-                    </div>
-                </Link>
-
-                <Link to="/survival" className="flex items-center p-4 bg-white rounded-2xl shadow-sm border border-orange-100 hover:border-orange-300 hover:shadow-lg transition-all group">
-                    <div className="bg-orange-50 p-3 rounded-xl mr-4 group-hover:bg-orange-100 transition-colors">
-                        <Tent className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900">Survival & Prep</h3>
-                        <p className="text-xs text-slate-500">Flood zones, Water, Shelter</p>
                     </div>
                 </Link>
             </div>

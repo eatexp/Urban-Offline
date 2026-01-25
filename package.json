@@ -1,5 +1,6 @@
 {
   "name": "urban-offline",
+  "description": "Offline-first survival and emergency preparedness app. Critical information when infrastructure fails or civil order breaks down: survival skills, navigation, medical protocols, legal rights. UK-focused with global expansion framework.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

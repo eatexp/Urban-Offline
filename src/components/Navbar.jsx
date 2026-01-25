@@ -1,4 +1,4 @@
-import { Home, Book, Map, HardDrive } from 'lucide-react';
+import { Home, AlertTriangle, Map, HardDrive } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const Navbar = () => {
@@ -9,9 +9,9 @@ const Navbar = () => {
                     <Home size={28} />
                     <span className="nav-label">Home</span>
                 </NavLink>
-                <NavLink to="/guides" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Book size={28} />
-                    <span className="nav-label">Guides</span>
+                <NavLink to="/survival" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <AlertTriangle size={28} />
+                    <span className="nav-label">Survival</span>
                 </NavLink>
                 <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Map size={28} />

@@ -1,10 +1,10 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'urban-offline-db';
-const DB_VERSION = 2; // Bumped for new stores
+const DB_VERSION = 4; // Bumped for user_context store
 
 // Stores that use out-of-line keys (no keyPath)
-const OUT_OF_LINE_STORES = ['map_tiles', 'search_index'];
+const OUT_OF_LINE_STORES = ['map_tiles', 'search_index', 'dataset_preferences', 'user_context'];
 
 export const initDB = async () => {
     return openDB(DB_NAME, DB_VERSION, {
@@ -63,6 +63,16 @@ export const initDB = async () => {
             // Content Packs metadata
             if (!db.objectStoreNames.contains('content_packs')) {
                 db.createObjectStore('content_packs', { keyPath: 'id' });
+            }
+
+            // Dataset Preferences (AI dataset toggle state)
+            if (!db.objectStoreNames.contains('dataset_preferences')) {
+                db.createObjectStore('dataset_preferences');
+            }
+
+            // User Context (Personal context for protocol generation)
+            if (!db.objectStoreNames.contains('user_context')) {
+                db.createObjectStore('user_context');
             }
         },
     });

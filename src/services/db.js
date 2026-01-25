@@ -20,8 +20,24 @@ export const db = isNative ? {
     },
     async delete(storeName, key) {
         return NativeStorage.deleteItem(storeName, key);
+    },
+    // Alias methods for compatibility with DatasetRegistry
+    async getItem(storeName, key) {
+        return this.get(storeName, key);
+    },
+    async setItem(storeName, key, value) {
+        return this.put(storeName, value, key);
     }
-} : webDB;
+} : {
+    ...webDB,
+    // Add alias methods for consistency
+    async getItem(storeName, key) {
+        return this.get(storeName, key);
+    },
+    async setItem(storeName, key, value) {
+        return this.put(storeName, value, key);
+    }
+};
 
 // Helper to init
 export const initStorage = async () => {

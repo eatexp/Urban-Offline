@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Send, Bot, User, AlertCircle, Loader2, 
+import {
+    Send, Bot, User, AlertCircle, Loader2,
     ChevronRight, BookOpen, Sparkles, X,
-    Wifi, WifiOff, Download, Settings
+    Wifi, WifiOff, Download, Settings, Database,
+    Heart, Tent, Scale
 } from 'lucide-react';
 import { RAGPipeline } from '../services/ai/RAGPipeline';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { AI_MODELS, checkAICapability } from '../services/ai/AIArchitecture';
+import { datasetRegistry } from '../services/ai/DatasetRegistry';
 import { createLogger } from '../utils/logger';
 
 const log = createLogger('AIChat');
@@ -38,13 +40,15 @@ Ask me anything, and I'll search through your downloaded content to find answers
     const [modelStatus, setModelStatus] = useState('checking');
     const [showSettings, setShowSettings] = useState(false);
     const [availableModels, setAvailableModels] = useState([]);
+    const [availableDatasets, setAvailableDatasets] = useState([]);
+    const [enabledDatasets, setEnabledDatasets] = useState([]);
 
     // Initialize AI capabilities
     useEffect(() => {
         const initializeAI = async () => {
             try {
                 setModelStatus('checking');
-                
+
                 // Check device capabilities
                 const capabilities = await checkAICapability();
                 setAiCapabilities(capabilities);
@@ -56,9 +60,16 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 const models = await AIModelManager.getAvailableModels();
                 setAvailableModels(models);
 
+                // Initialize dataset registry
+                const datasets = await datasetRegistry.getAll();
+                setAvailableDatasets(datasets);
+
+                const enabled = await datasetRegistry.getEnabledDatasets();
+                setEnabledDatasets(enabled);
+
                 // Check if any model is installed
                 const installedModels = models.filter(m => m.isInstalled);
-                
+
                 if (installedModels.length > 0) {
                     setModelStatus('ready');
                 } else {
@@ -99,6 +110,30 @@ Ask me anything, and I'll search through your downloaded content to find answers
         }
     };
 
+    // Handler for dataset toggle
+    const handleDatasetToggle = async (datasetId, enabled) => {
+        try {
+            await datasetRegistry.setEnabled(datasetId, enabled);
+            const updated = await datasetRegistry.getEnabledDatasets();
+            setEnabledDatasets(updated);
+            log.info('Dataset toggled', { datasetId, enabled });
+        } catch (error) {
+            log.error('Failed to toggle dataset', error);
+        }
+    };
+
+    // Handler for dataset preset
+    const handlePresetSelect = async (presetId) => {
+        try {
+            await datasetRegistry.applyPreset(presetId);
+            const updated = await datasetRegistry.getEnabledDatasets();
+            setEnabledDatasets(updated);
+            log.info('Preset applied', { presetId });
+        } catch (error) {
+            log.error('Failed to apply preset', error);
+        }
+    };
+
     // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,10 +156,11 @@ Ask me anything, and I'll search through your downloaded content to find answers
         setIsLoading(true);
 
         try {
-            // Get response from RAG pipeline
+            // Get response from RAG pipeline (with dataset filtering)
             const result = await RAGPipeline.query(query, {
                 category: 'general',
-                useAI: modelStatus === 'ready'
+                useAI: modelStatus === 'ready',
+                datasets: enabledDatasets.length > 0 ? enabledDatasets : null
             });
 
             // Add assistant message
@@ -178,14 +214,18 @@ Ask me anything, and I'll search through your downloaded content to find answers
                             <h1 className="font-bold text-slate-900">AI Assistant</h1>
                             <div className="flex items-center gap-2 text-xs">
                                 <span className={`flex items-center gap-1 ${
-                                    modelStatus === 'ready' ? 'text-green-600' : 
-                                    modelStatus === 'no-model' ? 'text-amber-600' : 
+                                    modelStatus === 'ready' ? 'text-green-600' :
+                                    modelStatus === 'no-model' ? 'text-amber-600' :
                                     'text-slate-500'
                                 }`}>
                                     {modelStatus === 'ready' && '● AI Ready'}
                                     {modelStatus === 'no-model' && '○ Search Mode'}
                                     {modelStatus === 'checking' && 'Checking...'}
                                     {modelStatus === 'fallback' && '○ Fallback Mode'}
+                                </span>
+                                <span className="flex items-center gap-1 text-slate-500">
+                                    <Database className="w-3 h-3" />
+                                    {enabledDatasets.length}/{availableDatasets.length}
                                 </span>
                                 <span className={`flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-slate-400'}`}>
                                     {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -269,10 +309,12 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
             {/* Settings Modal */}
             {showSettings && (
-                <SettingsModal 
+                <SettingsModal
                     models={availableModels}
                     capabilities={aiCapabilities}
                     modelStatus={modelStatus}
+                    datasets={availableDatasets}
+                    enabledDatasets={enabledDatasets}
                     onClose={() => setShowSettings(false)}
                     onModelDownload={async (modelId) => {
                         await AIModelManager.downloadModel(modelId, (progress, message) => {
@@ -280,6 +322,8 @@ Ask me anything, and I'll search through your downloaded content to find answers
                         });
                         refreshAIModels();
                     }}
+                    onDatasetToggle={handleDatasetToggle}
+                    onPresetSelect={handlePresetSelect}
                 />
             )}
         </div>
@@ -403,7 +447,12 @@ function formatContent(content) {
 }
 
 // Settings Modal
-const SettingsModal = ({ models, capabilities, modelStatus, onClose, onModelDownload }) => {
+const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDatasets, onClose, onModelDownload, onDatasetToggle, onPresetSelect }) => {
+    // Helper to get icon component by name
+    const getIconComponent = (iconName) => {
+        const icons = { Heart, Tent, Scale, BookOpen };
+        return icons[iconName] || Database;
+    };
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
             <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
@@ -482,6 +531,85 @@ const SettingsModal = ({ models, capabilities, modelStatus, onClose, onModelDown
                         </div>
                     </div>
 
+                    {/* Dataset Toggles */}
+                    <div className="mt-6">
+                        <h3 className="font-semibold text-sm text-slate-500 uppercase mb-2">Knowledge Sources</h3>
+                        <p className="text-xs text-slate-500 mb-3">
+                            Select which datasets the AI can access when answering questions
+                        </p>
+
+                        <div className="space-y-2">
+                            {datasets.map(dataset => {
+                                const IconComponent = getIconComponent(dataset.icon);
+                                const isEnabled = enabledDatasets.some(d => d.id === dataset.id);
+
+                                return (
+                                    <div
+                                        key={dataset.id}
+                                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                                    >
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <div className={`w-8 h-8 rounded-lg bg-${dataset.color}-100 flex items-center justify-center`}>
+                                                <IconComponent className={`w-4 h-4 text-${dataset.color}-600`} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-medium text-sm">{dataset.name}</h4>
+                                                <p className="text-xs text-slate-500">{dataset.description}</p>
+                                            </div>
+                                        </div>
+
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={isEnabled}
+                                                onChange={(e) => onDatasetToggle(dataset.id, e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Quick Presets */}
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                            <p className="text-xs text-slate-500 mb-2">Quick Presets:</p>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => onPresetSelect('all')}
+                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
+                                >
+                                    All Datasets
+                                </button>
+                                <button
+                                    onClick={() => onPresetSelect('survival-only')}
+                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
+                                >
+                                    Survival Only
+                                </button>
+                                <button
+                                    onClick={() => onPresetSelect('medical-only')}
+                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
+                                >
+                                    Medical Only
+                                </button>
+                                <button
+                                    onClick={() => onPresetSelect('civil-unrest')}
+                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
+                                >
+                                    Civil Unrest
+                                </button>
+                                <button
+                                    onClick={() => onPresetSelect('privacy-mode')}
+                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
+                                >
+                                    Privacy Mode
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Current Status */}
                     <div className="mt-6 p-3 bg-slate-50 rounded-lg text-sm">
                         <div className="flex items-center gap-2">
@@ -495,6 +623,12 @@ const SettingsModal = ({ models, capabilities, modelStatus, onClose, onModelDown
                                 {modelStatus === 'no-model' && 'No model installed - using search mode'}
                                 {modelStatus === 'checking' && 'Checking AI capabilities...'}
                                 {modelStatus === 'fallback' && 'Running in fallback mode'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                            <Database className="w-3 h-3 text-slate-500" />
+                            <span className="text-slate-600">
+                                {enabledDatasets.length} of {datasets.length} datasets enabled
                             </span>
                         </div>
                     </div>

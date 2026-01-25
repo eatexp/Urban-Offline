@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
@@ -15,6 +15,7 @@ const Health = lazy(() => import('./pages/Health'));
 const TriagePage = lazy(() => import('./pages/TriagePage'));
 const Survival = lazy(() => import('./pages/Survival'));
 const Law = lazy(() => import('./pages/Law'));
+const ProtocolPage = lazy(() => import('./pages/ProtocolPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -30,11 +31,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
-            <Route path="guides" element={
-              <Suspense fallback={<PageLoader />}>
-                <Guides />
-              </Suspense>
-            } />
+            <Route path="guides" element={<Navigate to="/survival" replace />} />
             <Route path="map" element={
               <Suspense fallback={<PageLoader />}>
                 <Map />
@@ -79,6 +76,11 @@ function App() {
             <Route path="law" element={
               <Suspense fallback={<PageLoader />}>
                 <Law />
+              </Suspense>
+            } />
+            <Route path="protocol/:scenarioId" element={
+              <Suspense fallback={<PageLoader />}>
+                <ProtocolPage />
               </Suspense>
             } />
           </Route>

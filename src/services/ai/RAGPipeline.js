@@ -14,6 +14,7 @@ import { db } from '../db';
 import { SearchService } from '../SearchService';
 import { SYSTEM_PROMPTS, FALLBACK_TEMPLATES, AI_CONFIG } from './AIArchitecture';
 import { AIModelManager } from './AIModelManager';
+import { datasetRegistry } from './DatasetRegistry';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('RAGPipeline');
@@ -32,7 +33,8 @@ export const RAGPipeline = {
         const {
             category = 'general',
             maxSources = AI_CONFIG.rag.maxContextChunks,
-            useAI = true
+            useAI = true,
+            datasets = null // Optional: filter by specific datasets
         } = options;
 
         try {
@@ -47,8 +49,8 @@ export const RAGPipeline = {
                 };
             }
 
-            // Step 2: Retrieve relevant content
-            const retrievedDocs = await this._retrieveContext(query, maxSources);
+            // Step 2: Retrieve relevant content (with dataset filtering)
+            const retrievedDocs = await this._retrieveContext(query, maxSources, datasets);
 
             // Step 3: Check if AI model is available
             const modelLoaded = AIModelManager.isModelLoaded();
@@ -72,8 +74,8 @@ export const RAGPipeline = {
                 return this._buildSearchResponse(query, retrievedDocs);
             }
 
-            // Step 4: Build prompt with context
-            const prompt = this._buildPrompt(query, retrievedDocs, category);
+            // Step 4: Build prompt with context (include dataset scope)
+            const prompt = this._buildPrompt(query, retrievedDocs, category, datasets);
 
             // Step 5: Generate response with LLM
             const llmResponse = await this._generateWithLLM(prompt);
@@ -106,12 +108,30 @@ export const RAGPipeline = {
 
     /**
      * Retrieve relevant content chunks for the query
+     * @param {string} query - Search query
+     * @param {number} maxResults - Maximum results to return
+     * @param {Array} enabledDatasets - Optional array of enabled datasets (null = all)
      */
-    async _retrieveContext(query, maxResults = 5) {
+    async _retrieveContext(query, maxResults = 5, enabledDatasets = null) {
         try {
+            // Get enabled dataset stores (for filtering)
+            let allowedStores;
+            if (enabledDatasets && enabledDatasets.length > 0) {
+                // Use provided datasets
+                allowedStores = enabledDatasets.map(d => d.store).filter(Boolean);
+                log.info('Using dataset filter', {
+                    datasets: enabledDatasets.map(d => d.id),
+                    stores: allowedStores
+                });
+            } else {
+                // Get from registry (respects user's toggle settings)
+                allowedStores = await datasetRegistry.getEnabledStores();
+                log.info('Using enabled datasets from registry', { stores: allowedStores });
+            }
+
             // Use existing search service
             const searchResults = await SearchService.search(query);
-            
+
             // Limit to max results
             const topResults = searchResults.slice(0, maxResults);
 
@@ -120,8 +140,11 @@ export const RAGPipeline = {
                 topResults.map(async (result) => {
                     try {
                         // Try to get full content from appropriate store
-                        const stores = ['health_content', 'survival_content', 'law_content'];
-                        
+                        // Default stores if no filter specified
+                        const stores = allowedStores.length > 0
+                            ? allowedStores
+                            : ['health_content', 'survival_content', 'law_content'];
+
                         for (const store of stores) {
                             try {
                                 const content = await db.get(store, result.id || result.slug);
@@ -136,7 +159,7 @@ export const RAGPipeline = {
                                 // Try next store
                             }
                         }
-                        
+
                         return result;
                     } catch (_e) {
                         return result;
@@ -144,7 +167,19 @@ export const RAGPipeline = {
                 })
             );
 
-            return enrichedResults;
+            // Filter out results from disabled stores
+            const filteredResults = enrichedResults.filter(result => {
+                if (!result.store) return true; // Keep if store not determined
+                return allowedStores.length === 0 || allowedStores.includes(result.store);
+            });
+
+            log.info('Retrieved context', {
+                total: searchResults.length,
+                enriched: enrichedResults.length,
+                filtered: filteredResults.length
+            });
+
+            return filteredResults;
 
         } catch (error) {
             log.error('Retrieval failed', error);
@@ -169,9 +204,21 @@ export const RAGPipeline = {
 
     /**
      * Build prompt with retrieved context
+     * @param {string} query - User query
+     * @param {Array} docs - Retrieved documents
+     * @param {string} category - Category for system prompt
+     * @param {Array} datasets - Enabled datasets (for scope notification)
      */
-    _buildPrompt(query, docs, category) {
-        const systemPrompt = SYSTEM_PROMPTS[category] || SYSTEM_PROMPTS.general;
+    _buildPrompt(query, docs, category, datasets = null) {
+        let systemPrompt = SYSTEM_PROMPTS[category] || SYSTEM_PROMPTS.general;
+
+        // Add dataset scope to prompt if filtering is active
+        if (datasets && datasets.length > 0) {
+            const datasetNames = datasets.map(d => d.name).join(', ');
+            systemPrompt += `\n\n**IMPORTANT SCOPE LIMITATION:**
+You are currently limited to information from these datasets: ${datasetNames}.
+If the user's question requires knowledge outside these datasets, politely inform them and suggest enabling the relevant dataset.`;
+        }
 
         // Build context from documents
         let context = '';
@@ -180,12 +227,15 @@ export const RAGPipeline = {
             docs.forEach((doc, i) => {
                 const content = doc.fullContent || doc.content || doc.description || '';
                 // Truncate long content
-                const truncated = content.length > 1000 
-                    ? content.substring(0, 1000) + '...' 
+                const truncated = content.length > 1000
+                    ? content.substring(0, 1000) + '...'
                     : content;
-                context += `\n[${i + 1}] "${doc.title}"\n${truncated}\n`;
+                context += `\n[${i + 1}] "${doc.title}" (Source: ${doc.store || 'unknown'})\n${truncated}\n`;
             });
             context += '\n--- END DOCUMENTS ---\n';
+        } else if (datasets && datasets.length > 0) {
+            // If no docs found and filtering is active, mention it
+            context = '\n\n**No relevant documents found in the currently enabled datasets.**\n';
         }
 
         return `${systemPrompt}
