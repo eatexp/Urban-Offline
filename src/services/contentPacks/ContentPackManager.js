@@ -149,6 +149,8 @@ export const ContentPackManager = {
         this._abortControllers.set(packId, abortController);
         this._downloadProgress.set(packId, 0);
 
+        let tempFileHandle = null;
+
         try {
             // Update status to downloading
             if (onProgress) onProgress(0, 'Starting download...');
@@ -166,9 +168,25 @@ export const ContentPackManager = {
             const contentLength = response.headers.get('content-length');
             const totalSize = contentLength ? parseInt(contentLength, 10) : pack.size;
 
+            // Prepare for download: check if OPFS (Origin Private File System) is available
+            let writable = null;
+            let useMemory = true;
+            let chunks = [];
+
+            try {
+                if (navigator.storage && navigator.storage.getDirectory) {
+                    const root = await navigator.storage.getDirectory();
+                    tempFileHandle = await root.getFileHandle(`temp_${packId}_${Date.now()}`, { create: true });
+                    writable = await tempFileHandle.createWritable();
+                    useMemory = false;
+                    log.debug('Using OPFS for download streaming');
+                }
+            } catch (err) {
+                log.warn('OPFS not available or failed, falling back to memory', err);
+            }
+
             // Read response as stream with progress
             const reader = response.body.getReader();
-            const chunks = [];
             let receivedLength = 0;
 
             while (true) {
@@ -176,8 +194,13 @@ export const ContentPackManager = {
                 
                 if (done) break;
                 
-                chunks.push(value);
                 receivedLength += value.length;
+
+                if (useMemory) {
+                    chunks.push(value);
+                } else {
+                    await writable.write(value);
+                }
                 
                 const progress = Math.round((receivedLength / totalSize) * 80); // 0-80% for download
                 this._downloadProgress.set(packId, progress);
@@ -186,22 +209,44 @@ export const ContentPackManager = {
                 }
             }
 
-            // Combine chunks
-            const packData = new Uint8Array(receivedLength);
-            let position = 0;
-            for (const chunk of chunks) {
-                packData.set(chunk, position);
-                position += chunk.length;
+            if (!useMemory) {
+                await writable.close();
             }
 
             if (onProgress) onProgress(85, 'Installing...');
 
+            // Prepare install source
+            let installSource;
+            if (useMemory) {
+                // Combine chunks
+                installSource = new Uint8Array(receivedLength);
+                let position = 0;
+                for (const chunk of chunks) {
+                    installSource.set(chunk, position);
+                    position += chunk.length;
+                }
+                // Clear chunks to free some memory
+                chunks = null;
+            } else {
+                installSource = await tempFileHandle.getFile();
+            }
+
             // Install the pack
-            await this._installPack(pack, packData, (installProgress) => {
+            await this._installPack(pack, installSource, (installProgress) => {
                 const totalProgress = 85 + Math.round(installProgress * 0.15);
                 this._downloadProgress.set(packId, totalProgress);
                 if (onProgress) onProgress(totalProgress, 'Installing content...');
             });
+
+            // Clean up temp file
+            if (tempFileHandle) {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    await root.removeEntry(tempFileHandle.name);
+                } catch (cleanupErr) {
+                    log.warn('Failed to cleanup temp file', cleanupErr);
+                }
+            }
 
             // Save pack metadata
             await db.put(PACKS_STORE, {
@@ -223,6 +268,16 @@ export const ContentPackManager = {
             return { success: true };
 
         } catch (error) {
+            // Attempt cleanup on error
+            if (tempFileHandle) {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    await root.removeEntry(tempFileHandle.name);
+                } catch (cleanupErr) {
+                    // Ignore
+                }
+            }
+
             this._downloadProgress.delete(packId);
             this._abortControllers.delete(packId);
 
@@ -308,11 +363,17 @@ export const ContentPackManager = {
 
     /**
      * Internal: Install pack data to storage
+     * @param {Object} pack - Pack metadata
+     * @param {File|Uint8Array} packSource - The downloaded file (if OPFS) or data array (if memory)
+     * @param {Function} onProgress
      */
-    async _installPack(pack, _packData, onProgress) {
+    async _installPack(pack, packSource, onProgress) {
         // Parse pack data (ZIP or JSON depending on format)
         // For now, we'll simulate installation based on pack category
         
+        // Note: In a real implementation, if packSource is a File (from OPFS),
+        // we would use a streaming unzip/parser here to avoid loading it all into memory.
+
         const category = pack.category;
         
         if (onProgress) onProgress(10);
