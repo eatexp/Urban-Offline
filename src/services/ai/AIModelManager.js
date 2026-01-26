@@ -1,15 +1,16 @@
 /**
  * AIModelManager - Download and manage local LLM models
- * 
+ *
  * Handles:
- * - Downloading models with progress tracking
- * - Storing models in IndexedDB/Filesystem
+ * - Downloading models with progress tracking via transformers.js
+ * - Storing models in IndexedDB cache
  * - Loading models for inference
  * - Model version management
  */
 
 import { db } from '../db';
-import { AI_MODELS, checkAICapability } from './AIArchitecture';
+import { checkAICapability } from './AIArchitecture';
+import TransformersEngine, { TRANSFORMERS_MODELS } from './TransformersEngine';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('AIModelManager');
@@ -17,32 +18,38 @@ const log = createLogger('AIModelManager');
 // Store for model metadata
 const MODELS_STORE = 'ai_models';
 
-// WebLLM CDN for model files
-const WEBLLM_CDN = 'https://huggingface.co/mlc-ai/';
-
 /**
  * AI Model Manager Service
  */
 export const AIModelManager = {
-    // Current loaded model
-    _currentModel: null,
+    // TransformersEngine singleton
     _engine: null,
     _downloadProgress: new Map(),
     _abortControllers: new Map(),
+    _isInitialized: false,
 
     /**
      * Initialize the model manager
      */
     async init() {
+        if (this._isInitialized) {
+            return this._capabilities;
+        }
+
         try {
             // Check device capabilities
             const capabilities = await checkAICapability();
-            
+
             log.info('Device capabilities', {
                 webGPU: capabilities.webGPU,
                 wasmSIMD: capabilities.wasmSIMD,
                 recommendedModel: capabilities.recommendedModel?.name
             });
+
+            // Get the TransformersEngine singleton
+            this._engine = TransformersEngine.getInstance();
+            this._capabilities = capabilities;
+            this._isInitialized = true;
 
             return capabilities;
         } catch (error) {
@@ -58,7 +65,8 @@ export const AIModelManager = {
         const installed = await this.getInstalledModels();
         const installedMap = new Map(installed.map(m => [m.id, m]));
 
-        return Object.values(AI_MODELS).map(model => {
+        // Use TRANSFORMERS_MODELS from TransformersEngine
+        return Object.values(TRANSFORMERS_MODELS).map(model => {
             const installedModel = installedMap.get(model.id);
             return {
                 ...model,
@@ -82,12 +90,12 @@ export const AIModelManager = {
     },
 
     /**
-     * Download a model
+     * Download a model using transformers.js
      * @param {string} modelId - Model ID to download
-     * @param {Function} onProgress - Progress callback (0-100)
+     * @param {Function} onProgress - Progress callback (progress, message)
      */
     async downloadModel(modelId, onProgress) {
-        const model = AI_MODELS[modelId];
+        const model = TRANSFORMERS_MODELS[modelId];
         if (!model) {
             return { success: false, error: 'Model not found' };
         }
@@ -95,70 +103,61 @@ export const AIModelManager = {
         // Check if already installed
         const installed = await this.isModelInstalled(modelId);
         if (installed) {
-            return { success: true, message: 'Already installed' };
+            // Verify the model is actually cached
+            const isCached = await TransformersEngine.isModelCached(modelId);
+            if (isCached) {
+                return { success: true, message: 'Already installed' };
+            }
+            // Cache was cleared, remove metadata and re-download
+            await db.delete(MODELS_STORE, modelId);
         }
 
-        // Set up abort controller
-        const abortController = new AbortController();
-        this._abortControllers.set(modelId, abortController);
+        // Ensure engine is initialized
+        if (!this._engine) {
+            this._engine = TransformersEngine.getInstance();
+        }
+
+        // Set up tracking
         this._downloadProgress.set(modelId, 0);
 
         try {
-            if (onProgress) onProgress(0, 'Initializing...');
+            if (onProgress) onProgress(0, 'Initializing download...');
 
-            // For WebLLM models, we'll use the WebLLM library to handle download
-            // This is a simplified version - actual implementation would use @mlc-ai/web-llm
-            
-            // Simulate model download stages
-            const stages = [
-                { progress: 10, message: 'Loading model config...' },
-                { progress: 30, message: 'Downloading model weights...' },
-                { progress: 60, message: 'Downloading tokenizer...' },
-                { progress: 80, message: 'Downloading WASM runtime...' },
-                { progress: 95, message: 'Finalizing...' }
-            ];
+            // Use TransformersEngine to initialize (download) the model
+            await this._engine.initialize(modelId, (progress, message) => {
+                this._downloadProgress.set(modelId, progress);
+                if (onProgress) onProgress(progress, message);
+            });
 
-            for (const stage of stages) {
-                if (abortController.signal.aborted) {
-                    throw new Error('Download cancelled');
-                }
-                
-                this._downloadProgress.set(modelId, stage.progress);
-                if (onProgress) onProgress(stage.progress, stage.message);
-                
-                // Simulate download time
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            // Save model metadata
+            // Save model metadata after successful download
             await db.put(MODELS_STORE, {
                 id: model.id,
                 name: model.name,
-                webLLMId: model.webLLMId,
+                hfId: model.hfId,
                 size: model.size,
                 sizeDisplay: model.sizeDisplay,
                 contextLength: model.contextLength,
-                capabilities: model.capabilities,
+                task: model.task,
                 installedAt: new Date().toISOString(),
                 version: '1.0.0'
             });
 
             this._downloadProgress.delete(modelId);
-            this._abortControllers.delete(modelId);
 
             if (onProgress) onProgress(100, 'Complete!');
 
+            log.info('Model downloaded successfully', { modelId });
             return { success: true };
 
         } catch (error) {
             this._downloadProgress.delete(modelId);
-            this._abortControllers.delete(modelId);
 
-            if (error.name === 'AbortError' || error.message === 'Download cancelled') {
+            if (error.name === 'AbortError' || error.message?.includes('abort')) {
+                log.info('Download cancelled', { modelId });
                 return { success: false, error: 'Download cancelled' };
             }
 
-            log.error('Download failed', error);
+            log.error('Download failed', { modelId, error: error.message });
             return { success: false, error: error.message };
         }
     },
@@ -167,10 +166,10 @@ export const AIModelManager = {
      * Cancel an in-progress download
      */
     cancelDownload(modelId) {
-        const controller = this._abortControllers.get(modelId);
-        if (controller) {
-            controller.abort();
+        if (this._engine) {
+            this._engine.abort();
         }
+        this._downloadProgress.delete(modelId);
     },
 
     /**
@@ -181,7 +180,7 @@ export const AIModelManager = {
     },
 
     /**
-     * Check if a model is installed
+     * Check if a model is installed (metadata exists)
      */
     async isModelInstalled(modelId) {
         try {
@@ -198,42 +197,46 @@ export const AIModelManager = {
      * @param {Function} onProgress - Loading progress callback
      */
     async loadModel(modelId, onProgress) {
-        const model = AI_MODELS[modelId];
+        const model = TRANSFORMERS_MODELS[modelId];
         if (!model) {
             return { success: false, error: 'Model not found' };
         }
 
-        // Check if installed
-        const installed = await this.isModelInstalled(modelId);
-        if (!installed) {
-            return { success: false, error: 'Model not installed' };
+        // Ensure engine is initialized
+        if (!this._engine) {
+            this._engine = TransformersEngine.getInstance();
+        }
+
+        // Check if already loaded
+        if (this._engine.isModelLoaded() && this._engine.currentModelId === modelId) {
+            if (onProgress) onProgress(100, 'Model ready!');
+            return { success: true, message: 'Already loaded' };
         }
 
         try {
             if (onProgress) onProgress(0, 'Loading model...');
 
-            // In production, this would initialize WebLLM:
-            // const engine = await CreateMLCEngine(model.webLLMId, {
-            //     initProgressCallback: (progress) => {
-            //         if (onProgress) onProgress(progress.progress * 100, progress.text);
-            //     }
-            // });
+            // Initialize the model (loads from cache if already downloaded)
+            await this._engine.initialize(modelId, (progress, message) => {
+                if (onProgress) onProgress(progress, message);
+            });
 
-            // Simulate loading
-            for (let i = 0; i <= 100; i += 10) {
-                if (onProgress) onProgress(i, `Loading model... ${i}%`);
-                await new Promise(resolve => setTimeout(resolve, 100));
+            // Update metadata with last loaded time
+            const metadata = await db.get(MODELS_STORE, modelId);
+            if (metadata) {
+                await db.put(MODELS_STORE, {
+                    ...metadata,
+                    lastLoadedAt: new Date().toISOString()
+                });
             }
-
-            this._currentModel = modelId;
-            // this._engine = engine; // Would be the actual engine
 
             if (onProgress) onProgress(100, 'Model ready!');
 
+            log.info('Model loaded', { modelId });
             return { success: true };
 
         } catch (error) {
-            log.error('Load failed', error);
+            log.error('Load failed', { modelId, error: error.message });
             return { success: false, error: error.message };
         }
     },
@@ -243,47 +246,68 @@ export const AIModelManager = {
      */
     async unloadModel() {
         if (this._engine) {
-            // this._engine.unload(); // Would unload the engine
-            this._engine = null;
+            await this._engine.unload();
         }
-        this._currentModel = null;
+        log.info('Model unloaded');
     },
 
     /**
-     * Delete a model
+     * Delete a model and its cache
      */
     async deleteModel(modelId) {
         try {
             // Unload if currently loaded
-            if (this._currentModel === modelId) {
+            if (this._engine?.currentModelId === modelId) {
                 await this.unloadModel();
             }
 
-            // Delete from storage
+            // Delete from metadata storage
             await db.delete(MODELS_STORE, modelId);
 
-            // In production, would also delete cached model files
-            // from IndexedDB cache
+            // Delete from transformers.js cache
+            await TransformersEngine.deleteModelCache(modelId);
 
+            log.info('Model deleted', { modelId });
             return { success: true };
         } catch (error) {
-            log.error('Delete failed', error);
+            log.error('Delete failed', { modelId, error: error.message });
             return { success: false, error: error.message };
         }
     },
 
     /**
-     * Get current loaded model
+     * Get current loaded model ID
      */
     getCurrentModel() {
-        return this._currentModel;
+        return this._engine?.currentModelId || null;
     },
 
     /**
      * Check if a model is loaded and ready
      */
     isModelLoaded() {
-        return this._currentModel !== null && this._engine !== null;
+        return this._engine?.isModelLoaded() || false;
+    },
+
+    /**
+     * Get the TransformersEngine for direct inference
+     */
+    getEngine() {
+        return this._engine;
+    },
+
+    /**
+     * Generate text using the loaded model
+     * @param {string} systemPrompt - System instructions
+     * @param {string} userMessage - User's query
+     * @param {Object} options - Generation options
+     */
+    async generate(systemPrompt, userMessage, options = {}) {
+        if (!this._engine?.isModelLoaded()) {
+            throw new Error('No model loaded. Call loadModel() first.');
+        }
+
+        return this._engine.chat(systemPrompt, userMessage, options);
     },
 
     /**
@@ -308,4 +332,3 @@ export const AIModelManager = {
 };
 
 export default AIModelManager;
-

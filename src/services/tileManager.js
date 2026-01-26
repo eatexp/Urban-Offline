@@ -76,7 +76,11 @@ export const tileManager = {
                     const existing = await this.getTile(tile.x, tile.y, tile.z);
                     if (existing) return;
 
-                    const url = `https://tile.openstreetmap.org/${tile.z}/${tile.x}/${tile.y}.png`;
+                    const tileUrlTemplate = region.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    const url = tileUrlTemplate
+                        .replace('{z}', tile.z)
+                        .replace('{x}', tile.x)
+                        .replace('{y}', tile.y);
 
                     // Retry logic (3 attempts)
                     let response;
@@ -103,6 +107,12 @@ export const tileManager = {
                         log.warn(`Invalid tile format: ${blob.type}`);
                     }
                 } catch (err) {
+                    // TODO: Critical Resilience - Check for QuotaExceededError and handle gracefully
+                    // Should notify user, clear old cache, or implement LRU eviction strategy
+                    if (err.name === 'QuotaExceededError') {
+                        log.error('Storage quota exceeded during tile download', err);
+                        // TODO: Trigger cleanup or notify user
+                    }
                     log.warn(`Failed to fetch tile ${tile.z}/${tile.x}/${tile.y}`, err);
                 }
             }));
@@ -118,8 +128,11 @@ export const tileManager = {
     },
 
     async clearAllTiles() {
+        // TODO: Performance - Implement LRU or region-specific deletion instead of clearing all tiles
+        // Current implementation is destructive.
         // This is a heavy operation, ideally we'd delete by range keys if IDB supported it easily
         // For now, we clear the whole store (assuming one region active or user wants full clear)
+
         const keys = await db.getAllKeys('map_tiles');
         for (const key of keys) {
             await db.delete('map_tiles', key);

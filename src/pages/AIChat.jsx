@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Send, Bot, User, AlertCircle, Loader2,
     ChevronRight, BookOpen, Sparkles, X,
     Wifi, WifiOff, Download, Settings, Database,
-    Heart, Tent, Scale
+    Heart, Tent, Scale, Check, Cpu
 } from 'lucide-react';
 import { RAGPipeline } from '../services/ai/RAGPipeline';
 import { AIModelManager } from '../services/ai/AIModelManager';
-import { AI_MODELS, checkAICapability } from '../services/ai/AIArchitecture';
+import { checkAICapability } from '../services/ai/AIArchitecture';
+import { TRANSFORMERS_MODELS } from '../services/ai/TransformersEngine';
 import { datasetRegistry } from '../services/ai/DatasetRegistry';
 import { createLogger } from '../utils/logger';
 
@@ -16,9 +17,15 @@ const log = createLogger('AIChat');
 
 const AIChat = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
-    
+
+    // Check for context passed from AskAIChip or other pages
+    // Persist context in state so it's available for follow-up questions
+    const incomingContext = location.state?.context;
+    const [persistedContext, setPersistedContext] = useState(null);
+
     const [messages, setMessages] = useState([{
         id: 'welcome',
         role: 'assistant',
@@ -35,13 +42,17 @@ Ask me anything, and I'll search through your downloaded content to find answers
     }]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamingContent, setStreamingContent] = useState('');
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [aiCapabilities, setAiCapabilities] = useState(null);
-    const [modelStatus, setModelStatus] = useState('checking');
+    const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback
+    const [activeModel, setActiveModel] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
     const [availableModels, setAvailableModels] = useState([]);
     const [availableDatasets, setAvailableDatasets] = useState([]);
     const [enabledDatasets, setEnabledDatasets] = useState([]);
+    const [downloadProgress, setDownloadProgress] = useState(null); // { modelId, progress, message }
 
     // Initialize AI capabilities
     useEffect(() => {
@@ -56,6 +67,9 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 // Initialize model manager
                 await AIModelManager.init();
 
+                // Initialize RAG pipeline (loads embedding model if available)
+                await RAGPipeline.init();
+
                 // Get available models
                 const models = await AIModelManager.getAvailableModels();
                 setAvailableModels(models);
@@ -67,11 +81,19 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 const enabled = await datasetRegistry.getEnabledDatasets();
                 setEnabledDatasets(enabled);
 
-                // Check if any model is installed
+                // Check if any model is installed and loaded
                 const installedModels = models.filter(m => m.isInstalled);
+                const isModelLoaded = AIModelManager.isModelLoaded();
 
-                if (installedModels.length > 0) {
+                if (isModelLoaded) {
                     setModelStatus('ready');
+                    // Get active model info
+                    const loadedModel = installedModels.find(m => m.isInstalled);
+                    setActiveModel(loadedModel?.id || null);
+                } else if (installedModels.length > 0) {
+                    // Model installed but not loaded yet
+                    setModelStatus('ready');
+                    setActiveModel(installedModels[0]?.id || null);
                 } else {
                     setModelStatus('no-model');
                 }
@@ -84,6 +106,26 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
         initializeAI();
     }, []);
+
+    // Handle incoming context from AskAIChip
+    useEffect(() => {
+        if (incomingContext) {
+            // Persist context for follow-up questions
+            setPersistedContext(incomingContext);
+
+            if (incomingContext.question) {
+                // Auto-populate the input with the question
+                setInputValue(incomingContext.question);
+                // Optionally auto-send after a brief delay
+                const timer = setTimeout(() => {
+                    if (inputRef.current) {
+                        inputRef.current.focus();
+                    }
+                }, 300);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [incomingContext]);
 
     // Online/offline listener
     useEffect(() => {
@@ -104,9 +146,56 @@ Ask me anything, and I'll search through your downloaded content to find answers
             const models = await AIModelManager.getAvailableModels();
             setAvailableModels(models);
             const installedModels = models.filter(m => m.isInstalled);
-            setModelStatus(installedModels.length > 0 ? 'ready' : 'no-model');
+            const isLoaded = AIModelManager.isModelLoaded();
+
+            if (isLoaded) {
+                setModelStatus('ready');
+            } else if (installedModels.length > 0) {
+                setModelStatus('ready');
+                setActiveModel(installedModels[0]?.id || null);
+            } else {
+                setModelStatus('no-model');
+            }
         } catch (_error) {
             setModelStatus('fallback');
+        }
+    };
+
+    // Handle model download with progress
+    const handleModelDownload = async (modelId) => {
+        try {
+            setDownloadProgress({ modelId, progress: 0, message: 'Starting download...' });
+
+            const result = await AIModelManager.downloadModel(modelId, (progress, message) => {
+                setDownloadProgress({ modelId, progress, message });
+                log.debug(`Model download: ${progress}% - ${message}`);
+            });
+
+            if (result.success) {
+                setDownloadProgress(null);
+                setActiveModel(modelId);
+                await refreshAIModels();
+            } else {
+                setDownloadProgress({ modelId, progress: 0, message: result.error || 'Download failed', error: true });
+                setTimeout(() => setDownloadProgress(null), 3000);
+            }
+        } catch (error) {
+            log.error('Model download failed', error);
+            setDownloadProgress({ modelId, progress: 0, message: error.message, error: true });
+            setTimeout(() => setDownloadProgress(null), 3000);
+        }
+    };
+
+    // Handle model selection (switch active model)
+    const handleModelSelect = async (modelId) => {
+        const model = availableModels.find(m => m.id === modelId);
+        if (!model?.isInstalled) {
+            // Need to download first
+            await handleModelDownload(modelId);
+        } else {
+            // Model already installed, just switch to it
+            setActiveModel(modelId);
+            // In future: could reload model here if needed
         }
     };
 
@@ -143,22 +232,51 @@ Ask me anything, and I'll search through your downloaded content to find answers
         const query = inputValue.trim();
         if (!query || isLoading) return;
 
+        // Build context-enhanced query if we have context (persisted or incoming)
+        // Use persisted context for all queries in session, not just the first one
+        let contextualQuery = query;
+        let contextInfo = null;
+        const activeContext = persistedContext || incomingContext;
+
+        if (activeContext?.sourceTitle) {
+            // Use context for enhanced answers
+            contextInfo = {
+                sourceTitle: activeContext.sourceTitle,
+                sourceCategory: activeContext.sourceCategory,
+                sourcePath: activeContext.sourcePath
+            };
+            log.info('Query with context', contextInfo);
+        }
+
         // Add user message
         const userMessage = {
             id: Date.now().toString(),
             role: 'user',
             content: query,
+            context: contextInfo,
             timestamp: new Date()
         };
 
         setMessages(prev => [...prev, userMessage]);
         setInputValue('');
         setIsLoading(true);
+        setIsStreaming(false);
+        setStreamingContent('');
 
         try {
+            // Determine category from context or enabled datasets
+            let category = 'general';
+            if (activeContext?.sourceCategory) {
+                category = activeContext.sourceCategory;
+            } else if (enabledDatasets.length === 1) {
+                // If only one dataset enabled, use its category
+                const singleDataset = enabledDatasets[0];
+                if (singleDataset.category) category = singleDataset.category;
+            }
+
             // Get response from RAG pipeline (with dataset filtering)
-            const result = await RAGPipeline.query(query, {
-                category: 'general',
+            const result = await RAGPipeline.query(contextualQuery, {
+                category,
                 useAI: modelStatus === 'ready',
                 datasets: enabledDatasets.length > 0 ? enabledDatasets : null
             });
@@ -170,6 +288,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 content: result.response,
                 sources: result.sources,
                 usedFallback: result.usedFallback,
+                confidence: result.confidence,
                 timestamp: new Date()
             };
 
@@ -177,7 +296,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
         } catch (error) {
             log.error('Query failed', error);
-            
+
             setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
@@ -185,9 +304,11 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 error: true,
                 timestamp: new Date()
             }]);
+        } finally {
+            // Always clear loading state, even on error
+            setIsLoading(false);
+            setIsStreaming(false);
         }
-
-        setIsLoading(false);
     };
 
     const handleSuggestion = (question) => {
@@ -202,63 +323,122 @@ Ask me anything, and I'll search through your downloaded content to find answers
     const suggestions = RAGPipeline.getSuggestedQuestions('medical');
 
     return (
-        <div className="flex flex-col h-full bg-slate-50">
+        <div
+            className="flex flex-col h-full animate-fade-in"
+            style={{ background: 'var(--color-bg-primary)' }}
+        >
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-4 py-3">
+            <header
+                className="px-4 py-3"
+                style={{
+                    background: 'var(--color-bg-glass)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    borderBottom: '1px solid var(--color-border-primary)'
+                }}
+            >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-white" />
+                        <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center"
+                            style={{
+                                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
+                            }}
+                        >
+                            <Sparkles className="w-5 h-5" style={{ color: 'white' }} />
                         </div>
                         <div>
-                            <h1 className="font-bold text-slate-900">AI Assistant</h1>
+                            <h1
+                                className="font-bold"
+                                style={{ color: 'var(--color-text-primary)' }}
+                            >
+                                AI Assistant
+                            </h1>
                             <div className="flex items-center gap-2 text-xs">
-                                <span className={`flex items-center gap-1 ${
-                                    modelStatus === 'ready' ? 'text-green-600' :
-                                    modelStatus === 'no-model' ? 'text-amber-600' :
-                                    'text-slate-500'
-                                }`}>
-                                    {modelStatus === 'ready' && '● AI Ready'}
-                                    {modelStatus === 'no-model' && '○ Search Mode'}
-                                    {modelStatus === 'checking' && 'Checking...'}
-                                    {modelStatus === 'fallback' && '○ Fallback Mode'}
+                                <span
+                                    className="flex items-center gap-1"
+                                    style={{
+                                        color: modelStatus === 'ready' ? 'var(--color-success)' :
+                                               modelStatus === 'no-model' ? 'var(--color-info)' :
+                                               'var(--color-text-muted)'
+                                    }}
+                                >
+                                    {modelStatus === 'ready' && (
+                                        <>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                            {activeModel ? TRANSFORMERS_MODELS[activeModel]?.name || 'AI Ready' : 'AI Ready'}
+                                        </>
+                                    )}
+                                    {modelStatus === 'no-model' && (
+                                        <>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                            Smart Search
+                                        </>
+                                    )}
+                                    {modelStatus === 'checking' && 'Initializing...'}
+                                    {modelStatus === 'fallback' && (
+                                        <>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                            Quick Answers
+                                        </>
+                                    )}
                                 </span>
-                                <span className="flex items-center gap-1 text-slate-500">
+                                <span
+                                    className="flex items-center gap-1"
+                                    style={{ color: 'var(--color-text-muted)' }}
+                                >
                                     <Database className="w-3 h-3" />
                                     {enabledDatasets.length}/{availableDatasets.length}
                                 </span>
-                                <span className={`flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-slate-400'}`}>
+                                <span
+                                    className="flex items-center gap-1"
+                                    style={{ color: isOnline ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                                >
                                     {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={() => setShowSettings(true)}
-                        className="p-2 hover:bg-slate-100 rounded-lg"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                        <Settings className="w-5 h-5 text-slate-500" />
+                        <Settings className="w-5 h-5" />
                     </button>
                 </div>
-            </div>
+            </header>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                {messages.map(message => (
-                    <MessageBubble 
+                {messages.map((message, index) => (
+                    <MessageBubble
                         key={message.id}
                         message={message}
                         onSourceClick={navigateToSource}
+                        animationDelay={index * 50}
                     />
                 ))}
 
                 {isLoading && (
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                            <Bot className="w-4 h-4 text-white" />
+                    <div className="flex gap-3 animate-fade-in">
+                        <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{
+                                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
+                            }}
+                        >
+                            <Bot className="w-4 h-4" style={{ color: 'white' }} />
                         </div>
-                        <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-slate-200">
-                            <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                        <div
+                            className="card rounded-2xl rounded-tl-none px-4 py-3"
+                        >
+                            <Loader2
+                                className="w-5 h-5 animate-spin"
+                                style={{ color: 'var(--color-primary-500)' }}
+                            />
                         </div>
                     </div>
                 )}
@@ -268,14 +448,32 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
             {/* Suggestions */}
             {messages.length <= 1 && (
-                <div className="px-4 pb-2">
-                    <p className="text-xs text-slate-500 mb-2">Try asking:</p>
+                <div className="px-4 pb-2 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                    <p
+                        className="text-xs mb-2"
+                        style={{ color: 'var(--color-text-muted)' }}
+                    >
+                        Try asking:
+                    </p>
                     <div className="flex flex-wrap gap-2">
                         {suggestions.slice(0, 3).map((q, i) => (
                             <button
                                 key={i}
                                 onClick={() => handleSuggestion(q)}
-                                className="text-sm px-3 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
+                                className="text-sm px-3 py-1.5 rounded-full transition-all"
+                                style={{
+                                    background: 'var(--color-bg-secondary)',
+                                    border: '1px solid var(--color-border-primary)',
+                                    color: 'var(--color-text-secondary)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                                    e.currentTarget.style.color = 'var(--color-primary-400)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
+                                }}
                             >
                                 {q}
                             </button>
@@ -285,7 +483,13 @@ Ask me anything, and I'll search through your downloaded content to find answers
             )}
 
             {/* Input */}
-            <div className="bg-white border-t border-slate-200 px-4 py-3 pb-safe">
+            <div
+                className="px-4 py-3 pb-safe"
+                style={{
+                    background: 'var(--color-bg-secondary)',
+                    borderTop: '1px solid var(--color-border-primary)'
+                }}
+            >
                 <div className="flex gap-2">
                     <input
                         ref={inputRef}
@@ -294,13 +498,25 @@ Ask me anything, and I'll search through your downloaded content to find answers
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                         placeholder="Ask about emergencies, first aid, legal rights..."
-                        className="flex-1 px-4 py-3 bg-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-4 py-3 rounded-xl transition-all"
+                        style={{
+                            background: 'var(--color-bg-tertiary)',
+                            border: '1px solid var(--color-border-primary)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-500)'}
+                        onBlur={(e) => e.currentTarget.style.borderColor = 'var(--color-border-primary)'}
                         disabled={isLoading}
                     />
                     <button
                         onClick={handleSend}
                         disabled={!inputValue.trim() || isLoading}
-                        className="p-3 bg-blue-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                        className="btn btn-primary p-3 rounded-xl"
+                        style={{
+                            opacity: (!inputValue.trim() || isLoading) ? 0.5 : 1,
+                            cursor: (!inputValue.trim() || isLoading) ? 'not-allowed' : 'pointer'
+                        }}
                     >
                         <Send className="w-5 h-5" />
                     </button>
@@ -313,15 +529,13 @@ Ask me anything, and I'll search through your downloaded content to find answers
                     models={availableModels}
                     capabilities={aiCapabilities}
                     modelStatus={modelStatus}
+                    activeModel={activeModel}
                     datasets={availableDatasets}
                     enabledDatasets={enabledDatasets}
+                    downloadProgress={downloadProgress}
                     onClose={() => setShowSettings(false)}
-                    onModelDownload={async (modelId) => {
-                        await AIModelManager.downloadModel(modelId, (progress, message) => {
-                            log.debug(`Model download: ${progress}% - ${message}`);
-                        });
-                        refreshAIModels();
-                    }}
+                    onModelDownload={handleModelDownload}
+                    onModelSelect={handleModelSelect}
                     onDatasetToggle={handleDatasetToggle}
                     onPresetSelect={handlePresetSelect}
                 />
@@ -331,45 +545,74 @@ Ask me anything, and I'll search through your downloaded content to find answers
 };
 
 // Message Bubble Component
-const MessageBubble = ({ message, onSourceClick }) => {
+const MessageBubble = ({ message, onSourceClick, animationDelay = 0 }) => {
     const isUser = message.role === 'user';
 
     return (
-        <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+        <div
+            className={`flex gap-3 animate-fade-in ${isUser ? 'flex-row-reverse' : ''}`}
+            style={{ animationDelay: `${animationDelay}ms` }}
+        >
             {/* Avatar */}
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                isUser 
-                    ? 'bg-slate-700'
-                    : 'bg-gradient-to-br from-blue-500 to-purple-600'
-            }`}>
-                {isUser 
-                    ? <User className="w-4 h-4 text-white" />
-                    : <Bot className="w-4 h-4 text-white" />
+            <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{
+                    background: isUser
+                        ? 'var(--color-bg-tertiary)'
+                        : 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
+                }}
+            >
+                {isUser
+                    ? <User className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                    : <Bot className="w-4 h-4" style={{ color: 'white' }} />
                 }
             </div>
 
             {/* Message */}
             <div className={`max-w-[80%] ${isUser ? 'text-right' : ''}`}>
-                <div className={`rounded-2xl px-4 py-3 ${
-                    isUser 
-                        ? 'bg-blue-600 text-white rounded-tr-none'
-                        : 'bg-white shadow-sm border border-slate-200 rounded-tl-none'
-                } ${message.error ? 'bg-red-50 border-red-200' : ''}`}>
+                <div
+                    className="rounded-2xl px-4 py-3"
+                    style={{
+                        background: isUser
+                            ? 'var(--color-primary-600)'
+                            : 'var(--color-bg-secondary)',
+                        border: isUser ? 'none' : '1px solid var(--color-border-primary)',
+                        borderRadius: isUser ? '1rem 1rem 0 1rem' : '1rem 1rem 1rem 0',
+                        ...(message.error && {
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)'
+                        })
+                    }}
+                >
                     {/* Content with markdown-like formatting */}
-                    <div className={`text-sm whitespace-pre-wrap ${isUser ? '' : 'text-slate-700'}`}>
-                        {formatContent(message.content)}
+                    <div
+                        className="text-sm whitespace-pre-wrap"
+                        style={{
+                            color: isUser ? 'white' : 'var(--color-text-secondary)',
+                            ...(message.error && { color: 'var(--color-danger)' })
+                        }}
+                    >
+                        {formatContent(message.content, isUser)}
                     </div>
                 </div>
 
                 {/* Sources */}
                 {message.sources && message.sources.length > 0 && (
                     <div className="mt-2 space-y-1">
-                        <p className="text-xs text-slate-500">Sources:</p>
+                        <p
+                            className="text-xs"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
+                            Sources:
+                        </p>
                         {message.sources.map((source, i) => (
                             <button
                                 key={i}
                                 onClick={() => onSourceClick(source)}
-                                className="flex items-center gap-2 text-xs text-blue-600 hover:underline"
+                                className="flex items-center gap-2 text-xs transition-colors"
+                                style={{ color: 'var(--color-primary-400)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                             >
                                 <BookOpen className="w-3 h-3" />
                                 {source.title}
@@ -381,7 +624,10 @@ const MessageBubble = ({ message, onSourceClick }) => {
 
                 {/* Fallback indicator */}
                 {message.usedFallback && !isUser && (
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                    <p
+                        className="text-xs mt-1 flex items-center gap-1"
+                        style={{ color: 'var(--color-text-muted)' }}
+                    >
                         <AlertCircle className="w-3 h-3" />
                         Answered from cached templates
                     </p>
@@ -392,12 +638,12 @@ const MessageBubble = ({ message, onSourceClick }) => {
 };
 
 // Simple markdown-like formatting
-function formatContent(content) {
+function formatContent(content, isUser = false) {
     if (!content) return null;
 
     // Split by lines and process
     const lines = content.split('\n');
-    
+
     return lines.map((line, i) => {
         // Bold text
         const boldRegex = /\*\*(.*?)\*\*/g;
@@ -409,10 +655,17 @@ function formatContent(content) {
             if (match.index > lastIndex) {
                 parts.push(line.substring(lastIndex, match.index));
             }
-            parts.push(<strong key={`bold-${i}-${match.index}`}>{match[1]}</strong>);
+            parts.push(
+                <strong
+                    key={`bold-${i}-${match.index}`}
+                    style={{ color: isUser ? 'white' : 'var(--color-text-primary)' }}
+                >
+                    {match[1]}
+                </strong>
+            );
             lastIndex = boldRegex.lastIndex;
         }
-        
+
         if (lastIndex < line.length) {
             parts.push(line.substring(lastIndex));
         }
@@ -447,18 +700,66 @@ function formatContent(content) {
 }
 
 // Settings Modal
-const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDatasets, onClose, onModelDownload, onDatasetToggle, onPresetSelect }) => {
+const SettingsModal = ({
+    models,
+    capabilities,
+    modelStatus,
+    activeModel,
+    datasets,
+    enabledDatasets,
+    downloadProgress,
+    onClose,
+    onModelDownload,
+    onModelSelect,
+    onDatasetToggle,
+    onPresetSelect
+}) => {
     // Helper to get icon component by name
     const getIconComponent = (iconName) => {
         const icons = { Heart, Tent, Scale, BookOpen };
         return icons[iconName] || Database;
     };
+
+    // Get transformers model info for display
+    const getModelInfo = (modelId) => {
+        return TRANSFORMERS_MODELS[modelId] || {};
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
-                <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                    <h2 className="font-bold text-lg">AI Settings</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+        <div
+            className="fixed inset-0 flex items-end sm:items-center justify-center animate-fade-in"
+            style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 'var(--z-modal-backdrop)'
+            }}
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div
+                className="card max-w-lg w-full max-h-[80vh] overflow-hidden animate-scale-in"
+                style={{
+                    borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+                    background: 'var(--color-bg-secondary)'
+                }}
+            >
+                {/* Modal Header */}
+                <div
+                    className="p-4 flex items-center justify-between"
+                    style={{ borderBottom: '1px solid var(--color-border-primary)' }}
+                >
+                    <h2
+                        className="font-bold text-lg"
+                        style={{ color: 'var(--color-text-primary)' }}
+                    >
+                        AI Settings
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -466,24 +767,35 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
                 <div className="p-4 overflow-y-auto">
                     {/* Device Capabilities */}
                     <div className="mb-6">
-                        <h3 className="font-semibold text-sm text-slate-500 uppercase mb-2">Device Capabilities</h3>
-                        <div className="bg-slate-50 rounded-lg p-3 space-y-2 text-sm">
+                        <h3 className="section-header mb-2">Device Capabilities</h3>
+                        <div
+                            className="rounded-lg p-3 space-y-2 text-sm"
+                            style={{ background: 'var(--color-bg-tertiary)' }}
+                        >
                             <div className="flex justify-between">
-                                <span>WebGPU</span>
-                                <span className={capabilities?.webGPU ? 'text-green-600' : 'text-slate-400'}>
+                                <span style={{ color: 'var(--color-text-secondary)' }}>WebGPU</span>
+                                <span style={{ color: capabilities?.webGPU ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
                                     {capabilities?.webGPU ? '✓ Supported' : '✗ Not available'}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span>WASM SIMD</span>
-                                <span className={capabilities?.wasmSIMD ? 'text-green-600' : 'text-slate-400'}>
+                                <span style={{ color: 'var(--color-text-secondary)' }}>WASM SIMD</span>
+                                <span style={{ color: capabilities?.wasmSIMD ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
                                     {capabilities?.wasmSIMD ? '✓ Supported' : '✗ Not available'}
                                 </span>
                             </div>
                             {capabilities?.recommendedModel && (
-                                <div className="pt-2 border-t border-slate-200">
-                                    <span className="text-slate-600">Recommended: </span>
-                                    <span className="font-medium">{capabilities.recommendedModel.name}</span>
+                                <div
+                                    className="pt-2"
+                                    style={{ borderTop: '1px solid var(--color-border-primary)' }}
+                                >
+                                    <span style={{ color: 'var(--color-text-muted)' }}>Recommended: </span>
+                                    <span
+                                        className="font-medium"
+                                        style={{ color: 'var(--color-text-primary)' }}
+                                    >
+                                        {capabilities.recommendedModel.name}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -491,50 +803,166 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
 
                     {/* Models */}
                     <div>
-                        <h3 className="font-semibold text-sm text-slate-500 uppercase mb-2">AI Models</h3>
+                        <h3 className="section-header mb-2">AI Models</h3>
+                        <p
+                            className="text-xs mb-3"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
+                            Choose a model for AI-powered answers. The app works fully without AI.
+                        </p>
                         <div className="space-y-3">
-                            {models.map(model => (
-                                <div 
-                                    key={model.id}
-                                    className="bg-white border border-slate-200 rounded-lg p-3"
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div>
-                                            <h4 className="font-medium flex items-center gap-2">
-                                                {model.name}
-                                                {model.recommended && (
-                                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
-                                                        Recommended
+                            {Object.values(TRANSFORMERS_MODELS).map(modelConfig => {
+                                const model = models.find(m => m.id === modelConfig.id) || {
+                                    id: modelConfig.id,
+                                    isInstalled: false
+                                };
+                                const isActive = activeModel === modelConfig.id;
+                                const isDownloading = downloadProgress?.modelId === modelConfig.id;
+
+                                return (
+                                    <button
+                                        key={modelConfig.id}
+                                        onClick={() => !isDownloading && onModelSelect(modelConfig.id)}
+                                        disabled={isDownloading}
+                                        className="w-full text-left p-3 rounded-xl transition-all"
+                                        style={{
+                                            background: isActive
+                                                ? 'var(--color-primary-900)'
+                                                : 'var(--color-bg-tertiary)',
+                                            border: isActive
+                                                ? '2px solid var(--color-primary-500)'
+                                                : '2px solid transparent',
+                                            opacity: isDownloading ? 0.8 : 1
+                                        }}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                                    style={{
+                                                        background: isActive
+                                                            ? 'var(--color-primary-600)'
+                                                            : 'var(--color-bg-secondary)'
+                                                    }}
+                                                >
+                                                    {isActive ? (
+                                                        <Check className="w-4 h-4" style={{ color: 'white' }} />
+                                                    ) : (
+                                                        <Cpu className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h4
+                                                        className="font-medium flex items-center gap-2"
+                                                        style={{ color: 'var(--color-text-primary)' }}
+                                                    >
+                                                        {modelConfig.name}
+                                                        {modelConfig.id === 'tinyllama' && (
+                                                            <span
+                                                                className="text-xs px-2 py-0.5 rounded"
+                                                                style={{
+                                                                    background: 'rgba(34, 197, 94, 0.2)',
+                                                                    color: 'var(--color-success)'
+                                                                }}
+                                                            >
+                                                                Recommended
+                                                            </span>
+                                                        )}
+                                                    </h4>
+                                                    <p
+                                                        className="text-xs"
+                                                        style={{ color: 'var(--color-text-muted)' }}
+                                                    >
+                                                        {modelConfig.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span
+                                                className="text-xs"
+                                                style={{ color: 'var(--color-text-muted)' }}
+                                            >
+                                                {modelConfig.sizeDisplay}
+                                            </span>
+                                        </div>
+
+                                        {/* Download progress */}
+                                        {isDownloading && (
+                                            <div className="mt-2">
+                                                <div className="flex items-center justify-between text-xs mb-1">
+                                                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                                                        {downloadProgress.message || 'Downloading...'}
+                                                    </span>
+                                                    <span style={{ color: 'var(--color-primary-400)' }}>
+                                                        {downloadProgress.progress}%
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    className="h-1.5 rounded-full overflow-hidden"
+                                                    style={{ background: 'var(--color-bg-secondary)' }}
+                                                >
+                                                    <div
+                                                        className="h-full rounded-full transition-all duration-300"
+                                                        style={{
+                                                            width: `${downloadProgress.progress}%`,
+                                                            background: downloadProgress.error
+                                                                ? 'var(--color-danger)'
+                                                                : 'linear-gradient(90deg, var(--color-primary-500), var(--color-accent-purple))'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Status indicator */}
+                                        {!isDownloading && (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                {model.isInstalled ? (
+                                                    <span
+                                                        className="text-xs flex items-center gap-1"
+                                                        style={{ color: 'var(--color-success)' }}
+                                                    >
+                                                        <Check className="w-3 h-3" />
+                                                        {isActive ? 'Active' : 'Installed'}
+                                                    </span>
+                                                ) : (
+                                                    <span
+                                                        className="text-xs flex items-center gap-1"
+                                                        style={{ color: 'var(--color-primary-400)' }}
+                                                    >
+                                                        <Download className="w-3 h-3" />
+                                                        Tap to download
                                                     </span>
                                                 )}
-                                            </h4>
-                                            <p className="text-sm text-slate-500">{model.description}</p>
-                                        </div>
-                                        <span className="text-xs text-slate-400">{model.sizeDisplay}</span>
-                                    </div>
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                                    {model.isInstalled ? (
-                                        <div className="flex items-center gap-2 text-green-600 text-sm">
-                                            <span>✓ Installed</span>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => onModelDownload(model.id)}
-                                            className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Download Model
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
+                        {/* No model notice */}
+                        <div
+                            className="mt-3 p-3 rounded-lg text-xs"
+                            style={{
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.2)'
+                            }}
+                        >
+                            <p style={{ color: 'var(--color-info)' }}>
+                                <strong>Note:</strong> The app works fully without AI models.
+                                Templates cover all emergencies, and smart search provides
+                                relevant information instantly.
+                            </p>
                         </div>
                     </div>
 
                     {/* Dataset Toggles */}
                     <div className="mt-6">
-                        <h3 className="font-semibold text-sm text-slate-500 uppercase mb-2">Knowledge Sources</h3>
-                        <p className="text-xs text-slate-500 mb-3">
+                        <h3 className="section-header mb-2">Knowledge Sources</h3>
+                        <p
+                            className="text-xs mb-3"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
                             Select which datasets the AI can access when answering questions
                         </p>
 
@@ -546,18 +974,38 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
                                 return (
                                     <div
                                         key={dataset.id}
-                                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                                        className="flex items-center justify-between p-3 rounded-lg"
+                                        style={{ background: 'var(--color-bg-tertiary)' }}
                                     >
                                         <div className="flex items-center gap-3 flex-1">
-                                            <div className={`w-8 h-8 rounded-lg bg-${dataset.color}-100 flex items-center justify-center`}>
-                                                <IconComponent className={`w-4 h-4 text-${dataset.color}-600`} />
+                                            <div
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                                style={{
+                                                    background: `rgba(var(--color-${dataset.color || 'primary'}-rgb, 59, 130, 246), 0.2)`
+                                                }}
+                                            >
+                                                <IconComponent
+                                                    className="w-4 h-4"
+                                                    style={{ color: 'var(--color-primary-400)' }}
+                                                />
                                             </div>
                                             <div className="flex-1">
-                                                <h4 className="font-medium text-sm">{dataset.name}</h4>
-                                                <p className="text-xs text-slate-500">{dataset.description}</p>
+                                                <h4
+                                                    className="font-medium text-sm"
+                                                    style={{ color: 'var(--color-text-primary)' }}
+                                                >
+                                                    {dataset.name}
+                                                </h4>
+                                                <p
+                                                    className="text-xs"
+                                                    style={{ color: 'var(--color-text-muted)' }}
+                                                >
+                                                    {dataset.description}
+                                                </p>
                                             </div>
                                         </div>
 
+                                        {/* Toggle Switch */}
                                         <label className="relative inline-flex items-center cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -565,7 +1013,23 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
                                                 onChange={(e) => onDatasetToggle(dataset.id, e.target.checked)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div
+                                                className="w-11 h-6 rounded-full peer transition-colors"
+                                                style={{
+                                                    background: isEnabled
+                                                        ? 'var(--color-primary-600)'
+                                                        : 'var(--color-bg-primary)',
+                                                    border: '1px solid var(--color-border-primary)'
+                                                }}
+                                            >
+                                                <div
+                                                    className="absolute top-[3px] left-[3px] w-5 h-5 rounded-full transition-transform"
+                                                    style={{
+                                                        background: 'white',
+                                                        transform: isEnabled ? 'translateX(20px)' : 'translateX(0)'
+                                                    }}
+                                                />
+                                            </div>
                                         </label>
                                     </div>
                                 );
@@ -573,61 +1037,141 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
                         </div>
 
                         {/* Quick Presets */}
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                            <p className="text-xs text-slate-500 mb-2">Quick Presets:</p>
+                        <div
+                            className="mt-4 pt-4"
+                            style={{ borderTop: '1px solid var(--color-border-primary)' }}
+                        >
+                            <p
+                                className="text-xs mb-2"
+                                style={{ color: 'var(--color-text-muted)' }}
+                            >
+                                Quick Presets:
+                            </p>
                             <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => onPresetSelect('all')}
-                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
-                                >
-                                    All Datasets
-                                </button>
-                                <button
-                                    onClick={() => onPresetSelect('survival-only')}
-                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
-                                >
-                                    Survival Only
-                                </button>
-                                <button
-                                    onClick={() => onPresetSelect('medical-only')}
-                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
-                                >
-                                    Medical Only
-                                </button>
-                                <button
-                                    onClick={() => onPresetSelect('civil-unrest')}
-                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
-                                >
-                                    Civil Unrest
-                                </button>
-                                <button
-                                    onClick={() => onPresetSelect('privacy-mode')}
-                                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors"
-                                >
-                                    Privacy Mode
-                                </button>
+                                {[
+                                    { id: 'all', label: 'All Datasets' },
+                                    { id: 'survival-only', label: 'Survival Only' },
+                                    { id: 'medical-only', label: 'Medical Only' },
+                                    { id: 'civil-unrest', label: 'Civil Unrest' },
+                                    { id: 'privacy-mode', label: 'Privacy Mode' }
+                                ].map(preset => (
+                                    <button
+                                        key={preset.id}
+                                        onClick={() => onPresetSelect(preset.id)}
+                                        className="text-xs px-3 py-1.5 rounded-full transition-all"
+                                        style={{
+                                            background: 'var(--color-bg-secondary)',
+                                            border: '1px solid var(--color-border-primary)',
+                                            color: 'var(--color-text-secondary)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                                            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'var(--color-bg-secondary)';
+                                            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                                        }}
+                                    >
+                                        {preset.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Current Status */}
-                    <div className="mt-6 p-3 bg-slate-50 rounded-lg text-sm">
-                        <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${
-                                modelStatus === 'ready' ? 'bg-green-500' :
-                                modelStatus === 'no-model' ? 'bg-amber-500' :
-                                'bg-slate-400'
-                            }`} />
-                            <span>
-                                {modelStatus === 'ready' && 'AI model loaded and ready'}
-                                {modelStatus === 'no-model' && 'No model installed - using search mode'}
-                                {modelStatus === 'checking' && 'Checking AI capabilities...'}
-                                {modelStatus === 'fallback' && 'Running in fallback mode'}
-                            </span>
+                    {/* Current Status - 3 Tier System */}
+                    <div
+                        className="mt-6 p-3 rounded-lg text-sm"
+                        style={{ background: 'var(--color-bg-tertiary)' }}
+                    >
+                        <p
+                            className="text-xs font-medium mb-2"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
+                            Current Capability Level
+                        </p>
+
+                        {/* Tier indicators */}
+                        <div className="space-y-2">
+                            {/* Tier 1 - Always available */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ background: 'var(--color-success)' }}
+                                />
+                                <span style={{ color: 'var(--color-text-secondary)' }}>
+                                    Quick Answers
+                                </span>
+                                <span
+                                    className="text-xs ml-auto"
+                                    style={{ color: 'var(--color-success)' }}
+                                >
+                                    ✓ Always Ready
+                                </span>
+                            </div>
+
+                            {/* Tier 2 - Smart Search */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{
+                                        background: modelStatus !== 'fallback'
+                                            ? 'var(--color-info)'
+                                            : 'var(--color-text-muted)'
+                                    }}
+                                />
+                                <span style={{ color: 'var(--color-text-secondary)' }}>
+                                    Smart Search
+                                </span>
+                                <span
+                                    className="text-xs ml-auto"
+                                    style={{
+                                        color: modelStatus !== 'fallback'
+                                            ? 'var(--color-info)'
+                                            : 'var(--color-text-muted)'
+                                    }}
+                                >
+                                    {modelStatus !== 'fallback' ? '✓ Active' : '○ Loading...'}
+                                </span>
+                            </div>
+
+                            {/* Tier 3 - Full AI */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{
+                                        background: modelStatus === 'ready'
+                                            ? 'var(--color-accent-purple)'
+                                            : 'var(--color-text-muted)'
+                                    }}
+                                />
+                                <span style={{ color: 'var(--color-text-secondary)' }}>
+                                    AI Assistant
+                                </span>
+                                <span
+                                    className="text-xs ml-auto"
+                                    style={{
+                                        color: modelStatus === 'ready'
+                                            ? 'var(--color-accent-purple)'
+                                            : 'var(--color-text-muted)'
+                                    }}
+                                >
+                                    {modelStatus === 'ready'
+                                        ? `✓ ${activeModel ? TRANSFORMERS_MODELS[activeModel]?.name : 'Ready'}`
+                                        : '○ Not installed'
+                                    }
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
-                            <Database className="w-3 h-3 text-slate-500" />
-                            <span className="text-slate-600">
+
+                        {/* Dataset count */}
+                        <div
+                            className="flex items-center gap-2 mt-3 pt-3"
+                            style={{ borderTop: '1px solid var(--color-border-primary)' }}
+                        >
+                            <Database className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
+                            <span style={{ color: 'var(--color-text-muted)' }}>
                                 {enabledDatasets.length} of {datasets.length} datasets enabled
                             </span>
                         </div>
@@ -639,4 +1183,3 @@ const SettingsModal = ({ models, capabilities, modelStatus, datasets, enabledDat
 };
 
 export default AIChat;
-

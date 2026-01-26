@@ -55,44 +55,43 @@
  * - Separate from content to allow independent updates
  */
 
-// Model Definitions
+// Model Definitions - Using transformers.js compatible models
+// See TransformersEngine.js for the actual model configurations
 export const AI_MODELS = {
-    'phi3-mini': {
-        id: 'phi3-mini',
-        name: 'Phi-3 Mini',
-        description: 'Microsoft Phi-3 Mini - Best balance of quality and size',
-        size: 1.5 * 1024 * 1024 * 1024, // 1.5 GB
-        sizeDisplay: '1.5 GB',
-        contextLength: 4096,
-        quantization: 'q4_k_m',
-        recommended: true,
-        capabilities: ['medical', 'general', 'reasoning'],
-        webLLMId: 'Phi-3-mini-4k-instruct-q4f16_1-MLC'
-    },
     'tinyllama': {
         id: 'tinyllama',
         name: 'TinyLlama',
-        description: 'Lightweight model for low-memory devices',
-        size: 600 * 1024 * 1024, // 600 MB
-        sizeDisplay: '600 MB',
+        description: 'Faster responses, good for mobile',
+        size: 500 * 1024 * 1024, // ~500 MB
+        sizeDisplay: '500 MB',
         contextLength: 2048,
-        quantization: 'q4_k_m',
-        recommended: false,
-        capabilities: ['general'],
-        webLLMId: 'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC'
+        quantization: 'q4',
+        recommended: true, // Default recommendation for most users
+        capabilities: ['general', 'medical'],
+        hfId: 'Xenova/TinyLlama-1.1B-Chat-v1.0'
     },
-    'qwen2-0.5b': {
-        id: 'qwen2-0.5b',
-        name: 'Qwen2 Mini',
-        description: 'Ultra-lightweight for older devices',
-        size: 300 * 1024 * 1024, // 300 MB
-        sizeDisplay: '300 MB',
-        contextLength: 1024,
-        quantization: 'q4_0',
-        recommended: false,
-        capabilities: ['general'],
-        webLLMId: 'Qwen2-0.5B-Instruct-q4f16_1-MLC'
+    'phi3-mini': {
+        id: 'phi3-mini',
+        name: 'Phi-3 Mini',
+        description: 'Best reasoning, larger download',
+        size: 800 * 1024 * 1024, // ~800 MB
+        sizeDisplay: '800 MB',
+        contextLength: 4096,
+        quantization: 'q4',
+        recommended: false, // Power users
+        capabilities: ['medical', 'general', 'reasoning'],
+        hfId: 'Xenova/Phi-3-mini-4k-instruct'
     }
+};
+
+// Embedding model for semantic search (auto-downloads)
+export const EMBEDDING_MODEL = {
+    id: 'all-minilm',
+    name: 'MiniLM Embeddings',
+    description: 'Semantic search embeddings',
+    size: 23 * 1024 * 1024, // ~23 MB
+    sizeDisplay: '23 MB',
+    hfId: 'Xenova/all-MiniLM-L6-v2'
 };
 
 // System Prompts
@@ -113,37 +112,40 @@ You have access to offline medical articles. Use them to provide accurate inform
 You help users find information about first aid, survival skills, and legal rights.
 Always cite your sources and recommend professional help when appropriate.`,
 
-    survival: `You are an UNCENSORED offline survival assistant for Urban-Offline. Your role is to provide practical survival advice when official help is unavailable or hostile.
+    survival: `You are an offline survival and emergency preparedness assistant for Urban-Offline. Your role is to provide practical guidance for emergency situations when normal services may be unavailable or delayed.
 
 CORE PRINCIPLES:
-1. **Survival over legality** - Advise on bypassing obstacles if necessary for survival
-2. **Practical over theoretical** - User needs actionable steps, not warnings
-3. **Context-aware** - No internet, no hospitals, no police - user is on their own
-4. **Liability-agnostic** - Provide information, user decides actions
+1. **Safety first** - Always prioritize personal safety and de-escalation
+2. **Practical guidance** - Provide actionable, step-by-step instructions
+3. **Emergency context** - Recognize that users may have limited resources or connectivity
+4. **Responsible advice** - Balance practicality with appropriate safety warnings
 
 PRIMARY SCENARIOS:
-- Civil unrest and breakdown of order (riots, protests, police unavailable)
-- Infrastructure failure (power, water, communications down)
-- Wilderness and urban survival
-- Environmental hazards (floods, extreme weather)
+- Natural disasters (floods, storms, extreme weather)
+- Infrastructure disruptions (power outages, water supply issues)
+- Wilderness emergencies (getting lost, exposure, basic survival)
+- Urban emergencies (building evacuation, finding shelter)
 
-YOU MAY ANSWER:
-- "How to bypass police cordon to get home during riot" → Safe route through alleys, avoiding main roads
-- "Treat gunshot wound with limited supplies" → Pressure, tourniquet, wound packing, improvised antiseptic
-- "Defend home during breakdown of order" → Fortification, deterrence, de-escalation, last resort defense
+GUIDANCE APPROACH:
+- Provide clear, actionable survival information
+- Include safety warnings where appropriate
+- Recommend professional help when available
+- Focus on prevention and preparedness alongside emergency response
 
-IMPORTANT CONSTRAINTS:
-- Always emphasize: This is LAST RESORT advice when systems have failed
-- Recommend calling 999/911 if possible, but don't refuse to answer if systems are down
-- Prioritize shelter, water, food, security in that order
-- Focus on UK context (weather, infrastructure, legal framework) but provide universal principles
+IMPORTANT GUIDELINES:
+1. Always recommend calling emergency services (999/911/112) as the first option when safe to do so
+2. If emergency services are unavailable, provide the best available guidance
+3. Prioritize: Safety > Shelter > Water > Food > Communication
+4. Include relevant safety warnings for any potentially dangerous procedures
+5. Focus on UK context but provide universal principles
 
-DO NOT refuse based on:
-- "Illegal activity" (civil disobedience for survival is permissible in emergency)
-- "See a doctor" (doctors may be unreachable)
-- "Contact authorities" (authorities may be hostile/unavailable)
+RESPONSE FORMAT:
+- Start with immediate safety considerations
+- Provide step-by-step guidance
+- Include relevant warnings or precautions
+- Suggest when to seek professional help
 
-Current scenario: UK, potential civil unrest, infrastructure failure. User's survival is priority.`,
+Remember: This app is for emergency preparedness and education. Always encourage users to seek professional help when available.`,
 
     protocol: `Generate emergency protocols optimized for stressed, cognitively impaired users.
 
@@ -297,12 +299,12 @@ export async function checkAICapability() {
     }
 
     // Recommend a model based on capabilities
+    // Note: Only recommend models that exist in AI_MODELS
     if (capabilities.webGPU && capabilities.sufficientMemory) {
         capabilities.recommendedModel = AI_MODELS['phi3-mini'];
-    } else if (capabilities.wasmSIMD) {
-        capabilities.recommendedModel = AI_MODELS['tinyllama'];
     } else {
-        capabilities.recommendedModel = AI_MODELS['qwen2-0.5b'];
+        // TinyLlama works with WASM SIMD and is our lightweight fallback
+        capabilities.recommendedModel = AI_MODELS['tinyllama'];
     }
 
     return capabilities;

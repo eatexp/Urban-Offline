@@ -3,60 +3,67 @@ import { createLogger } from '../utils/logger';
 
 const log = createLogger('DataManager');
 
-// Mock Regions (Simulating a server response)
-const AVAILABLE_REGIONS = [
-    {
-        id: 'region-london',
-        name: 'London, UK',
-        type: 'region',
-        coordinates: [51.5074, -0.1278],
-        size: '125 MB',
-        description: 'Greater London area. Includes hospitals, shelters, and offline map tiles.',
-        modules: ['map-tiles', 'places-medical', 'places-shelter']
-    },
-    {
-        id: 'region-nyc',
-        name: 'New York City, USA',
-        type: 'region',
-        coordinates: [40.7128, -74.0060],
-        size: '140 MB',
-        description: 'NYC Metro area. Includes evacuation routes and medical centers.',
-        modules: ['map-tiles', 'places-medical', 'places-evac']
-    },
-    {
-        id: 'region-sf',
-        name: 'San Francisco, USA',
-        type: 'region',
-        coordinates: [37.7749, -122.4194],
-        size: '95 MB',
-        description: 'Bay Area. Includes seismic safety zones and water points.',
-        modules: ['map-tiles', 'places-water', 'places-seismic']
+// Fetches the region manifest from public assets with offline fallback
+const fetchRegionsManifest = async () => {
+    try {
+        const response = await fetch('/regions.json');
+        if (!response.ok) throw new Error('Failed to fetch regions manifest');
+        const data = await response.json();
+
+        // Cache the data for offline use
+        try {
+            await db.put('dataset_preferences', data, 'regions_manifest');
+        } catch (cacheError) {
+            log.warn('Failed to cache regions manifest', cacheError);
+        }
+
+        return data;
+    } catch (error) {
+        log.error('Error loading regions manifest from network', error);
+
+        // Try to load from cache as fallback
+        try {
+            const cached = await db.get('dataset_preferences', 'regions_manifest');
+            if (cached && Array.isArray(cached)) {
+                log.info('Loaded regions manifest from cache');
+                return cached;
+            }
+        } catch (cacheError) {
+            log.error('Error loading regions manifest from cache', cacheError);
+        }
+
+        // Return empty array as last resort
+        return [];
     }
-];
+    // TODO: Resilience - Implement offline fallback (e.g. cache regions.json or bundle it)
+    // If fetch fails, try to load from local storage or service worker cache specifically if not handled by generic SW.
+};
 
 export const dataManager = {
     async getAvailableRegions() {
         try {
-            const installed = await db.getAll('datasets'); // Reusing 'datasets' store for regions
+            const [regions, installed] = await Promise.all([
+                fetchRegionsManifest(),
+                db.getAll('datasets')
+            ]);
+
             const installedIds = new Set((installed || []).map(d => d.id));
 
-            return AVAILABLE_REGIONS.map(r => ({
+            return regions.map(r => ({
                 ...r,
                 isInstalled: installedIds.has(r.id),
                 installedAt: installedIds.has(r.id) ? (installed || []).find(d => d.id === r.id)?.installedAt : null
             }));
         } catch (_dbError) {
-            // If getAll fails, return regions with none installed
-            return AVAILABLE_REGIONS.map(r => ({
-                ...r,
-                isInstalled: false,
-                installedAt: null
-            }));
+            log.error('Failed to get available regions', _dbError);
+            // Return empty or cached structure if needed, for now empty is safer than crashing
+            return [];
         }
     },
 
     async installRegion(regionId, onProgress) {
-        const region = AVAILABLE_REGIONS.find(r => r.id === regionId);
+        const regions = await fetchRegionsManifest();
+        const region = regions.find(r => r.id === regionId);
         if (!region) throw new Error('Region not found');
 
         try {
@@ -106,14 +113,14 @@ export const dataManager = {
         try {
             // Delete metadata
             await db.delete('datasets', regionId);
-            
+
             // Clean up tiles (async, don't wait)
             import('./tileManager').then(({ tileManager }) => {
                 tileManager.clearAllTiles().catch(err => {
                     log.warn('Failed to clear tiles', err);
                 });
             });
-            
+
             return true;
         } catch (error) {
             log.error('Region uninstallation failed', error);

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Activity, Thermometer, HeartPulse, Droplets, AlertCircle } from 'lucide-react';
+import { Heart, Activity, Thermometer, HeartPulse, Droplets, AlertCircle, ChevronRight } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
+import AskAIChip from '../components/AskAIChip';
 
 const Health = () => {
     const healthStories = TriageRouter.getStoriesByCategory('health');
@@ -31,37 +32,91 @@ const Health = () => {
     };
 
     return (
-        <div className="page-container">
-            <header className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+        <div className="page-container animate-slide-up">
+            {/* Page Header */}
+            <header className="page-header animate-fade-in">
+                <div className="page-header-row">
+                    <div className="page-header-icon page-header-icon-emergency">
                         <Heart size={24} />
                     </div>
-                    <h1 className="text-2xl font-bold">Health & First Aid</h1>
+                    <h1 className="page-header-title">Health & First Aid</h1>
                 </div>
-                <p className="text-sm text-muted">Emergency medical protocols and triage.</p>
+                <p className="page-header-description">
+                    Emergency medical protocols and interactive triage guides.
+                </p>
             </header>
 
-            <div className="grid gap-4">
-                {healthStories.map((route) => {
-                    const Icon = getIcon(route.story);
-                    return (
-                        <Link
-                            key={route.story}
-                            to={`/triage/${route.story}`}
-                            className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm text-left hover:border-red-400 hover:shadow-md transition-all flex items-start gap-4"
-                        >
-                            <div className="p-3 bg-red-50 text-red-600 rounded-lg">
-                                <Icon size={24} />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-lg text-slate-900">{getTitle(route.story)}</h3>
-                                <p className="text-sm text-slate-500">{getDescription(route.story)}</p>
-                            </div>
-                        </Link>
-                    );
-                })}
-            </div>
+            {/* Emergency Triage Cards */}
+            <section className="animate-slide-up" style={{ animationDelay: '50ms' }}>
+                <h2 className="section-header section-header-with-line">Interactive Emergency Guides</h2>
+                <div className="grid gap-4">
+                    {healthStories.map((route, index) => {
+                        const Icon = getIcon(route.story);
+                        return (
+                            <Link
+                                key={route.story}
+                                to={`/triage/${route.story}`}
+                                className="card card-link hover:shadow-xl animate-scale-in"
+                                style={{
+                                    borderColor: 'rgba(239, 68, 68, 0.2)',
+                                    animationDelay: `${index * 50 + 100}ms`
+                                }}
+                            >
+                                <div
+                                    className="card-link-icon"
+                                    style={{ background: 'rgba(239, 68, 68, 0.1)' }}
+                                >
+                                    <Icon size={24} style={{ color: 'var(--color-danger)' }} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-lg" style={{ color: 'var(--color-text-primary)' }}>
+                                        {getTitle(route.story)}
+                                    </h3>
+                                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                        {getDescription(route.story)}
+                                    </p>
+                                </div>
+                                <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                                    style={{ background: 'rgba(239, 68, 68, 0.1)' }}
+                                >
+                                    <ChevronRight size={16} style={{ color: 'var(--color-danger)' }} />
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* Empty State if no stories */}
+            {healthStories.length === 0 && (
+                <div
+                    className="card p-8 text-center animate-fade-in"
+                    style={{ animationDelay: '100ms' }}
+                >
+                    <div
+                        className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                        style={{ background: 'rgba(239, 68, 68, 0.1)' }}
+                    >
+                        <Heart size={32} style={{ color: 'var(--color-danger)' }} />
+                    </div>
+                    <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-text-primary)' }}>
+                        No Health Guides Available
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        Health triage guides will appear here once content is downloaded.
+                    </p>
+                </div>
+            )}
+
+            {/* Ask AI Chip */}
+            <section className="mt-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                <AskAIChip
+                    title="Health & First Aid"
+                    category="health"
+                    variant="expanded"
+                />
+            </section>
         </div>
     );
 };

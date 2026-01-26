@@ -1,75 +1,38 @@
-export const TRIAGE_ROUTES = [
-    // --- HEALTH (Medical) ---
-    {
-        story: 'hypothermia.ink.json',
-        keywords: ['cold', 'freezing', 'shivering', 'blue lips', 'hypothermia', 'exposure', 'wet'],
-        category: 'health'
-    },
-    {
-        story: 'health/cpr.ink.json',
-        keywords: ['cpr', 'cardiac arrest', 'not breathing', 'unresponsive', 'heart stopped', 'resuscitation', 'chest compressions'],
-        category: 'health'
-    },
-    {
-        story: 'health/severe-bleeding.ink.json',
-        keywords: ['bleeding', 'blood', 'hemorrhage', 'cut', 'wound', 'tourniquet', 'pressure', 'artery'],
-        category: 'health'
-    },
-    {
-        story: 'health/choking.ink.json',
-        keywords: ['choking', 'can\'t breathe', 'obstruction', 'heimlich', 'airway blocked', 'coughing', 'gagging'],
-        category: 'health'
-    },
+import { IntentClassifier } from '../ai/IntentClassifier';
 
-    // --- LEGAL RIGHTS (UK) ---
-    {
-        story: 'legal/stop-and-search.ink.json',
-        keywords: ['stop', 'search', 'police', 'grounds', 'warrant', 'gowisely', 'detained'],
-        category: 'legal'
-    },
-    {
-        story: 'legal/arrest-rights.ink.json',
-        keywords: ['arrest', 'rights', 'custody', 'solicitor', 'lawyer', 'silent', 'caution'],
-        category: 'legal'
-    },
-    {
-        story: 'legal/custody-rights.ink.json',
-        keywords: ['cell', 'station', 'phone', 'call', 'review', 'detention', 'time'],
-        category: 'legal'
-    },
+// Generate routes dynamically from the unified intent definition
+// This ensures TriageRouter matches the same patterns as Search and Alerts.
+const getRoutes = () => {
+    const routes = [];
 
-    // --- SURVIVAL SKILLS ---
-    {
-        story: 'survival/water-purification.ink.json',
-        keywords: ['water', 'drink', 'thirsty', 'purify', 'filter', 'boil', 'hydration'],
-        category: 'survival'
-    },
-    {
-        story: 'survival/shelter-building.ink.json',
-        keywords: ['shelter', 'house', 'roof', 'rain', 'cold', 'wind', 'sleep', 'camp'],
-        category: 'survival'
-    },
-    {
-        story: 'survival/fire-making.ink.json',
-        keywords: ['fire', 'flame', 'heat', 'warm', 'cook', 'light', 'match', 'burn'],
-        category: 'survival'
-    },
-    {
-        story: 'survival/signaling.ink.json',
-        keywords: ['signal', 'rescue', 'help', 'aircraft', 'whistle', 'mirror', 'found'],
-        category: 'survival'
+    for (const [key, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
+        // Only include patterns that have a triage story
+        if (pattern.triageStory) {
+            routes.push({
+                story: pattern.triageStory,
+                keywords: pattern.keywords,
+                category: pattern.category,
+                key: key
+            });
+        }
     }
-];
+    // Add mapped stories from KEYWORD_TO_TRIAGE that might not be main categories
+    // (This step is implicit if we stick to the main EMERGENCY_PATTERNS which is cleaner)
+    return routes;
+};
 
 export const TriageRouter = {
     findTriageStory(userInput) {
         if (!userInput) return null;
         const input = userInput.toLowerCase();
 
-        const matches = TRIAGE_ROUTES
+        const routes = getRoutes();
+
+        // Simple keyword scoring
+        const matches = routes
             .map(route => ({
                 ...route,
-                score: route.keywords.filter(kw => input.includes(kw)).length
+                score: route.keywords.filter(kw => input.includes(kw.toLowerCase())).length
             }))
             .filter(r => r.score > 0)
             .sort((a, b) => b.score - a.score);
@@ -78,6 +41,6 @@ export const TriageRouter = {
     },
 
     getStoriesByCategory(category) {
-        return TRIAGE_ROUTES.filter(r => r.category === category);
+        return getRoutes().filter(r => r.category === category);
     }
 };

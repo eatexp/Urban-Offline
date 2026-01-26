@@ -1,0 +1,53 @@
+[
+    {
+        "id": "region-london",
+        "name": "London, UK",
+        "type": "region",
+        "coordinates": [
+            51.5074,
+            -0.1278
+        ],
+        "size": "125 MB",
+        "description": "Greater London area. Includes hospitals, shelters, and offline map tiles.",
+        "modules": [
+            "map-tiles",
+            "places-medical",
+            "places-shelter"
+        ],
+        "tileUrl": "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    },
+    {
+        "id": "region-nyc",
+        "name": "New York City, USA",
+        "type": "region",
+        "coordinates": [
+            40.7128,
+            -74.0060
+        ],
+        "size": "140 MB",
+        "description": "NYC Metro area. Includes evacuation routes and medical centers.",
+        "modules": [
+            "map-tiles",
+            "places-medical",
+            "places-evac"
+        ],
+        "tileUrl": "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    },
+    {
+        "id": "region-sf",
+        "name": "San Francisco, USA",
+        "type": "region",
+        "coordinates": [
+            37.7749,
+            -122.4194
+        ],
+        "size": "95 MB",
+        "description": "Bay Area. Includes seismic safety zones and water points.",
+        "modules": [
+            "map-tiles",
+            "places-water",
+            "places-seismic"
+        ],
+        "tileUrl": "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    }
+]

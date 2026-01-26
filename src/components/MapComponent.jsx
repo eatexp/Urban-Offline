@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dataManager } from '../services/dataManager';
@@ -53,13 +53,13 @@ const MapComponent = () => {
     return (
         <div className="relative h-full w-full">
             {!activeRegion && (
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] glass-card flex items-center gap-sm py-2 px-4 shadow-lg border-orange-500/50">
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] glass-card flex items-center gap-2 py-2 px-4 shadow-lg border-orange-500/50">
                     <AlertTriangle size={16} className="text-primary" />
                     <span className="text-xs font-bold text-primary">OFFLINE MODE: NO REGION DATA</span>
                 </div>
             )}
 
-            <MapContainer center={position} zoom={zoom} style={{ height: '100%', width: '100%', background: '#0f172a' }}>
+            <MapContainer center={position} zoom={zoom} className="h-full w-full bg-slate-900">
                 <OfflineTileLayer />
 
                 {regions.map((region, index) => (
@@ -80,4 +80,8 @@ const MapComponent = () => {
     );
 };
 
+// TODO: Performance - Memoize MapComponent to prevent re-renders when parent state changes.
+// Use React.memo(MapComponent) and ensure props (like regions array) are stable.
+// This component re-renders unnecessarily when parent state changes, impacting map performance
+// export default React.memo(MapComponent);
 export default MapComponent;

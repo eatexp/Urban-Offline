@@ -44,6 +44,8 @@ class InkService {
         const textArr = [];
         while (this.story.canContinue) {
             textArr.push(this.story.Continue());
+            // NOTE: Security - Audit confirms TriageScreen uses React text nodes (safe). If using innerHTML elsewhere, sanitize this.
+            // Current TriageScreen usage uses React text nodes which is safe.
         }
 
         // Join text segments with newlines

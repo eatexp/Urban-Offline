@@ -8,10 +8,10 @@ import { AlertTriangle, RefreshCw, Home, ChevronRight } from 'lucide-react';
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { 
-            hasError: false, 
-            error: null, 
-            errorInfo: null 
+        this.state = {
+            hasError: false,
+            error: null,
+            errorInfo: null
         };
     }
 
@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
     componentDidCatch(error, errorInfo) {
         // Log error to console in development
         console.error('ErrorBoundary caught an error:', error, errorInfo);
-        
+
         this.setState({ errorInfo });
 
         // In production, you might want to log to an error reporting service
@@ -54,31 +54,58 @@ class ErrorBoundary extends React.Component {
 
             // Default error UI
             return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                    <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-6">
+                <div
+                    className="min-h-screen flex items-center justify-center p-4 animate-fade-in"
+                    style={{ background: 'var(--color-bg-primary)' }}
+                >
+                    <div
+                        className="card max-w-md w-full p-6"
+                        style={{ background: 'var(--color-bg-secondary)' }}
+                    >
                         {/* Icon */}
-                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AlertTriangle className="w-8 h-8 text-red-600" />
+                        <div
+                            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)' }}
+                        >
+                            <AlertTriangle className="w-8 h-8" style={{ color: 'var(--color-danger)' }} />
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-xl font-bold text-slate-900 text-center mb-2">
+                        <h1
+                            className="text-xl font-bold text-center mb-2"
+                            style={{ color: 'var(--color-text-primary)' }}
+                        >
                             Something went wrong
                         </h1>
 
                         {/* Description */}
-                        <p className="text-slate-500 text-center mb-6">
+                        <p
+                            className="text-center mb-6"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
                             We encountered an unexpected error. Don't worry - your downloaded content is safe.
                         </p>
 
                         {/* Error Details (optional) */}
                         {showDetails && this.state.error && (
-                            <div className="bg-slate-50 rounded-lg p-3 mb-6 overflow-x-auto">
-                                <p className="text-xs font-mono text-slate-600">
+                            <div
+                                className="rounded-lg p-3 mb-6 overflow-x-auto"
+                                style={{
+                                    background: 'var(--color-bg-tertiary)',
+                                    border: '1px solid var(--color-border-primary)'
+                                }}
+                            >
+                                <p
+                                    className="text-xs font-mono"
+                                    style={{ color: 'var(--color-danger)' }}
+                                >
                                     {this.state.error.toString()}
                                 </p>
                                 {this.state.errorInfo && (
-                                    <pre className="text-xs font-mono text-slate-400 mt-2 whitespace-pre-wrap">
+                                    <pre
+                                        className="text-xs font-mono mt-2 whitespace-pre-wrap"
+                                        style={{ color: 'var(--color-text-muted)' }}
+                                    >
                                         {this.state.errorInfo.componentStack?.slice(0, 500)}
                                     </pre>
                                 )}
@@ -89,7 +116,7 @@ class ErrorBoundary extends React.Component {
                         <div className="space-y-3">
                             <button
                                 onClick={this.handleReset}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                                className="btn btn-primary btn-lg w-full"
                             >
                                 <RefreshCw className="w-5 h-5" />
                                 Try Again
@@ -97,7 +124,7 @@ class ErrorBoundary extends React.Component {
 
                             <button
                                 onClick={this.handleGoHome}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+                                className="btn btn-secondary btn-lg w-full"
                             >
                                 <Home className="w-5 h-5" />
                                 Go to Home
@@ -105,14 +132,20 @@ class ErrorBoundary extends React.Component {
 
                             <button
                                 onClick={this.handleReload}
-                                className="w-full text-center text-sm text-slate-500 hover:text-slate-700"
+                                className="w-full text-center text-sm py-2 transition-colors"
+                                style={{ color: 'var(--color-text-muted)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
                             >
                                 Reload the app
                             </button>
                         </div>
 
                         {/* Help Text */}
-                        <p className="text-xs text-slate-400 text-center mt-6">
+                        <p
+                            className="text-xs text-center mt-6"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
                             If this keeps happening, try clearing the app cache.
                         </p>
                     </div>
@@ -146,12 +179,22 @@ export class CompactErrorBoundary extends React.Component {
             const { message = 'This section failed to load' } = this.props;
 
             return (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                    <AlertTriangle className="w-6 h-6 text-red-500 mx-auto mb-2" />
-                    <p className="text-sm text-red-700">{message}</p>
+                <div
+                    className="card card-emergency p-4 text-center animate-fade-in"
+                >
+                    <AlertTriangle
+                        className="w-6 h-6 mx-auto mb-2"
+                        style={{ color: 'var(--color-danger)' }}
+                    />
+                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        {message}
+                    </p>
                     <button
                         onClick={() => this.setState({ hasError: false })}
-                        className="mt-2 text-sm text-red-600 hover:underline flex items-center justify-center gap-1 mx-auto"
+                        className="mt-3 text-sm flex items-center justify-center gap-1 mx-auto transition-colors"
+                        style={{ color: 'var(--color-danger)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
                         Retry <ChevronRight className="w-4 h-4" />
                     </button>
@@ -164,4 +207,3 @@ export class CompactErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
-

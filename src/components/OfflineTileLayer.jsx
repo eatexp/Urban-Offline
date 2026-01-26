@@ -26,10 +26,14 @@ const OfflineTileLayer = () => {
                     if (url) {
                         tile.src = url;
                     } else {
+                        // TODO: Map Integration - Add visual indicator (e.g. "No Data") if tile is missing and we are offline.
+                        // Ideally render a placeholder tile or canvas with "No Data" text.
                         // 2. Fallback to online URL
                         tile.src = this.getTileUrl(coords);
                     }
                 }).catch(() => {
+                    // TODO: Critical Map Integration - Add visual indicator (e.g. "No Data" placeholder) if tile is missing and we are offline
+                    // Users need feedback when offline tiles aren't available
                     tile.src = this.getTileUrl(coords);
                 });
 
@@ -37,9 +41,11 @@ const OfflineTileLayer = () => {
             }
         });
 
-        const layer = new CustomLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            className: 'map-tiles' // Keep dark mode filter
+        // Use CartoDB Dark Matter for "Premium" Dark Mode (No CSS inversion needed)
+        const layer = new CustomLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         });
 
         layer.addTo(map);

@@ -2,7 +2,7 @@
  * HybridSearch - Combines keyword search with intent routing
  * 
  * Features:
- * - Intent detection for emergency queries
+ * - Intent detection via Unified IntentClassifier (Keywords + ML)
  * - Category-aware search ranking
  * - Synonym expansion
  * - Emergency keyword prioritization
@@ -10,110 +10,13 @@
 
 import { SearchService } from '../SearchService';
 import { createLogger } from '../../utils/logger';
+import { IntentClassifier } from '../ai/IntentClassifier';
 
 const log = createLogger('HybridSearch');
 
-// Intent patterns for routing queries
-const INTENT_PATTERNS = {
-    // Medical emergencies - highest priority
-    'emergency.medical.cpr': {
-        patterns: ['cpr', 'resuscitation', 'heart stopped', 'not breathing', 'cardiac arrest'],
-        category: 'health',
-        priority: 10,
-        suggestedAction: 'triage',
-        triageFlow: 'cpr-emergency.ink.json'
-    },
-    'emergency.medical.choking': {
-        patterns: ['choking', 'cannot breathe', 'object stuck', 'heimlich', 'airway blocked'],
-        category: 'health',
-        priority: 10,
-        suggestedAction: 'triage',
-        triageFlow: 'choking-emergency.ink.json'
-    },
-    'emergency.medical.bleeding': {
-        patterns: ['bleeding', 'blood loss', 'hemorrhage', 'tourniquet', 'wound', 'cut'],
-        category: 'health',
-        priority: 9,
-        suggestedAction: 'search'
-    },
-    'emergency.medical.stroke': {
-        patterns: ['stroke', 'face drooping', 'arm weakness', 'slurred speech', 'fast'],
-        category: 'health',
-        priority: 10,
-        suggestedAction: 'triage',
-        triageFlow: 'stroke-recognition.ink.json'
-    },
-    'emergency.medical.burn': {
-        patterns: ['burn', 'burned', 'scalded', 'fire injury'],
-        category: 'health',
-        priority: 8,
-        suggestedAction: 'search'
-    },
-    'emergency.medical.fracture': {
-        patterns: ['broken bone', 'fracture', 'broke', 'splint'],
-        category: 'health',
-        priority: 7,
-        suggestedAction: 'search'
-    },
-    
-    // Environmental emergencies
-    'emergency.environmental.hypothermia': {
-        patterns: ['hypothermia', 'freezing', 'cold exposure', 'shivering', 'frostbite'],
-        category: 'survival',
-        priority: 8,
-        suggestedAction: 'triage',
-        triageFlow: 'hypothermia.ink.json'
-    },
-    'emergency.environmental.heat': {
-        patterns: ['heat stroke', 'heat exhaustion', 'overheating', 'too hot'],
-        category: 'survival',
-        priority: 8,
-        suggestedAction: 'search'
-    },
-    
-    // Legal queries
-    'legal.arrest': {
-        patterns: ['arrested', 'arrest', 'police custody', 'detained'],
-        category: 'law',
-        priority: 7,
-        suggestedAction: 'search'
-    },
-    'legal.rights': {
-        patterns: ['rights', 'pace code', 'solicitor', 'lawyer', 'legal aid'],
-        category: 'law',
-        priority: 6,
-        suggestedAction: 'search'
-    },
-    'legal.search': {
-        patterns: ['search me', 'stop and search', 'police search'],
-        category: 'law',
-        priority: 6,
-        suggestedAction: 'search'
-    },
-    
-    // Survival queries
-    'survival.water': {
-        patterns: ['purify water', 'clean water', 'drinking water', 'water purification', 'safe water'],
-        category: 'survival',
-        priority: 5,
-        suggestedAction: 'search'
-    },
-    'survival.shelter': {
-        patterns: ['shelter', 'emergency shelter', 'build shelter', 'homeless'],
-        category: 'survival',
-        priority: 5,
-        suggestedAction: 'search'
-    },
-    'survival.navigation': {
-        patterns: ['lost', 'navigate', 'direction', 'compass', 'find way'],
-        category: 'survival',
-        priority: 4,
-        suggestedAction: 'search'
-    }
-};
-
 // Synonym expansion for better search coverage
 const SYNONYMS = {
+    // TODO: Consistency - Derive synonyms or related terms from IntentClassifier.EMERGENCY_PATTERNS to avoid duplication
     'cpr': ['resuscitation', 'chest compressions', 'rescue breathing'],
     'heart attack': ['myocardial infarction', 'cardiac arrest', 'heart failure'],
     'stroke': ['brain attack', 'cerebrovascular accident', 'cva'],
@@ -130,36 +33,36 @@ const SYNONYMS = {
  */
 export const HybridSearchService = {
     /**
-     * Detect intent from query
+     * Detect intent from query (Async)
      * @param {string} query 
-     * @returns {Object|null} Detected intent or null
+     * @returns {Promise<Object|null>} Detected intent or null
      */
-    detectIntent(query) {
-        const normalizedQuery = query.toLowerCase();
-        let bestMatch = null;
-        let bestScore = 0;
+    async detectIntent(query) {
+        try {
+            const result = await IntentClassifier.classifyIntent(query);
 
-        for (const [intentId, intent] of Object.entries(INTENT_PATTERNS)) {
-            let matchScore = 0;
-            
-            for (const pattern of intent.patterns) {
-                if (normalizedQuery.includes(pattern)) {
-                    // Longer matches score higher
-                    matchScore += pattern.length * intent.priority;
-                }
+            // Filter out low confidence or general queries
+            if (result.type === 'general' || result.confidence < 0.3) {
+                return null;
             }
 
-            if (matchScore > bestScore) {
-                bestScore = matchScore;
-                bestMatch = {
-                    id: intentId,
-                    ...intent,
-                    score: matchScore
-                };
-            }
+            return {
+                id: result.type, // e.g. 'medical_critical'
+                category: result.category,
+                priority: result.urgency,
+                suggestedAction: result.route, // 'triage', 'search', 'protocol'
+                triageFlow: result.triageStory,
+                protocolId: result.protocolId,
+                // TODO: Consistency - Ensure mapped properties match what Search.jsx expects for alerts (message, cta)
+                // Currently 'message' and 'cta' are correctly mapped from emergency patterns, but keep in sync if IntentClassifier changes.
+                message: result.message,
+                cta: result.cta,
+                score: result.confidence * 10
+            };
+        } catch (e) {
+            log.warn('Intent detection failed', e);
+            return null;
         }
-
-        return bestMatch;
     },
 
     /**
@@ -195,10 +98,10 @@ export const HybridSearchService = {
             includeIntentRouting = true
         } = options;
 
-        // Step 1: Detect intent
+        // Step 1: Detect intent (Unified Classifier)
         let intent = null;
         if (includeIntentRouting) {
-            intent = this.detectIntent(query);
+            intent = await this.detectIntent(query);
         }
 
         // Step 2: Expand query with synonyms
@@ -208,10 +111,11 @@ export const HybridSearchService = {
         const allResults = [];
         const seenIds = new Set();
 
+        // Parallelize search if possible, but sequential for now to preserve order preference
         for (const expandedQuery of expandedQueries) {
             try {
                 const results = await SearchService.search(expandedQuery);
-                
+
                 for (const result of results) {
                     if (!seenIds.has(result.id)) {
                         seenIds.add(result.id);
@@ -244,7 +148,7 @@ export const HybridSearchService = {
             }
 
             // Title match bonus
-            if (result.title && query.toLowerCase().split(' ').some(word => 
+            if (result.title && query.toLowerCase().split(' ').some(word =>
                 result.title.toLowerCase().includes(word)
             )) {
                 score += 2;
@@ -269,12 +173,14 @@ export const HybridSearchService = {
             expandedQueries: expandedQueries,
             totalResults: allResults.length,
             suggestedAction: intent?.suggestedAction || 'search',
-            triageFlow: intent?.triageFlow || null
+            triageFlow: intent?.triageFlow || null,
+            protocolId: intent?.protocolId || null
         };
     },
 
     /**
      * Get search suggestions based on partial query
+     * Uses IntentClassifier's shared patterns.
      * @param {string} partial 
      * @returns {string[]}
      */
@@ -283,16 +189,17 @@ export const HybridSearchService = {
         const suggestions = [];
 
         // Check intent patterns for matches
-        for (const intent of Object.values(INTENT_PATTERNS)) {
-            for (const pattern of intent.patterns) {
-                if (pattern.startsWith(normalizedPartial) && 
-                    !suggestions.includes(pattern)) {
-                    suggestions.push(pattern);
+        // Accessing the static EMERGENCY_PATTERNS from the unified classifier
+        for (const pattern of Object.values(IntentClassifier.EMERGENCY_PATTERNS)) {
+            for (const keyword of pattern.keywords) {
+                if (keyword.startsWith(normalizedPartial) &&
+                    !suggestions.includes(keyword)) {
+                    suggestions.push(keyword);
                 }
             }
         }
 
-        // Add common emergency queries
+        // Add common emergency queries (supplementary)
         const commonQueries = [
             'how to do cpr',
             'what to do if someone is choking',
@@ -318,38 +225,41 @@ export const HybridSearchService = {
      * @returns {string[]}
      */
     getRelatedSearches(query) {
-        const intent = this.detectIntent(query);
-        
-        if (!intent) {
-            return [
-                'first aid basics',
-                'emergency contacts',
-                'survival guide'
-            ];
+        // Use IntentClassifier patterns for consistent related searches
+        const related = [];
+        const normalizedQuery = query.toLowerCase();
+
+        // Check all emergency patterns for keyword matches
+        for (const [type, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
+            const matches = pattern.keywords.filter(kw =>
+                normalizedQuery.includes(kw.toLowerCase()) ||
+                kw.toLowerCase().includes(normalizedQuery)
+            );
+
+            if (matches.length > 0) {
+                // Add related keywords from the same pattern
+                pattern.keywords.forEach(kw => {
+                    if (!related.includes(kw) && kw.length > 3) {
+                        related.push(kw);
+                    }
+                });
+            }
         }
 
-        const relatedByCategory = {
-            'health': [
-                'recovery position',
-                'emergency phone numbers',
-                'when to call 999',
-                'basic first aid kit'
-            ],
-            'law': [
-                'right to silence',
-                'solicitor contact',
-                'police complaints',
-                'legal aid eligibility'
-            ],
-            'survival': [
-                'emergency shelter types',
-                'food safety',
-                'signaling for help',
-                'fire starting'
-            ]
-        };
+        // Add common emergency queries if no specific matches
+        if (related.length === 0) {
+            const commonQueries = [
+                'first aid basics',
+                'emergency contacts',
+                'survival guide',
+                'cpr instructions',
+                'how to stop bleeding',
+                'legal rights'
+            ];
+            related.push(...commonQueries);
+        }
 
-        return relatedByCategory[intent.category] || [];
+        return related.slice(0, 5);
     }
 };
 

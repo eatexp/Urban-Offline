@@ -63,7 +63,7 @@ export const OnlineContentService = {
             });
 
             const response = await fetch(`${WIKI_SEARCH_API}?${params}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Search failed: ${response.status}`);
             }
@@ -81,6 +81,8 @@ export const OnlineContentService = {
 
         } catch (error) {
             log.error('Search failed', error);
+            // TODO: Resilience - Cache search results for offline use
+            // If user goes offline, they should be able to see recent search results.
             return { error: error.message, results: [] };
         }
     },
@@ -107,7 +109,7 @@ export const OnlineContentService = {
             });
 
             const response = await fetch(`${WIKI_SEARCH_API}?${params}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Category fetch failed: ${response.status}`);
             }
@@ -146,7 +148,7 @@ export const OnlineContentService = {
             }
 
             const data = await response.json();
-            
+
             return {
                 error: null,
                 summary: {
@@ -176,7 +178,7 @@ export const OnlineContentService = {
         try {
             const encodedTitle = encodeURIComponent(title);
             const response = await fetch(`${WIKI_API}/page/html/${encodedTitle}`, {
-                headers: { 
+                headers: {
                     'Accept': 'text/html',
                     'User-Agent': 'Urban-Offline/1.0 (Emergency Preparedness App)'
                 }
@@ -187,10 +189,10 @@ export const OnlineContentService = {
             }
 
             const html = await response.text();
-            
+
             // Clean and extract plain text
             const plainText = this._extractPlainText(html);
-            
+
             return {
                 error: null,
                 article: {
@@ -260,13 +262,13 @@ export const OnlineContentService = {
         // Create a simple DOM parser
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         // Remove unwanted elements
         const removeSelectors = [
             'script', 'style', '[data-mw]', '.mw-editsection',
             '.reference', '.navbox', '.sidebar', '.hatnote', '.metadata'
         ];
-        
+
         removeSelectors.forEach(selector => {
             try {
                 doc.querySelectorAll(selector).forEach(el => el.remove());
@@ -274,7 +276,7 @@ export const OnlineContentService = {
                 // Selector may be invalid
             }
         });
-        
+
         return doc.body?.innerHTML || html;
     },
 
@@ -284,10 +286,10 @@ export const OnlineContentService = {
     _extractPlainText(html) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         // Remove script, style
         doc.querySelectorAll('script, style').forEach(el => el.remove());
-        
+
         return doc.body?.textContent?.trim() || '';
     }
 };

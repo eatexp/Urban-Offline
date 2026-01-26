@@ -1,8 +1,8 @@
 /**
  * RAG Pipeline - Retrieval Augmented Generation
- * 
+ *
  * Connects local LLM to downloaded content for accurate, cited responses.
- * 
+ *
  * Pipeline:
  * 1. Query understanding & intent detection
  * 2. Retrieve relevant content chunks
@@ -15,14 +15,44 @@ import { SearchService } from '../SearchService';
 import { SYSTEM_PROMPTS, FALLBACK_TEMPLATES, AI_CONFIG } from './AIArchitecture';
 import { AIModelManager } from './AIModelManager';
 import { datasetRegistry } from './DatasetRegistry';
+import EmbeddingEngine from './EmbeddingEngine';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('RAGPipeline');
+
+// Generation timeout (30 seconds max)
+const GENERATION_TIMEOUT = 30000;
 
 /**
  * RAG Pipeline Service
  */
 export const RAGPipeline = {
+    // Track if semantic search is available
+    _semanticSearchReady: false,
+    _embeddingEngine: null,
+
+    /**
+     * Initialize the RAG pipeline (including semantic search)
+     */
+    async init() {
+        try {
+            // Initialize embedding engine for semantic search
+            this._embeddingEngine = EmbeddingEngine.getInstance();
+
+            // Try to initialize (downloads model if needed)
+            await this._embeddingEngine.initialize((progress, message) => {
+                log.debug('Embedding model progress', { progress, message });
+            });
+
+            this._semanticSearchReady = this._embeddingEngine.isModelReady();
+            log.info('RAG Pipeline initialized', { semanticSearch: this._semanticSearchReady });
+
+        } catch (error) {
+            log.warn('Semantic search unavailable, falling back to keyword search', error);
+            this._semanticSearchReady = false;
+        }
+    },
+
     /**
      * Process a user query and generate a response
      * @param {string} query - User's question
@@ -34,7 +64,8 @@ export const RAGPipeline = {
             category = 'general',
             maxSources = AI_CONFIG.rag.maxContextChunks,
             useAI = true,
-            datasets = null // Optional: filter by specific datasets
+            datasets = null, // Optional: filter by specific datasets
+            stream = false // Enable streaming (returns async generator)
         } = options;
 
         try {
@@ -50,7 +81,7 @@ export const RAGPipeline = {
             }
 
             // Step 2: Retrieve relevant content (with dataset filtering)
-            const retrievedDocs = await this._retrieveContext(query, maxSources, datasets);
+            const { results: retrievedDocs, searchMethod } = await this._retrieveContext(query, maxSources, datasets);
 
             // Step 3: Check if AI model is available
             const modelLoaded = AIModelManager.isModelLoaded();
@@ -66,26 +97,29 @@ export const RAGPipeline = {
                             snippet: d.content?.substring(0, 150) + '...'
                         })),
                         usedFallback: true,
-                        confidence: 0.7
+                        confidence: 0.7,
+                        searchMethod
                     };
                 }
 
                 // Return search-based response
-                return this._buildSearchResponse(query, retrievedDocs);
+                const searchResponse = this._buildSearchResponse(query, retrievedDocs);
+                return { ...searchResponse, searchMethod };
             }
 
             // Step 4: Build prompt with context (include dataset scope)
             const prompt = this._buildPrompt(query, retrievedDocs, category, datasets);
 
             // Step 5: Generate response with LLM
-            const llmResponse = await this._generateWithLLM(prompt);
+            const llmResponse = await this._generateWithLLM(prompt, { stream });
 
             // Step 6: Parse and format response with citations
-            return this._formatResponse(llmResponse, retrievedDocs);
+            const formattedResponse = this._formatResponse(llmResponse, retrievedDocs);
+            return { ...formattedResponse, searchMethod };
 
         } catch (error) {
             log.error('Query failed', error);
-            
+
             // Return fallback on error
             const fallback = this._checkFallback(query);
             if (fallback) {
@@ -108,9 +142,11 @@ export const RAGPipeline = {
 
     /**
      * Retrieve relevant content chunks for the query
+     * Uses semantic search if available, falls back to keyword search
      * @param {string} query - Search query
      * @param {number} maxResults - Maximum results to return
      * @param {Array} enabledDatasets - Optional array of enabled datasets (null = all)
+     * @returns {Promise<{results: Array, searchMethod: string}>}
      */
     async _retrieveContext(query, maxResults = 5, enabledDatasets = null) {
         try {
@@ -129,8 +165,43 @@ export const RAGPipeline = {
                 log.info('Using enabled datasets from registry', { stores: allowedStores });
             }
 
-            // Use existing search service
-            const searchResults = await SearchService.search(query);
+            let searchResults;
+            let searchMethod = 'keyword'; // Track which method was used
+
+            // Try semantic search first if available
+            if (this._semanticSearchReady && this._embeddingEngine?.isModelReady()) {
+                try {
+                    // Get all documents from allowed stores for semantic search
+                    const allDocs = await this._getAllDocuments(allowedStores);
+
+                    if (allDocs.length > 0) {
+                        const semanticResults = await this._embeddingEngine.semanticSearch(
+                            query,
+                            allDocs,
+                            { topK: maxResults, minScore: AI_CONFIG.rag.minRelevanceScore }
+                        );
+
+                        searchResults = semanticResults.map(r => ({
+                            ...r.document,
+                            score: r.score,
+                            semantic: true
+                        }));
+
+                        searchMethod = 'semantic';
+                        log.info('Semantic search results', { count: searchResults.length });
+                    }
+                } catch (error) {
+                    log.warn('Semantic search failed, falling back to keyword', error);
+                    searchMethod = 'keyword_fallback'; // Explicitly mark as fallback
+                }
+            }
+
+            // Fall back to keyword search if semantic search failed or unavailable
+            if (!searchResults || searchResults.length === 0) {
+                searchResults = await SearchService.search(query);
+                searchMethod = searchMethod === 'keyword_fallback' ? 'keyword_fallback' : 'keyword';
+                log.info('Keyword search results', { count: searchResults.length, method: searchMethod });
+            }
 
             // Limit to max results
             const topResults = searchResults.slice(0, maxResults);
@@ -140,7 +211,6 @@ export const RAGPipeline = {
                 topResults.map(async (result) => {
                     try {
                         // Try to get full content from appropriate store
-                        // Default stores if no filter specified
                         const stores = allowedStores.length > 0
                             ? allowedStores
                             : ['health_content', 'survival_content', 'law_content'];
@@ -176,15 +246,40 @@ export const RAGPipeline = {
             log.info('Retrieved context', {
                 total: searchResults.length,
                 enriched: enrichedResults.length,
-                filtered: filteredResults.length
+                filtered: filteredResults.length,
+                searchMethod
             });
 
-            return filteredResults;
+            return { results: filteredResults, searchMethod };
 
         } catch (error) {
             log.error('Retrieval failed', error);
-            return [];
+            return { results: [], searchMethod: 'none' };
         }
+    },
+
+    /**
+     * Get all documents from specified stores (for semantic search)
+     */
+    async _getAllDocuments(stores) {
+        const docs = [];
+
+        for (const store of stores) {
+            try {
+                const storeContents = await db.getAll(store);
+                if (storeContents) {
+                    docs.push(...storeContents.map(doc => ({
+                        ...doc,
+                        store,
+                        text: doc.content || doc.fullText || doc.title || ''
+                    })));
+                }
+            } catch (error) {
+                log.debug(`Failed to get documents from ${store}`, error);
+            }
+        }
+
+        return docs;
     },
 
     /**
@@ -251,28 +346,66 @@ Response:`;
 
     /**
      * Generate response using loaded LLM
+     * @param {string} prompt - Full prompt with context
+     * @param {Object} options - Generation options
      */
-    async _generateWithLLM(_prompt) {
-        // In production, this would call the actual LLM engine:
-        // const engine = AIModelManager._engine;
-        // const response = await engine.chat.completions.create({
-        //     messages: [{ role: "user", content: prompt }],
-        //     temperature: AI_CONFIG.generation.temperature,
-        //     max_tokens: AI_CONFIG.generation.maxTokens
-        // });
-        // return response.choices[0].message.content;
+    async _generateWithLLM(prompt, options = {}) {
+        const engine = AIModelManager.getEngine();
 
-        // Placeholder: return structured response
-        return `Based on the available information, here's what I can tell you:
+        if (!engine || !engine.isModelLoaded()) {
+            throw new Error('LLM not available');
+        }
 
-This is a placeholder response. In the full implementation, this would be generated by the local LLM using the provided context.
+        // Create timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Generation timeout')), GENERATION_TIMEOUT);
+        });
 
-The response would include:
-- Relevant information from the retrieved documents
-- Clear, actionable guidance
-- Source citations [1][2] linking to the original articles
+        try {
+            // Race generation against timeout
+            const response = await Promise.race([
+                engine.generate(prompt, {
+                    maxTokens: AI_CONFIG.generation.maxTokens,
+                    temperature: AI_CONFIG.generation.temperature,
+                    topP: AI_CONFIG.generation.topP,
+                    stopSequences: AI_CONFIG.generation.stopSequences
+                }),
+                timeoutPromise
+            ]);
 
-⚠️ **Important:** For medical emergencies, always call emergency services (999/911) first.`;
+            log.info('LLM generation complete', {
+                promptLength: prompt.length,
+                responseLength: response.length
+            });
+
+            return response;
+
+        } catch (error) {
+            if (error.message === 'Generation timeout') {
+                log.warn('LLM generation timed out');
+                throw new Error('Response generation took too long. Please try a simpler question.');
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Stream response generation (returns async generator)
+     * @param {string} prompt - Full prompt
+     * @param {Object} options - Generation options
+     */
+    async *_streamGenerate(prompt, options = {}) {
+        const engine = AIModelManager.getEngine();
+
+        if (!engine || !engine.isModelLoaded()) {
+            throw new Error('LLM not available');
+        }
+
+        yield* engine.generateStream(prompt, {
+            maxTokens: AI_CONFIG.generation.maxTokens,
+            temperature: AI_CONFIG.generation.temperature,
+            ...options
+        });
     },
 
     /**
@@ -317,7 +450,7 @@ The response would include:
         const citations = [];
         const citationRegex = /\[(\d+)\]/g;
         let match;
-        
+
         while ((match = citationRegex.exec(llmResponse)) !== null) {
             const index = parseInt(match[1]) - 1;
             if (docs[index] && !citations.find(c => c.index === index)) {
@@ -331,8 +464,8 @@ The response would include:
 
         return {
             response: llmResponse,
-            sources: citations.length > 0 
-                ? citations 
+            sources: citations.length > 0
+                ? citations
                 : docs.slice(0, 3).map((d, i) => ({
                     index: i,
                     title: d.title,
@@ -369,8 +502,14 @@ The response would include:
         };
 
         return suggestions[topic] || suggestions.medical;
+    },
+
+    /**
+     * Check if semantic search is available
+     */
+    isSemanticSearchReady() {
+        return this._semanticSearchReady;
     }
 };
 
 export default RAGPipeline;
-

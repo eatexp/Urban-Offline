@@ -1,0 +1,37 @@
+{
+  "appId": "com.urbanoffline.app",
+  "appName": "UrbanOffline Dev",
+  "webDir": "dist",
+  "server": {
+    "url": "http://localhost:5173",
+    "cleartext": true,
+    "allowNavigation": [
+      "localhost",
+      "192.168.*",
+      "10.0.*"
+    ]
+  },
+  "plugins": {
+    "CapacitorSQLite": {
+      "iosDatabaseLocation": "Library/CapacitorDatabase",
+      "androidDatabaseLocation": "default"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true,
+      "backgroundColor": "#0f172a"
+    }
+  },
+  "android": {
+    "buildOptions": {
+      "debuggable": true,
+      "minifyEnabled": false
+    }
+  },
+  "ios": {
+    "buildOptions": {
+      "debuggable": true,
+      "minifyEnabled": false
+    }
+  }
+}

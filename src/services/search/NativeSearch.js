@@ -51,6 +51,7 @@ export const NativeSearch = {
                 slug: row.slug,
                 title: row.title,
                 description: row.description || row.title,
+                // TODO: Logic - Category should be derived from the article source table or metadata, not hardcoded to 'health'
                 category: 'health'
             }));
         } catch (e) {

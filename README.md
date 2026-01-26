@@ -48,7 +48,8 @@ Urban-Offline is an offline-first emergency preparedness application designed fo
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite, Tailwind CSS
+- **Frontend**: React 19, Vite, Tailwind CSS v4
+- **Styling**: Tailwind v4 + Custom Design System (CSS Variables)
 - **Storage**: IndexedDB (Web), SQLite + Filesystem (Native)
 - **Search**: FlexSearch (Web), SQLite FTS5 (Native)
 - **Maps**: Leaflet + React-Leaflet with OSM tiles
