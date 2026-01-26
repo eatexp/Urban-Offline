@@ -355,16 +355,35 @@ export const ContentPackManager = {
         // For now, we store pack metadata
         if (onProgress) onProgress(50);
 
+        const newDocs = [];
+
         // Mark resources as installed
         for (const resource of pack.resources || []) {
             if (resource.type === 'article' || resource.type === 'guide') {
                 // Would store actual article content here
                 log.debug(`Would install ${resource.id} to ${targetStore}`);
+
+                // Generate a human-readable title from ID if needed
+                const readableTitle = resource.id
+                    .split(/[-_]/)
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+                newDocs.push({
+                    id: resource.id,
+                    slug: resource.id,
+                    title: readableTitle,
+                    content: '',
+                    description: '',
+                    category: pack.category
+                });
             }
         }
 
         // Index for search
-        await SearchService.rebuildIndex();
+        if (newDocs.length > 0) {
+            await SearchService.addDocuments(newDocs);
+        }
         
         if (onProgress) onProgress(100);
     },

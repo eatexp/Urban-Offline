@@ -131,6 +131,29 @@ export const SearchService = {
         }
     },
 
+    async addDocuments(docs) {
+        if (!index) await this.init();
+
+        // Add all documents to the index
+        for (const doc of docs) {
+            await index.add({
+                ...doc,
+                slug: doc.slug || doc.id
+            });
+        }
+
+        // Persist updated index once
+        try {
+            const exported = index.export();
+            await db.put('search_index', {
+                data: JSON.stringify(exported),
+                updatedAt: new Date().toISOString()
+            }, 'main_index');
+        } catch (e) {
+            log.warn('Failed to persist search index update', e);
+        }
+    },
+
     async search(query) {
         if (!index) await this.init();
 

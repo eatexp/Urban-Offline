@@ -26,6 +26,39 @@ export const NativeSearch = {
         await db.run(query, [id, title, fullContent]);
     },
 
+    async addDocuments(docs) {
+        const db = await getDBConnection();
+        const set = [];
+
+        for (const doc of docs) {
+            const { id, title, content, description } = doc;
+
+            // Validate ID for Native SQLite (must be integer rowid)
+            if (!Number.isInteger(id)) {
+                continue;
+            }
+
+            const fullContent = (content || '') + ' ' + (description || '');
+
+            set.push({
+                statement: `DELETE FROM articles_fts WHERE rowid = ?`,
+                values: [id]
+            });
+            set.push({
+                statement: `INSERT INTO articles_fts (rowid, title, body_plain) VALUES (?, ?, ?)`,
+                values: [id, title, fullContent]
+            });
+        }
+
+        if (set.length > 0) {
+            try {
+                await db.executeSet(set);
+            } catch (e) {
+                logger.error("Native Search Batch Error", e);
+            }
+        }
+    },
+
     async search(queryText) {
         const db = await getDBConnection();
         // FTS Match Query - using snippet for description
