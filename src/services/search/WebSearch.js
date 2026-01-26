@@ -6,6 +6,8 @@ const log = createLogger('WebSearch');
 
 let index = null;
 let isIndexing = false;
+let saveTimeout = null;
+const SAVE_DELAY = 2000;
 
 export const SearchService = {
     async init() {
@@ -126,16 +128,22 @@ export const SearchService = {
             slug: doc.slug || doc.id
         });
         
-        // Persist updated index (debounced in production)
-        try {
-            const exported = index.export();
-            await db.put('search_index', {
-                data: JSON.stringify(exported),
-                updatedAt: new Date().toISOString()
-            }, 'main_index');
-        } catch (e) {
-            log.warn('Failed to persist search index update', e);
+        // Persist updated index (debounced)
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
         }
+
+        saveTimeout = setTimeout(async () => {
+            try {
+                const exported = index.export();
+                await db.put('search_index', {
+                    data: JSON.stringify(exported),
+                    updatedAt: new Date().toISOString()
+                }, 'main_index');
+            } catch (e) {
+                log.warn('Failed to persist search index update', e);
+            }
+        }, SAVE_DELAY);
     },
 
     async addDocuments(docs) {
