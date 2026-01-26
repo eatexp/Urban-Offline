@@ -155,7 +155,7 @@ const Search = () => {
         if (target.startsWith('/triage') && document.startViewTransition) {
             // Add timeout handling for view transitions to prevent hanging
             const transitionTimeout = setTimeout(() => {
-                log.warn('View transition timed out for result navigation, performing directly');
+                logger.warn('View transition timed out for result navigation, performing directly');
                 navigate(target);
             }, 3000); // 3 second timeout
 
@@ -164,7 +164,7 @@ const Search = () => {
                 navigate(target);
             }).catch((err) => {
                 clearTimeout(transitionTimeout);
-                log.error('View transition failed for result navigation', err);
+                logger.error('View transition failed for result navigation', err);
                 navigate(target); // Fallback to direct navigation
             });
         } else {
@@ -202,6 +202,7 @@ const Search = () => {
                     type="text"
                     className="search-input"
                     placeholder="Search emergency knowledge..."
+                    aria-label="Search emergency knowledge"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length > 2 && setIsOpen(true)}
@@ -216,6 +217,7 @@ const Search = () => {
                             setEmergencyAlert(null);
                         }}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                        aria-label="Clear search"
                     >
                         <X size={16} />
                     </button>
