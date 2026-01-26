@@ -51,14 +51,18 @@ export const SearchService = {
 
         // Index articles from health_content, survival_content, law_content stores
         try {
-            const [healthContent, survivalContent, lawContent] = await Promise.all([
-                db.getAll('health_content').catch(() => []),
-                db.getAll('survival_content').catch(() => []),
-                db.getAll('law_content').catch(() => [])
-            ]);
+            let count = 0;
+            const YIELD_EVERY = 50;
+
+            // Helper to prevent blocking main thread
+            const yieldToMain = async () => {
+                if (++count % YIELD_EVERY === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            };
 
             // Index health content
-            healthContent.forEach(item => {
+            await db.iterate('health_content', async (item) => {
                 index.add({
                     id: item.id,
                     slug: item.id,
@@ -67,10 +71,11 @@ export const SearchService = {
                     description: item.summary || '',
                     category: 'health'
                 });
-            });
+                await yieldToMain();
+            }).catch(e => log.warn('Failed to iterate health_content', e));
 
             // Index survival content
-            survivalContent.forEach(item => {
+            await db.iterate('survival_content', async (item) => {
                 index.add({
                     id: item.id,
                     slug: item.id,
@@ -79,10 +84,11 @@ export const SearchService = {
                     description: item.description || '',
                     category: 'survival'
                 });
-            });
+                await yieldToMain();
+            }).catch(e => log.warn('Failed to iterate survival_content', e));
 
             // Index law content
-            lawContent.forEach(item => {
+            await db.iterate('law_content', async (item) => {
                 index.add({
                     id: item.id,
                     slug: item.id,
@@ -91,9 +97,10 @@ export const SearchService = {
                     description: item.summary || '',
                     category: 'law'
                 });
-            });
+                await yieldToMain();
+            }).catch(e => log.warn('Failed to iterate law_content', e));
 
-            log.info(`Indexed ${healthContent.length + survivalContent.length + lawContent.length} items`);
+            log.info(`Indexed ${count} items`);
 
             // Persist index - search_index uses out-of-line keys, so pass key separately
             try {

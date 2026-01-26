@@ -87,6 +87,39 @@ export const db = {
         const database = await initDB();
         return database.getAll(storeName);
     },
+    async iterate(storeName, callback) {
+        const database = await initDB();
+        const BATCH_SIZE = 50;
+        let lastKey = null;
+
+        while (true) {
+            const tx = database.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            let cursor;
+
+            if (lastKey !== null) {
+                cursor = await store.openCursor(IDBKeyRange.lowerBound(lastKey, true));
+            } else {
+                cursor = await store.openCursor();
+            }
+
+            const batch = [];
+
+            while (cursor && batch.length < BATCH_SIZE) {
+                batch.push(cursor.value);
+                lastKey = cursor.key;
+                cursor = await cursor.continue();
+            }
+
+            if (batch.length === 0) break;
+
+            for (const item of batch) {
+                await callback(item);
+            }
+
+            if (batch.length < BATCH_SIZE) break;
+        }
+    },
     /**
      * Put a value in the store
      * @param {string} storeName - Store name

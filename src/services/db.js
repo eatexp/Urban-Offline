@@ -13,15 +13,13 @@ export const db = isNative ? {
     async getAll(storeName) {
         return NativeStorage.getAll(storeName);
     },
+    async iterate(storeName, callback) {
+        return NativeStorage.iterate(storeName, callback);
+    },
     async put(storeName, value, key) {
         const itemKey = key || value?.id;
-        try {
-            return await NativeStorage.put(storeName, value, itemKey);
-        } catch (e) {
-            // TODO: Resilience - Handle QuotaExceededError globally if possible, or ensure callers handle it.
-            // Consider catching QuotaExceededError here and returning a specific failure code or event.
-            throw e;
-        }
+        // TODO: Resilience - Handle QuotaExceededError globally if possible
+        return NativeStorage.put(storeName, value, itemKey);
     },
     async delete(storeName, key) {
         return NativeStorage.deleteItem(storeName, key);
