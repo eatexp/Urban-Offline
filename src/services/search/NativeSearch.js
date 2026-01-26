@@ -26,6 +26,32 @@ export const NativeSearch = {
         await db.run(query, [id, title, fullContent]);
     },
 
+    async addDocuments(docs) {
+        const db = await getDBConnection();
+        const set = [];
+
+        docs.forEach(doc => {
+            const { id, title, content, description } = doc;
+            const fullContent = (content || '') + ' ' + (description || '');
+
+            // Delete existing (using rowid=id pattern)
+            set.push({
+                statement: `DELETE FROM articles_fts WHERE rowid = ?`,
+                values: [id]
+            });
+
+            // Insert new
+            set.push({
+                statement: `INSERT INTO articles_fts (rowid, title, body_plain) VALUES (?, ?, ?)`,
+                values: [id, title, fullContent]
+            });
+        });
+
+        if (set.length > 0) {
+            await db.executeSet(set);
+        }
+    },
+
     async search(queryText) {
         const db = await getDBConnection();
         // FTS Match Query - using snippet for description

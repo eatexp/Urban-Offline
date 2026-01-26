@@ -107,6 +107,61 @@ export const put = async (storeName, value, key) => {
     }
 };
 
+export const putAll = async (storeName, items) => {
+    // 1. Large Content -> Filesystem
+    if (DATA_STORES.includes(storeName)) {
+        try {
+            // Ensure directory exists once
+            await Filesystem.mkdir({
+                path: storeName,
+                directory: Directory.Documents,
+                recursive: true
+            });
+
+            // Process in chunks to avoid opening too many files at once
+            const CHUNK_SIZE = 50;
+            for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+                const chunk = items.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map(item => {
+                    const key = item.id;
+                    if (!key) throw new Error(`Key (id) is required for store '${storeName}'`);
+                    return Filesystem.writeFile({
+                        path: `${storeName}/${key}`,
+                        data: JSON.stringify(item),
+                        directory: Directory.Documents,
+                        encoding: Encoding.UTF8
+                    });
+                }));
+            }
+        } catch (e) {
+            log.error('FS PutAll Error', e);
+            throw e;
+        }
+        return;
+    }
+
+    // 2. Metadata -> SQLite
+    if (!db) await initDB();
+    try {
+        const set = items.map(item => {
+            const key = item.id || item.key;
+            if (!key) throw new Error(`Key is required for store '${storeName}'`);
+            const strVal = JSON.stringify(item);
+            return {
+                statement: `INSERT OR REPLACE INTO kv_store (store_name, key, value) VALUES (?, ?, ?)`,
+                values: [storeName, key, strVal]
+            };
+        });
+
+        if (set.length > 0) {
+            await db.executeSet(set);
+        }
+    } catch (e) {
+        log.error('SQLite PutAll Error', e);
+        throw e;
+    }
+};
+
 export const getAll = async (storeName) => {
     if (!db) await initDB();
     try {
