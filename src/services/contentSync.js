@@ -52,6 +52,10 @@ export const contentSync = {
      */
     async syncFromManifest(manifest) {
         let syncedCount = 0;
+        const healthItems = [];
+        const lawItems = [];
+        const survivalItems = [];
+        const searchDocs = [];
 
         if (manifest.articles) {
             for (const article of manifest.articles) {
@@ -65,7 +69,7 @@ export const contentSync = {
                     }
                 }
 
-                // Store in appropriate IndexedDB store
+                // Prepare content data
                 const contentData = {
                     id: article.slug,
                     title: article.title,
@@ -76,23 +80,24 @@ export const contentSync = {
                     importedAt: new Date().toISOString()
                 };
 
+                // Add to appropriate batch
                 if (category === 'health') {
-                    await db.put('health_content', contentData);
+                    healthItems.push(contentData);
                 } else if (category === 'law') {
-                    await db.put('law_content', {
+                    lawItems.push({
                         ...contentData,
                         fullText: article.body_plain || ''
                     });
                 } else if (category === 'survival') {
-                    await db.put('survival_content', {
+                    survivalItems.push({
                         ...contentData,
                         searchableText: article.body_plain || '',
                         description: contentData.summary
                     });
                 }
 
-                // Index for search
-                await SearchService.addDocument({
+                // Prepare search doc
+                searchDocs.push({
                     id: article.slug,
                     slug: article.slug,
                     title: article.title,
@@ -104,6 +109,14 @@ export const contentSync = {
                 syncedCount++;
             }
         }
+
+        // Execute batch operations in parallel
+        await Promise.all([
+            healthItems.length > 0 ? db.putAll('health_content', healthItems) : Promise.resolve(),
+            lawItems.length > 0 ? db.putAll('law_content', lawItems) : Promise.resolve(),
+            survivalItems.length > 0 ? db.putAll('survival_content', survivalItems) : Promise.resolve(),
+            searchDocs.length > 0 ? SearchService.addDocuments(searchDocs) : Promise.resolve()
+        ]);
 
         return { synced: true, count: syncedCount };
     },

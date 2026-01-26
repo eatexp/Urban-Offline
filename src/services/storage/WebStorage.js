@@ -111,4 +111,30 @@ export const db = {
         const database = await initDB();
         return database.delete(storeName, key);
     },
+    /**
+     * Put multiple values in the store in a single transaction
+     * @param {string} storeName - Store name
+     * @param {Array<any>} items - Array of items to store
+     */
+    async putAll(storeName, items) {
+        const database = await initDB();
+        const tx = database.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+
+        const isOutOfLine = OUT_OF_LINE_STORES.includes(storeName);
+
+        await Promise.all(items.map(item => {
+            if (isOutOfLine) {
+                const storeKey = item.id; // Expect id to be present for out-of-line stores in bulk op
+                if (!storeKey) {
+                    // Fail fast or log? Failing fast is safer for consistency.
+                    throw new Error(`Key (id) is required for store '${storeName}' in bulk operation`);
+                }
+                return store.put(item, storeKey);
+            }
+            return store.put(item);
+        }));
+
+        await tx.done;
+    }
 };

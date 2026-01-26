@@ -15,16 +15,15 @@ export const db = isNative ? {
     },
     async put(storeName, value, key) {
         const itemKey = key || value?.id;
-        try {
-            return await NativeStorage.put(storeName, value, itemKey);
-        } catch (e) {
-            // TODO: Resilience - Handle QuotaExceededError globally if possible, or ensure callers handle it.
-            // Consider catching QuotaExceededError here and returning a specific failure code or event.
-            throw e;
-        }
+        // TODO: Resilience - Handle QuotaExceededError globally if possible, or ensure callers handle it.
+        // Consider catching QuotaExceededError here and returning a specific failure code or event.
+        return NativeStorage.put(storeName, value, itemKey);
     },
     async delete(storeName, key) {
         return NativeStorage.deleteItem(storeName, key);
+    },
+    async putAll(storeName, items) {
+        return NativeStorage.putAll(storeName, items);
     },
     // Alias methods for compatibility with DatasetRegistry
     async getItem(storeName, key) {
