@@ -121,6 +121,50 @@ export const getAll = async (storeName) => {
     }
 };
 
+export const iterate = async (storeName, callback) => {
+    // 1. Large Content -> Filesystem
+    if (DATA_STORES.includes(storeName)) {
+        try {
+            const result = await Filesystem.readdir({
+                path: storeName,
+                directory: Directory.Documents
+            });
+
+            for (const file of result.files) {
+                 const fileName = file.name || file; // Handle object or string
+
+                 try {
+                     const fileContent = await Filesystem.readFile({
+                         path: `${storeName}/${fileName}`,
+                         directory: Directory.Documents,
+                         encoding: Encoding.UTF8
+                     });
+                     await callback(JSON.parse(fileContent.data));
+                 } catch (readErr) {
+                     log.warn(`Failed to read file ${fileName} in store ${storeName}`, readErr);
+                 }
+            }
+        } catch (_error) {
+            // Directory doesn't exist or other error -> assume empty
+            log.debug(`Store directory ${storeName} not found or empty`);
+        }
+        return;
+    }
+
+    // 2. Metadata -> SQLite
+    if (!db) await initDB();
+    try {
+        const res = await db.query(`SELECT value FROM kv_store WHERE store_name = ?`, [storeName]);
+        if (res.values) {
+            for (const row of res.values) {
+                await callback(JSON.parse(row.value));
+            }
+        }
+    } catch (e) {
+        log.error('SQLite Iterate Error', e);
+    }
+};
+
 export const deleteItem = async (storeName, key) => {
     if (DATA_STORES.includes(storeName)) {
         try {
