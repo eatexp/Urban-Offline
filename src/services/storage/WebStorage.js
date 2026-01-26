@@ -87,6 +87,10 @@ export const db = {
         const database = await initDB();
         return database.getAll(storeName);
     },
+    async getAllKeys(storeName) {
+        const database = await initDB();
+        return database.getAllKeys(storeName);
+    },
     /**
      * Put a value in the store
      * @param {string} storeName - Store name

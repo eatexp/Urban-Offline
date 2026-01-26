@@ -13,6 +13,9 @@ export const db = isNative ? {
     async getAll(storeName) {
         return NativeStorage.getAll(storeName);
     },
+    async getAllKeys(storeName) {
+        return NativeStorage.getAllKeys(storeName);
+    },
     async put(storeName, value, key) {
         const itemKey = key || value?.id;
         try {

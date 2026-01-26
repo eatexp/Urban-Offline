@@ -12,6 +12,8 @@ import { createLogger } from '../utils/logger';
 
 const log = createLogger('ContentBrowser');
 
+const getSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
 // Category icons with design system colors
 const CATEGORY_ICONS = {
     'emergency': <Zap className="w-5 h-5" style={{ color: 'var(--color-danger)' }} />,
@@ -76,9 +78,8 @@ const ContentBrowser = () => {
 
     const checkDownloaded = async () => {
         try {
-            const healthContent = await db.getAll('health_content');
-            const downloaded = new Set((healthContent || []).map(a => a.title?.toLowerCase()));
-            setDownloadedArticles(downloaded);
+            const keys = await db.getAllKeys('health_content');
+            setDownloadedArticles(new Set(keys));
         } catch (_e) {
             // Could not check downloaded
         }
@@ -173,7 +174,7 @@ const ContentBrowser = () => {
             });
 
             // Update downloaded set
-            setDownloadedArticles(prev => new Set([...prev, article.title.toLowerCase()]));
+            setDownloadedArticles(prev => new Set([...prev, slug]));
 
         } catch (e) {
             log.error('Download failed', e);
@@ -188,7 +189,7 @@ const ContentBrowser = () => {
     };
 
     const isArticleDownloaded = (title) => {
-        return downloadedArticles.has(title?.toLowerCase());
+        return downloadedArticles.has(getSlug(title));
     };
 
     return (

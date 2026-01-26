@@ -121,6 +121,34 @@ export const getAll = async (storeName) => {
     }
 };
 
+export const getAllKeys = async (storeName) => {
+    // 1. Large Content -> Filesystem
+    if (DATA_STORES.includes(storeName)) {
+        try {
+            const ret = await Filesystem.readdir({
+                path: storeName,
+                directory: Directory.Documents
+            });
+            return ret.files.map(f => typeof f === 'string' ? f : f.name);
+        } catch (_error) {
+            return [];
+        }
+    }
+
+    // 2. Metadata -> SQLite
+    if (!db) await initDB();
+    try {
+        const res = await db.query(`SELECT key FROM kv_store WHERE store_name = ?`, [storeName]);
+        if (res.values) {
+            return res.values.map(v => v.key);
+        }
+        return [];
+    } catch (e) {
+        log.error('SQLite getAllKeys Error', e);
+        return [];
+    }
+};
+
 export const deleteItem = async (storeName, key) => {
     if (DATA_STORES.includes(storeName)) {
         try {
