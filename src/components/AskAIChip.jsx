@@ -146,20 +146,11 @@ const AskAIChip = ({
         return (
             <button
                 onClick={() => setIsExpanded(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
-                style={{
-                    background: 'var(--color-bg-tertiary)',
-                    border: '1px solid var(--color-border-primary)',
-                    color: 'var(--color-text-secondary)'
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                    e.currentTarget.style.color = 'var(--color-primary-400)';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                    e.currentTarget.style.color = 'var(--color-text-secondary)';
-                }}
+                aria-expanded={false}
+                className="flex items-center gap-2 px-4 py-2 rounded-full transition-all
+                           bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] text-[var(--color-text-secondary)]
+                           hover:border-[var(--color-primary-500)] hover:text-[var(--color-primary-400)]
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
             >
                 <MessageCircle size={16} />
                 <span className="text-sm font-medium">Have a question?</span>
@@ -171,38 +162,31 @@ const AskAIChip = ({
     // Expanded variant - full suggestions
     return (
         <div
-            className="rounded-xl p-4 animate-fade-in"
-            style={{
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border-primary)'
-            }}
+            className="rounded-xl p-4 animate-fade-in bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]"
         >
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
                 <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{
-                        background: aiStatus === 'ready'
-                            ? 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
-                            : 'var(--color-bg-tertiary)'
-                    }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        aiStatus === 'ready'
+                            ? 'bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-purple)]'
+                            : 'bg-[var(--color-bg-tertiary)]'
+                    }`}
                 >
                     {aiStatus === 'ready' ? (
-                        <Sparkles size={16} style={{ color: 'white' }} />
+                        <Sparkles size={16} className="text-white" />
                     ) : (
-                        <HelpCircle size={16} style={{ color: 'var(--color-text-muted)' }} />
+                        <HelpCircle size={16} className="text-[var(--color-text-muted)]" />
                     )}
                 </div>
                 <div>
                     <h4
-                        className="text-sm font-medium"
-                        style={{ color: 'var(--color-text-primary)' }}
+                        className="text-sm font-medium text-[var(--color-text-primary)]"
                     >
                         Have a question about this?
                     </h4>
                     <p
-                        className="text-xs"
-                        style={{ color: 'var(--color-text-muted)' }}
+                        className="text-xs text-[var(--color-text-muted)]"
                     >
                         {aiStatus === 'ready' ? 'AI assistant ready' : 'Search available'}
                     </p>
@@ -215,20 +199,10 @@ const AskAIChip = ({
                     <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="text-sm px-3 py-1.5 rounded-full transition-all"
-                        style={{
-                            background: 'var(--color-bg-tertiary)',
-                            border: '1px solid var(--color-border-primary)',
-                            color: 'var(--color-text-secondary)'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                            e.currentTarget.style.color = 'var(--color-primary-400)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                            e.currentTarget.style.color = 'var(--color-text-secondary)';
-                        }}
+                        className="text-sm px-3 py-1.5 rounded-full transition-all
+                                   bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] text-[var(--color-text-secondary)]
+                                   hover:border-[var(--color-primary-500)] hover:text-[var(--color-primary-400)]
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
                     >
                         {suggestion}
                     </button>
@@ -238,24 +212,12 @@ const AskAIChip = ({
             {/* Ask anything button */}
             <button
                 onClick={handleAskAnything}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all"
-                style={{
-                    background: aiStatus === 'ready'
-                        ? 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))'
-                        : 'var(--color-bg-tertiary)',
-                    color: aiStatus === 'ready' ? 'white' : 'var(--color-text-secondary)',
-                    border: aiStatus === 'ready' ? 'none' : '1px solid var(--color-border-primary)'
-                }}
-                onMouseEnter={(e) => {
-                    if (aiStatus !== 'ready') {
-                        e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all
+                    ${aiStatus === 'ready'
+                        ? 'bg-gradient-to-br from-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white border-none'
+                        : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border-primary)] hover:border-[var(--color-primary-500)]'
                     }
-                }}
-                onMouseLeave={(e) => {
-                    if (aiStatus !== 'ready') {
-                        e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                    }
-                }}
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]`}
             >
                 <MessageCircle size={16} />
                 <span className="font-medium">Ask anything</span>
@@ -265,8 +227,7 @@ const AskAIChip = ({
             {variant === 'compact' && (
                 <button
                     onClick={() => setIsExpanded(false)}
-                    className="w-full text-center py-2 text-xs mt-2"
-                    style={{ color: 'var(--color-text-muted)' }}
+                    className="w-full text-center py-2 text-xs mt-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:underline"
                 >
                     Collapse
                 </button>
