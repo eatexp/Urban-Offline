@@ -58,6 +58,7 @@ const TriageScreen = ({ storyFile, onClose }) => {
         return (
             <div
                 className="card card-emergency p-4 flex items-center gap-3 animate-fade-in"
+                role="alert"
             >
                 <div
                     className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
@@ -116,6 +117,7 @@ const TriageScreen = ({ storyFile, onClose }) => {
                         style={{ color: 'var(--color-text-muted)' }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        aria-label="Go back"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -129,6 +131,7 @@ const TriageScreen = ({ storyFile, onClose }) => {
                     style={{ color: 'var(--color-text-muted)' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                    aria-label="Restart triage"
                 >
                     <RefreshCw size={18} />
                 </button>
