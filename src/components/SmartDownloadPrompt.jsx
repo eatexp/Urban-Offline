@@ -226,6 +226,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss download prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -284,14 +285,21 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 <p
                                     className="text-xs mb-2"
                                     style={{ color: 'var(--color-text-muted)' }}
+                                    id="model-selection-label"
                                 >
                                     Choose AI model:
                                 </p>
-                                <div className="space-y-2">
+                                <div
+                                    className="space-y-2"
+                                    role="radiogroup"
+                                    aria-labelledby="model-selection-label"
+                                >
                                     {Object.values(TRANSFORMERS_MODELS).map(model => (
                                         <button
                                             key={model.id}
                                             onClick={() => setSelectedModel(model.id)}
+                                            role="radio"
+                                            aria-checked={selectedModel === model.id}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
                                                 background: selectedModel === model.id
@@ -381,6 +389,11 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             <div
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-label="Download progress"
                             >
                                 <div
                                     className="h-full rounded-full transition-all duration-300"
