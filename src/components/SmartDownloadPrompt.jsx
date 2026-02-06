@@ -282,15 +282,22 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             {/* Model selection */}
                             <div className="mb-4">
                                 <p
+                                    id="model-selection-label"
                                     className="text-xs mb-2"
                                     style={{ color: 'var(--color-text-muted)' }}
                                 >
                                     Choose AI model:
                                 </p>
-                                <div className="space-y-2">
+                                <div
+                                    className="space-y-2"
+                                    role="radiogroup"
+                                    aria-labelledby="model-selection-label"
+                                >
                                     {Object.values(TRANSFORMERS_MODELS).map(model => (
                                         <button
                                             key={model.id}
+                                            role="radio"
+                                            aria-checked={selectedModel === model.id}
                                             onClick={() => setSelectedModel(model.id)}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
