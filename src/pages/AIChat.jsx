@@ -4,14 +4,55 @@ import {
     Send, Bot, User, AlertCircle, Loader2,
     ChevronRight, BookOpen, Sparkles, X,
     Wifi, WifiOff, Download, Settings, Database,
-    Heart, Tent, Scale, Check, Cpu
+    Heart, Tent, Scale, Check, Cpu,
+    Activity, Eye, EyeOff
 } from 'lucide-react';
+
+// TODO: [CrossPlatform] AI_CHAT_DESKTOP_OPTIMIZATION
+// Current: AIChat uses mobile-first single-column layout
+//
+// GAPS:
+// - Desktop/Windows: Wasted horizontal space on wide screens
+// - No keyboard shortcuts for desktop users (e.g., Ctrl+Enter to send)
+// - Settings modal takes full width on desktop
+// - Message bubbles could use side-by-side layout
+//
+// RECOMMENDATION:
+// - Add responsive breakpoints for desktop (768px, 1024px)
+// - Implement keyboard shortcuts (Ctrl/Cmd+Enter, Escape to close)
+// - Use max-width container for chat on large screens
+// - Consider split-pane: chat on left, sources on right
+//
+// Effort: M | Impact: Medium - Better desktop UX
+
+// TODO: [CrossPlatform] MODEL_DOWNLOAD_PROGRESS_WINDOWS
+// Current: Download progress works via transformers.js progress_callback
+//
+// ISSUE:
+// - Windows native: transformers.js won't work (no browser APIs)
+// - Download progress will be unavailable on Windows native builds
+//
+// SOLUTION:
+// - Add platform detection in AIModelManager
+// - Show "AI unavailable on Windows app" message instead of download UI
+// - Or implement native download via Node.js fs for Windows
+//
+// Effort: S | Impact: Medium - Clear user communication
+
 import { RAGPipeline } from '../services/ai/RAGPipeline';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { checkAICapability } from '../services/ai/AIArchitecture';
 import { TRANSFORMERS_MODELS } from '../services/ai/TransformersEngine';
 import { datasetRegistry } from '../services/ai/DatasetRegistry';
 import { createLogger } from '../utils/logger';
+import {
+    RAGPipelineVisualizer,
+    DatasetNetworkGraph,
+    DatasetActivityIndicator,
+    IntentClassificationViz
+} from '../components/ai-visualizations';
+import AIReadingViz from '../components/ai-visualizations/AIReadingViz';
+import ModelPicker from '../components/ModelPicker';
 
 const log = createLogger('AIChat');
 
@@ -49,10 +90,23 @@ Ask me anything, and I'll search through your downloaded content to find answers
     const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback
     const [activeModel, setActiveModel] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
+    const [showModelPicker, setShowModelPicker] = useState(false);
     const [availableModels, setAvailableModels] = useState([]);
     const [availableDatasets, setAvailableDatasets] = useState([]);
     const [enabledDatasets, setEnabledDatasets] = useState([]);
     const [downloadProgress, setDownloadProgress] = useState(null); // { modelId, progress, message }
+
+    // Visualization state
+    const [showVisualizations, setShowVisualizations] = useState(false);
+    const [pipelineState, setPipelineState] = useState({
+        isActive: false,
+        currentStage: null,
+        stageData: {}
+    });
+    const [queryActivity, setQueryActivity] = useState([]);
+    const [lastClassification, setLastClassification] = useState(null);
+    const [vizStages, setVizStages] = useState([]);
+    const [vizActive, setVizActive] = useState(false);
 
     // Initialize AI capabilities
     useEffect(() => {
@@ -228,6 +282,27 @@ Ask me anything, and I'll search through your downloaded content to find answers
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Handle keyboard shortcuts (Ctrl+Enter to send, Escape to close settings)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ctrl/Cmd + Enter to send
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!isLoading && inputValue.trim()) {
+                    handleSend();
+                }
+            }
+            // Escape to close settings
+            if (e.key === 'Escape' && showSettings) {
+                e.preventDefault();
+                setShowSettings(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [inputValue, isLoading, showSettings]);
+
     const handleSend = async () => {
         const query = inputValue.trim();
         if (!query || isLoading) return;
@@ -274,12 +349,32 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 if (singleDataset.category) category = singleDataset.category;
             }
 
-            // Get response from RAG pipeline (with dataset filtering)
-            const result = await RAGPipeline.query(contextualQuery, {
-                category,
-                useAI: modelStatus === 'ready',
-                datasets: enabledDatasets.length > 0 ? enabledDatasets : null
-            });
+            // Get response from RAG pipeline with visualization events
+            setVizStages([]);
+            setVizActive(true);
+
+            const result = await RAGPipeline.queryWithEvents(
+                contextualQuery,
+                {
+                    category,
+                    useAI: modelStatus === 'ready',
+                    datasets: enabledDatasets.length > 0 ? enabledDatasets : null
+                },
+                (stageEvent) => {
+                    setVizStages(prev => {
+                        // Replace last event if same stage, otherwise append
+                        const existing = prev.findIndex(s => s.stage === stageEvent.stage);
+                        if (existing >= 0) {
+                            const next = [...prev];
+                            next[existing] = stageEvent;
+                            return next;
+                        }
+                        return [...prev, stageEvent];
+                    });
+                }
+            );
+
+            setVizActive(false);
 
             // Add assistant message
             const assistantMessage = {
@@ -324,204 +419,325 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
     return (
         <div
-            className="flex flex-col h-full animate-fade-in"
+            className="flex flex-col h-full animate-fade-in lg:flex-row"
             style={{ background: 'var(--color-bg-primary)' }}
         >
-            {/* Header */}
-            <header
-                className="px-4 py-3"
-                style={{
-                    background: 'var(--color-bg-glass)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    borderBottom: '1px solid var(--color-border-primary)'
-                }}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center"
-                            style={{
-                                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
-                            }}
-                        >
-                            <Sparkles className="w-5 h-5" style={{ color: 'white' }} />
-                        </div>
-                        <div>
-                            <h1
-                                className="font-bold"
-                                style={{ color: 'var(--color-text-primary)' }}
+            {/* Main Chat Area */}
+            <div className="flex flex-col flex-1 h-full min-w-0">
+                {/* Header */}
+                <header
+                    className="px-4 py-3 lg:px-6"
+                    style={{
+                        background: 'var(--color-bg-glass)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        borderBottom: '1px solid var(--color-border-primary)'
+                    }}
+                >
+                    <div className="flex items-center justify-between max-w-4xl mx-auto">
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center"
+                                style={{
+                                    background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
+                                }}
                             >
-                                AI Assistant
-                            </h1>
-                            <div className="flex items-center gap-2 text-xs">
-                                <span
-                                    className="flex items-center gap-1"
-                                    style={{
-                                        color: modelStatus === 'ready' ? 'var(--color-success)' :
-                                               modelStatus === 'no-model' ? 'var(--color-info)' :
-                                               'var(--color-text-muted)'
-                                    }}
+                                <Sparkles className="w-5 h-5" style={{ color: 'white' }} />
+                            </div>
+                            <div>
+                                <h1
+                                    className="font-bold"
+                                    style={{ color: 'var(--color-text-primary)' }}
                                 >
-                                    {modelStatus === 'ready' && (
-                                        <>
-                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                            {activeModel ? TRANSFORMERS_MODELS[activeModel]?.name || 'AI Ready' : 'AI Ready'}
-                                        </>
-                                    )}
-                                    {modelStatus === 'no-model' && (
-                                        <>
-                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                            Smart Search
-                                        </>
-                                    )}
-                                    {modelStatus === 'checking' && 'Initializing...'}
-                                    {modelStatus === 'fallback' && (
-                                        <>
-                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                            Quick Answers
-                                        </>
-                                    )}
-                                </span>
-                                <span
-                                    className="flex items-center gap-1"
-                                    style={{ color: 'var(--color-text-muted)' }}
-                                >
-                                    <Database className="w-3 h-3" />
-                                    {enabledDatasets.length}/{availableDatasets.length}
-                                </span>
-                                <span
-                                    className="flex items-center gap-1"
-                                    style={{ color: isOnline ? 'var(--color-success)' : 'var(--color-text-muted)' }}
-                                >
-                                    {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                                </span>
+                                    AI Assistant
+                                </h1>
+                                <div className="flex items-center gap-2 text-xs">
+                                    <span
+                                        className="flex items-center gap-1"
+                                        style={{
+                                            color: modelStatus === 'ready' ? 'var(--color-success)' :
+                                                modelStatus === 'no-model' ? 'var(--color-info)' :
+                                                    'var(--color-text-muted)'
+                                        }}
+                                    >
+                                        {modelStatus === 'ready' && (
+                                            <>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                {activeModel ? TRANSFORMERS_MODELS[activeModel]?.name || 'AI Ready' : 'AI Ready'}
+                                            </>
+                                        )}
+                                        {modelStatus === 'no-model' && (
+                                            <>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                Smart Search
+                                            </>
+                                        )}
+                                        {modelStatus === 'checking' && 'Initializing...'}
+                                        {modelStatus === 'fallback' && (
+                                            <>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                Quick Answers
+                                            </>
+                                        )}
+                                    </span>
+                                    <span
+                                        className="flex items-center gap-1"
+                                        style={{ color: 'var(--color-text-muted)' }}
+                                    >
+                                        <Database className="w-3 h-3" />
+                                        {enabledDatasets.length}/{availableDatasets.length}
+                                    </span>
+                                    <span
+                                        className="flex items-center gap-1"
+                                        style={{ color: isOnline ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                                    >
+                                        {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        className="p-2 rounded-lg transition-colors"
-                        style={{ color: 'var(--color-text-muted)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                        <Settings className="w-5 h-5" />
-                    </button>
-                </div>
-            </header>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                {messages.map((message, index) => (
-                    <MessageBubble
-                        key={message.id}
-                        message={message}
-                        onSourceClick={navigateToSource}
-                        animationDelay={index * 50}
-                    />
-                ))}
-
-                {isLoading && (
-                    <div className="flex gap-3 animate-fade-in">
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{
-                                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
-                            }}
-                        >
-                            <Bot className="w-4 h-4" style={{ color: 'white' }} />
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setShowModelPicker(true)}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{ color: 'var(--color-text-muted)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                title="Manage AI Models"
+                            >
+                                <Cpu className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setShowVisualizations(!showVisualizations)}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                    color: showVisualizations ? 'var(--color-primary-400)' : 'var(--color-text-muted)',
+                                    background: showVisualizations ? 'var(--color-bg-tertiary)' : 'transparent'
+                                }}
+                                onMouseEnter={(e) => !showVisualizations && (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
+                                onMouseLeave={(e) => !showVisualizations && (e.currentTarget.style.background = 'transparent')}
+                                title="Toggle AI Visualizations"
+                            >
+                                <Activity className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{ color: 'var(--color-text-muted)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <Settings className="w-5 h-5" />
+                            </button>
                         </div>
-                        <div
-                            className="card rounded-2xl rounded-tl-none px-4 py-3"
-                        >
-                            <Loader2
-                                className="w-5 h-5 animate-spin"
-                                style={{ color: 'var(--color-primary-500)' }}
+                    </div>
+                </header>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 lg:px-6 space-y-4">
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {messages.map((message, index) => (
+                            <MessageBubble
+                                key={message.id}
+                                message={message}
+                                onSourceClick={navigateToSource}
+                                animationDelay={index * 50}
                             />
+                        ))}
+
+                        {isLoading && (
+                            <div className="flex gap-3 animate-fade-in">
+                                <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                                    style={{
+                                        background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-accent-purple))'
+                                    }}
+                                >
+                                    <Bot className="w-4 h-4" style={{ color: 'white' }} />
+                                </div>
+                                <div
+                                    className="card rounded-2xl rounded-tl-none px-4 py-3"
+                                >
+                                    <Loader2
+                                        className="w-5 h-5 animate-spin"
+                                        style={{ color: 'var(--color-primary-500)' }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+                </div>
+
+                {/* Suggestions */}
+                {messages.length <= 1 && (
+                    <div className="px-4 pb-2 lg:px-6 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                        <div className="max-w-4xl mx-auto">
+                            <p
+                                className="text-xs mb-2"
+                                style={{ color: 'var(--color-text-muted)' }}
+                            >
+                                Try asking:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {suggestions.slice(0, 3).map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => handleSuggestion(q)}
+                                        className="text-sm px-3 py-1.5 rounded-full transition-all"
+                                        style={{
+                                            background: 'var(--color-bg-secondary)',
+                                            border: '1px solid var(--color-border-primary)',
+                                            color: 'var(--color-text-secondary)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                                            e.currentTarget.style.color = 'var(--color-primary-400)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                                            e.currentTarget.style.color = 'var(--color-text-secondary)';
+                                        }}
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
 
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Suggestions */}
-            {messages.length <= 1 && (
-                <div className="px-4 pb-2 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                    <p
-                        className="text-xs mb-2"
-                        style={{ color: 'var(--color-text-muted)' }}
-                    >
-                        Try asking:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                        {suggestions.slice(0, 3).map((q, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleSuggestion(q)}
-                                className="text-sm px-3 py-1.5 rounded-full transition-all"
+                {/* Input */}
+                <div
+                    className="px-4 py-3 pb-safe lg:px-6"
+                    style={{
+                        background: 'var(--color-bg-secondary)',
+                        borderTop: '1px solid var(--color-border-primary)'
+                    }}
+                >
+                    <div className="max-w-4xl mx-auto">
+                        <div className="flex gap-2">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                placeholder="Ask about emergencies, first aid, legal rights..."
+                                className="flex-1 px-4 py-3 rounded-xl transition-all"
                                 style={{
-                                    background: 'var(--color-bg-secondary)',
+                                    background: 'var(--color-bg-tertiary)',
                                     border: '1px solid var(--color-border-primary)',
-                                    color: 'var(--color-text-secondary)'
+                                    color: 'var(--color-text-primary)',
+                                    outline: 'none'
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                                    e.currentTarget.style.color = 'var(--color-primary-400)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
+                                onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-500)'}
+                                onBlur={(e) => e.currentTarget.style.borderColor = 'var(--color-border-primary)'}
+                                disabled={isLoading}
+                            />
+                            <button
+                                onClick={handleSend}
+                                disabled={!inputValue.trim() || isLoading}
+                                className="btn btn-primary p-3 rounded-xl"
+                                style={{
+                                    opacity: (!inputValue.trim() || isLoading) ? 0.5 : 1,
+                                    cursor: (!inputValue.trim() || isLoading) ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                {q}
+                                <Send className="w-5 h-5" />
                             </button>
-                        ))}
+                        </div>
+                        {/* Keyboard shortcut hint for desktop */}
+                        <div className="hidden lg:flex items-center justify-end gap-2 mt-2">
+                            <span className="text-xs kbd">Ctrl</span>
+                            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>+</span>
+                            <span className="text-xs kbd">Enter</span>
+                            <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>to send</span>
+                            <span className="mx-2" style={{ color: 'var(--color-border-primary)' }}>|</span>
+                            <span className="text-xs kbd">Esc</span>
+                            <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>to close settings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Visualizations Panel - Desktop Only */}
+            {showVisualizations && (
+                <div
+                    className="hidden lg:flex flex-col w-96 xl:w-[420px] border-l"
+                    style={{
+                        background: 'var(--color-bg-secondary)',
+                        borderColor: 'var(--color-border-primary)'
+                    }}
+                >
+                    <div
+                        className="px-4 py-3"
+                        style={{
+                            background: 'var(--color-bg-glass)',
+                            backdropFilter: 'blur(16px)',
+                            borderBottom: '1px solid var(--color-border-primary)'
+                        }}
+                    >
+                        <h2
+                            className="font-semibold text-sm flex items-center gap-2"
+                            style={{ color: 'var(--color-text-primary)' }}
+                        >
+                            <Activity className="w-4 h-4" />
+                            AI Data Flow
+                        </h2>
+                        <p
+                            className="text-xs mt-1"
+                            style={{ color: 'var(--color-text-muted)' }}
+                        >
+                            Real-time visualization of AI processing
+                        </p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <AIReadingViz
+                            stages={vizStages}
+                            isActive={vizActive}
+                            onReplay={() => setVizStages(prev => {
+                                // Re-trigger by resetting and re-setting
+                                setVizStages([]);
+                                setTimeout(() => setVizStages(prev), 50);
+                            })}
+                        />
                     </div>
                 </div>
             )}
 
-            {/* Input */}
-            <div
-                className="px-4 py-3 pb-safe"
-                style={{
-                    background: 'var(--color-bg-secondary)',
-                    borderTop: '1px solid var(--color-border-primary)'
-                }}
-            >
-                <div className="flex gap-2">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Ask about emergencies, first aid, legal rights..."
-                        className="flex-1 px-4 py-3 rounded-xl transition-all"
-                        style={{
-                            background: 'var(--color-bg-tertiary)',
-                            border: '1px solid var(--color-border-primary)',
-                            color: 'var(--color-text-primary)',
-                            outline: 'none'
-                        }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-500)'}
-                        onBlur={(e) => e.currentTarget.style.borderColor = 'var(--color-border-primary)'}
-                        disabled={isLoading}
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!inputValue.trim() || isLoading}
-                        className="btn btn-primary p-3 rounded-xl"
-                        style={{
-                            opacity: (!inputValue.trim() || isLoading) ? 0.5 : 1,
-                            cursor: (!inputValue.trim() || isLoading) ? 'not-allowed' : 'pointer'
-                        }}
+            {/* Sources Panel - Desktop Only (shown when visualizations hidden) */}
+            {!showVisualizations && <SourcesPanel messages={messages} onSourceClick={navigateToSource} />}
+
+            {/* Mobile Visualizations Modal */}
+            {showVisualizations && (
+                <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setShowVisualizations(false)}>
+                    <div
+                        className="absolute bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-t-2xl p-4"
+                        style={{ background: 'var(--color-bg-secondary)' }}
+                        onClick={e => e.stopPropagation()}
                     >
-                        <Send className="w-5 h-5" />
-                    </button>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="font-semibold flex items-center gap-2">
+                                <Activity className="w-5 h-5" />
+                                AI Data Flow
+                            </h2>
+                            <button onClick={() => setShowVisualizations(false)}>
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <AIReadingViz
+                                stages={vizStages}
+                                isActive={vizActive}
+                            />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Settings Modal */}
             {showSettings && (
@@ -540,12 +756,43 @@ Ask me anything, and I'll search through your downloaded content to find answers
                     onPresetSelect={handlePresetSelect}
                 />
             )}
+
+            {/* Model Picker Modal */}
+            {showModelPicker && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in"
+                    onClick={() => setShowModelPicker(false)}
+                >
+                    <div
+                        className="w-full max-w-lg max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl animate-scale-in"
+                        style={{ background: 'var(--color-bg-primary)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <ModelPicker
+                            onClose={() => setShowModelPicker(false)}
+                            onModelChange={(modelId) => {
+                                setActiveModel(modelId);
+                                refreshAIModels();
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-// Message Bubble Component
-const MessageBubble = ({ message, onSourceClick, animationDelay = 0 }) => {
+// =============================================================================
+// VERIFIED: [Performance] MESSAGE_BUBBLE_DEEP_COMPARISON
+// =============================================================================
+// Implementation: Added custom comparison function to React.memo that compares
+//   only the essential props (id, content, role, animationDelay) instead of
+//   shallow object comparison. This prevents unnecessary re-renders when parent
+//   re-renders with same message data but new object references.
+// =============================================================================
+
+// MessageBubble - memoized with custom comparison to prevent unnecessary re-renders
+const MessageBubble = React.memo(({ message, onSourceClick, animationDelay = 0 }) => {
     const isUser = message.role === 'user';
 
     return (
@@ -596,29 +843,70 @@ const MessageBubble = ({ message, onSourceClick, animationDelay = 0 }) => {
                     </div>
                 </div>
 
-                {/* Sources */}
+                {/* Sources - Enhanced with category icons and data source badge */}
                 {message.sources && message.sources.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                        <p
-                            className="text-xs"
-                            style={{ color: 'var(--color-text-muted)' }}
+                    <div className="mt-3 space-y-2">
+                        {/* Data source badge - shows AI used offline content */}
+                        <div
+                            className="flex items-center gap-2 px-2 py-1 rounded-full w-fit text-xs"
+                            style={{
+                                background: 'rgba(34, 197, 94, 0.1)',
+                                border: '1px solid rgba(34, 197, 94, 0.2)',
+                                color: 'var(--color-success)'
+                            }}
                         >
-                            Sources:
-                        </p>
-                        {message.sources.map((source, i) => (
-                            <button
-                                key={i}
-                                onClick={() => onSourceClick(source)}
-                                className="flex items-center gap-2 text-xs transition-colors"
-                                style={{ color: 'var(--color-primary-400)' }}
-                                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                            >
-                                <BookOpen className="w-3 h-3" />
-                                {source.title}
-                                <ChevronRight className="w-3 h-3" />
-                            </button>
-                        ))}
+                            <Database className="w-3 h-3" />
+                            <span>Data from your library • {message.sources.length} source{message.sources.length > 1 ? 's' : ''}</span>
+                        </div>
+
+                        {/* Source cards with category icons */}
+                        <div className="space-y-1.5">
+                            {message.sources.map((source, i) => {
+                                // Determine category icon
+                                const getCategoryIcon = () => {
+                                    const cat = (source.category || '').toLowerCase();
+                                    if (cat.includes('health') || cat.includes('medical')) {
+                                        return <Heart className="w-3 h-3" style={{ color: '#ef4444' }} />;
+                                    }
+                                    if (cat.includes('survival') || cat.includes('emergency')) {
+                                        return <Tent className="w-3 h-3" style={{ color: '#f97316' }} />;
+                                    }
+                                    if (cat.includes('law') || cat.includes('legal')) {
+                                        return <Scale className="w-3 h-3" style={{ color: '#8b5cf6' }} />;
+                                    }
+                                    return <BookOpen className="w-3 h-3" style={{ color: 'var(--color-primary-400)' }} />;
+                                };
+
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => onSourceClick(source)}
+                                        className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg transition-all w-full"
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            border: '1px solid var(--color-border-primary)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)';
+                                            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                                            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                                        }}
+                                    >
+                                        {getCategoryIcon()}
+                                        <span
+                                            className="flex-1 text-left truncate"
+                                            style={{ color: 'var(--color-text-secondary)' }}
+                                        >
+                                            {source.title}
+                                        </span>
+                                        <ChevronRight className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
@@ -635,16 +923,34 @@ const MessageBubble = ({ message, onSourceClick, animationDelay = 0 }) => {
             </div>
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Custom comparison function - only re-render if essential props change
+    // This prevents re-renders when parent re-renders with same message data
+    return (
+        prevProps.message.id === nextProps.message.id &&
+        prevProps.message.content === nextProps.message.content &&
+        prevProps.message.role === nextProps.message.role &&
+        prevProps.animationDelay === nextProps.animationDelay
+    );
+});
 
-// Simple markdown-like formatting
+// Format cache to prevent re-parsing on every render (Option B from TODO)
+const formatCache = new Map();
+const MAX_FORMAT_CACHE_SIZE = 100;
+
+// Simple markdown-like formatting with caching
 function formatContent(content, isUser = false) {
     if (!content) return null;
+
+    const cacheKey = `${content}|${isUser}`;
+    if (formatCache.has(cacheKey)) {
+        return formatCache.get(cacheKey);
+    }
 
     // Split by lines and process
     const lines = content.split('\n');
 
-    return lines.map((line, i) => {
+    const result = lines.map((line, i) => {
         // Bold text
         const boldRegex = /\*\*(.*?)\*\*/g;
         const parts = [];
@@ -697,7 +1003,145 @@ function formatContent(content, isUser = false) {
             </React.Fragment>
         );
     });
+
+    // LRU eviction for format cache
+    if (formatCache.size >= MAX_FORMAT_CACHE_SIZE) {
+        const firstKey = formatCache.keys().next().value;
+        formatCache.delete(firstKey);
+    }
+    formatCache.set(cacheKey, result);
+
+    return result;
 }
+
+// Sources Panel - Desktop Only
+const SourcesPanel = ({ messages, onSourceClick }) => {
+    // Get all sources from assistant messages
+    const allSources = messages
+        .filter(m => m.role === 'assistant' && m.sources && m.sources.length > 0)
+        .flatMap(m => m.sources)
+        // Remove duplicates by id
+        .filter((source, index, self) =>
+            index === self.findIndex(s => s.id === source.id)
+        )
+        .slice(0, 5); // Limit to 5 most recent sources
+
+    const hasConversationStarted = messages.length > 1;
+
+    return (
+        <div
+            className="hidden lg:flex flex-col w-80 xl:w-96 border-l"
+            style={{
+                background: 'var(--color-bg-secondary)',
+                borderColor: 'var(--color-border-primary)'
+            }}
+        >
+            <div
+                className="px-4 py-3"
+                style={{
+                    background: 'var(--color-bg-glass)',
+                    backdropFilter: 'blur(16px)',
+                    borderBottom: '1px solid var(--color-border-primary)'
+                }}
+            >
+                <h2
+                    className="font-semibold text-sm flex items-center gap-2"
+                    style={{ color: 'var(--color-text-primary)' }}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    Sources
+                </h2>
+                <p
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--color-text-muted)' }}
+                >
+                    {allSources.length} reference{allSources.length !== 1 ? 's' : ''} from this conversation
+                </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {allSources.length > 0 ? (
+                    allSources.map((source, index) => (
+                        <button
+                            key={source.id}
+                            onClick={() => onSourceClick(source)}
+                            className="w-full text-left p-3 rounded-xl transition-all group"
+                            style={{
+                                background: 'var(--color-bg-tertiary)',
+                                border: '1px solid var(--color-border-primary)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                                e.currentTarget.style.background = 'var(--color-bg-secondary)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                                e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                            }}
+                        >
+                            <div className="flex items-start gap-3">
+                                <span
+                                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium"
+                                    style={{
+                                        background: 'var(--color-primary-600)',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {index + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <h4
+                                        className="text-sm font-medium truncate"
+                                        style={{ color: 'var(--color-text-primary)' }}
+                                    >
+                                        {source.title}
+                                    </h4>
+                                    {source.category && (
+                                        <p
+                                            className="text-xs mt-0.5"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            {source.category}
+                                        </p>
+                                    )}
+                                </div>
+                                <ChevronRight
+                                    className="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{ color: 'var(--color-primary-400)' }}
+                                />
+                            </div>
+                        </button>
+                    ))
+                ) : (
+                    <div className="text-center py-8">
+                        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: 'var(--color-text-muted)' }} />
+                        <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                            {hasConversationStarted ? 'No sources yet' : 'Start a conversation'}
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                            {hasConversationStarted
+                                ? 'Sources will appear here when the AI references articles'
+                                : 'Ask a question and see relevant sources appear here'
+                            }
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Quick tip */}
+            <div
+                className="px-4 py-3 text-xs"
+                style={{
+                    background: 'var(--color-bg-tertiary)',
+                    borderTop: '1px solid var(--color-border-primary)',
+                    color: 'var(--color-text-muted)'
+                }}
+            >
+                Click a source to read the full article
+            </div>
+        </div>
+    );
+};
 
 // Settings Modal
 const SettingsModal = ({
@@ -709,7 +1153,7 @@ const SettingsModal = ({
     enabledDatasets,
     downloadProgress,
     onClose,
-    onModelDownload,
+    _onModelDownload,
     onModelSelect,
     onDatasetToggle,
     onPresetSelect
@@ -718,11 +1162,6 @@ const SettingsModal = ({
     const getIconComponent = (iconName) => {
         const icons = { Heart, Tent, Scale, BookOpen };
         return icons[iconName] || Database;
-    };
-
-    // Get transformers model info for display
-    const getModelInfo = (modelId) => {
-        return TRANSFORMERS_MODELS[modelId] || {};
     };
 
     return (
