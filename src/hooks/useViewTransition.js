@@ -63,7 +63,8 @@ export const useViewTransition = () => {
 
         const transitionTimeout = setTimeout(() => {
             if (!callbackInvoked) {
-                log.warn('View transition timed out after 2s, forcing callback to prevent UI freeze');
+                // Critical Robustness: prevent UI freeze if browser hangs during transition
+                log.warn('View transition timed out after 2s, forcing callback execution');
                 callbackInvoked = true;
                 try {
                     callback();
