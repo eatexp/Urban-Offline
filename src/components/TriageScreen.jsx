@@ -46,20 +46,9 @@ const log = createLogger('TriageScreen');
 const ChoiceButton = memo(({ choice, index, onChoose }) => (
     <button
         onClick={() => onChoose(choice.index)}
-        className="choice-button text-left p-4 rounded-lg transition-all animate-scale-in flex-1 min-w-[200px]"
+        className="triage-choice-button animate-scale-in flex-1 min-w-[200px]"
         style={{
-            background: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border-primary)',
-            color: 'var(--color-text-primary)',
             animationDelay: `${index * 50}ms`
-        }}
-        onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-            e.currentTarget.style.boxShadow = '0 0 0 1px var(--color-primary-500), var(--shadow-md)';
-        }}
-        onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-            e.currentTarget.style.boxShadow = 'none';
         }}
     >
         <span className="font-semibold">{choice.text}</span>
@@ -113,11 +102,15 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
 
         const doLoad = async () => {
             try {
-                await inkService.loadStory(storyFile);
+                const success = await inkService.loadStory(storyFile);
                 if (isMounted) {
-                    const initial = inkService.continue();
-                    setStoryState(initial);
-                    setError(null);
+                    if (success) {
+                        const initial = inkService.continue();
+                        setStoryState(initial);
+                        setError(null);
+                    } else {
+                        setError("Failed to load triage guide.");
+                    }
                 }
             } catch (_e) {
                 log.error('Failed to load story', _e);
@@ -151,44 +144,6 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
         setStoryState(next);
     }, [triggerHaptic]);
 
-    if (error) {
-        return (
-            <div
-                className="card card-emergency p-4 flex items-center gap-3 animate-fade-in"
-            >
-                <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(239, 68, 68, 0.2)' }}
-                >
-                    <AlertCircle size={20} style={{ color: 'var(--color-danger)' }} />
-                </div>
-                <div>
-                    <p className="font-bold" style={{ color: 'var(--color-danger)' }}>Error</p>
-                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{error}</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!storyState) {
-        return (
-            <div
-                className="p-8 text-center animate-fade-in"
-                style={{ color: 'var(--color-text-muted)' }}
-            >
-                <div
-                    className="animate-spin w-8 h-8 rounded-full mx-auto mb-4"
-                    style={{
-                        borderWidth: '3px',
-                        borderColor: 'var(--color-border-primary)',
-                        borderTopColor: 'var(--color-primary-500)'
-                    }}
-                ></div>
-                Loading triage flow...
-            </div>
-        );
-    }
-
     return (
         <div
             className="card triage-screen rounded-xl overflow-hidden flex flex-col h-[70vh] sm:h-[75vh] md:h-[80vh] lg:max-h-[600px] animate-scale-in"
@@ -209,10 +164,8 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg transition-colors"
-                        style={{ color: 'var(--color-text-muted)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        className="triage-nav-button"
+                        aria-label="Close triage guide"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -222,105 +175,139 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                 </div>
                 <button
                     onClick={handleReload}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ color: 'var(--color-text-muted)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                    className="triage-nav-button"
+                    aria-label="Restart triage guide"
                 >
                     <RefreshCw size={18} />
                 </button>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
-                <div className="max-w-2xl mx-auto lg:max-w-3xl xl:max-w-4xl prose prose-invert">
-                    {storyState.text.split('\n').map((line, i) => {
-                        // Simple Markdown Parser for **bold**
-                        const parts = line.split(/(\*\*.*?\*\*)/g);
-                        return (
-                            <p
-                                key={i}
-                                className="text-lg leading-relaxed font-medium"
-                                style={{ color: 'var(--color-text-secondary)' }}
-                            >
-                                {parts.map((part, index) => {
-                                    if (part.startsWith('**') && part.endsWith('**')) {
-                                        return (
-                                            <strong
-                                                key={index}
-                                                className="font-bold"
-                                                style={{ color: 'var(--color-text-primary)' }}
-                                            >
-                                                {part.slice(2, -2)}
-                                            </strong>
-                                        );
-                                    }
-                                    return part;
-                                })}
-                            </p>
-                        );
-                    })}
-                </div>
-
-                {/* Tags */}
-                {storyState.tags && storyState.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {storyState.tags.map(tag => (
-                            <span
-                                key={tag}
-                                className="px-3 py-1 text-xs rounded-full font-mono uppercase"
-                                style={{
-                                    background: 'rgba(59, 130, 246, 0.1)',
-                                    color: 'var(--color-info)',
-                                    border: '1px solid rgba(59, 130, 246, 0.2)'
-                                }}
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Choices - Responsive layout: horizontal on lg screens, vertical on mobile */}
-            <div
-                className="p-4 lg:p-6"
-                style={{
-                    background: 'var(--color-bg-tertiary)',
-                    borderTop: '1px solid var(--color-border-primary)'
-                }}
-            >
-                {storyState.choices.length > 0 ? (
-                    <div className="max-w-4xl mx-auto flex flex-col lg:flex-row gap-3">
-                        {storyState.choices.map((choice, index) => (
-                            <ChoiceButton
-                                key={choice.index}
-                                choice={choice}
-                                index={index}
-                                onChoose={handleChoice}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center p-4 animate-fade-in">
+            {error ? (
+                <div className="flex-1 flex items-center justify-center p-4">
+                    <div
+                        className="card card-emergency p-4 flex items-center gap-3 animate-fade-in w-full max-w-sm"
+                    >
                         <div
-                            className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
-                            style={{ background: 'rgba(34, 197, 94, 0.1)' }}
+                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ background: 'rgba(239, 68, 68, 0.2)' }}
                         >
-                            <CheckCircle size={24} style={{ color: 'var(--color-success)' }} />
+                            <AlertCircle size={20} style={{ color: 'var(--color-danger)' }} />
                         </div>
-                        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-                            End of Guide
-                        </p>
-                        <button
-                            onClick={onClose}
-                            className="btn btn-primary btn-md"
-                        >
-                            Close
-                        </button>
+                        <div>
+                            <p className="font-bold" style={{ color: 'var(--color-danger)' }}>Error</p>
+                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{error}</p>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            ) : !storyState ? (
+                <div
+                    className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in"
+                    style={{ color: 'var(--color-text-muted)' }}
+                >
+                    <div
+                        className="animate-spin w-8 h-8 rounded-full mx-auto mb-4"
+                        style={{
+                            borderWidth: '3px',
+                            borderColor: 'var(--color-border-primary)',
+                            borderTopColor: 'var(--color-primary-500)'
+                        }}
+                    ></div>
+                    Loading triage flow...
+                </div>
+            ) : (
+                <>
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+                        <div className="max-w-2xl mx-auto lg:max-w-3xl xl:max-w-4xl prose prose-invert">
+                            {storyState.text.split('\n').map((line, i) => {
+                                // Simple Markdown Parser for **bold**
+                                const parts = line.split(/(\*\*.*?\*\*)/g);
+                                return (
+                                    <p
+                                        key={i}
+                                        className="text-lg leading-relaxed font-medium"
+                                        style={{ color: 'var(--color-text-secondary)' }}
+                                    >
+                                        {parts.map((part, index) => {
+                                            if (part.startsWith('**') && part.endsWith('**')) {
+                                                return (
+                                                    <strong
+                                                        key={index}
+                                                        className="font-bold"
+                                                        style={{ color: 'var(--color-text-primary)' }}
+                                                    >
+                                                        {part.slice(2, -2)}
+                                                    </strong>
+                                                );
+                                            }
+                                            return part;
+                                        })}
+                                    </p>
+                                );
+                            })}
+                        </div>
+
+                        {/* Tags */}
+                        {storyState.tags && storyState.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {storyState.tags.map(tag => (
+                                    <span
+                                        key={tag}
+                                        className="px-3 py-1 text-xs rounded-full font-mono uppercase"
+                                        style={{
+                                            background: 'rgba(59, 130, 246, 0.1)',
+                                            color: 'var(--color-info)',
+                                            border: '1px solid rgba(59, 130, 246, 0.2)'
+                                        }}
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Choices - Responsive layout: horizontal on lg screens, vertical on mobile */}
+                    <div
+                        className="p-4 lg:p-6"
+                        style={{
+                            background: 'var(--color-bg-tertiary)',
+                            borderTop: '1px solid var(--color-border-primary)'
+                        }}
+                    >
+                        {storyState.choices.length > 0 ? (
+                            <div className="max-w-4xl mx-auto flex flex-col lg:flex-row gap-3">
+                                {storyState.choices.map((choice, index) => (
+                                    <ChoiceButton
+                                        key={choice.index}
+                                        choice={choice}
+                                        index={index}
+                                        onChoose={handleChoice}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center p-4 animate-fade-in">
+                                <div
+                                    className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+                                    style={{ background: 'rgba(34, 197, 94, 0.1)' }}
+                                >
+                                    <CheckCircle size={24} style={{ color: 'var(--color-success)' }} />
+                                </div>
+                                <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                                    End of Guide
+                                </p>
+                                <button
+                                    onClick={onClose}
+                                    className="btn btn-primary btn-md"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
