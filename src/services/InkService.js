@@ -175,9 +175,10 @@ class InkService {
         }
 
         try {
-            const response = await fetch(`/assets/ink/${filename}`);
+            const url = `/assets/ink/${filename}`;
+            const response = await fetch(url);
             if (!response.ok) {
-                log.error(`Ink story not found: ${filename}`);
+                log.error(`Ink story not found: ${filename} (Status: ${response.status}) from ${url}`);
                 return false;
             }
             const json = await response.json();
