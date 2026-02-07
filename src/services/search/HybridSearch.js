@@ -119,24 +119,36 @@ export const HybridSearchService = {
         const allResults = [];
         const seenIds = new Set();
 
-        // Parallelize search if possible, but sequential for now to preserve order preference
+        // Parallelize search using Promise.all to improve performance
+        // Maintain results order by awaiting the array of promises
         const failedQueries = [];
-        for (const expandedQuery of expandedQueries) {
+
+        const searchPromises = expandedQueries.map(async (expandedQuery) => {
             try {
                 const results = await SearchService.search(expandedQuery);
-
-                for (const result of results) {
-                    if (!seenIds.has(result.id)) {
-                        seenIds.add(result.id);
-                        allResults.push({
-                            ...result,
-                            matchedQuery: expandedQuery
-                        });
-                    }
-                }
+                return { expandedQuery, results, error: null };
             } catch (e) {
-                log.warn('Search query failed', expandedQuery, e);
-                failedQueries.push({ query: expandedQuery, error: e.message });
+                return { expandedQuery, results: [], error: e };
+            }
+        });
+
+        const searchResults = await Promise.all(searchPromises);
+
+        for (const { expandedQuery, results, error } of searchResults) {
+            if (error) {
+                log.warn('Search query failed', expandedQuery, error);
+                failedQueries.push({ query: expandedQuery, error: error.message });
+                continue;
+            }
+
+            for (const result of results) {
+                if (!seenIds.has(result.id)) {
+                    seenIds.add(result.id);
+                    allResults.push({
+                        ...result,
+                        matchedQuery: expandedQuery
+                    });
+                }
             }
         }
 
@@ -251,7 +263,7 @@ export const HybridSearchService = {
         const normalizedQuery = query.toLowerCase();
 
         // Check all emergency patterns for keyword matches
-        for (const [type, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
+        for (const [_, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
             const matches = pattern.keywords.filter(kw =>
                 normalizedQuery.includes(kw.toLowerCase()) ||
                 kw.toLowerCase().includes(normalizedQuery)
