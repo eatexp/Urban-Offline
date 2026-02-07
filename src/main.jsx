@@ -2,12 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { initStorage } from './services/db';
-import { SearchService } from './services/SearchService';
-import { Capacitor } from '@capacitor/core';
-import { getDBConnection } from './services/storage/NativeStorage';
+import { initStorage, contentSync } from './services/db';
 import { createLogger } from './utils/logger';
 import { AppProvider } from './context/AppProvider';
+import { inkService } from './services/InkService';
 
 const log = createLogger('Main');
 
@@ -19,6 +17,23 @@ const startApp = () => {
       </AppProvider>
     </React.StrictMode>
   );
+
+  // Preload critical triage stories for offline availability
+  // This ensures life-safety guides (CPR, choking, etc.) are cached
+  inkService.preloadCriticalStories().then(({ loaded, failed }) => {
+    if (failed.length > 0) {
+      log.warn(`Failed to preload ${failed.length} critical stories:`, failed);
+    }
+  }).catch(err => {
+    log.warn('Story preload failed:', err);
+  });
 };
 
-startApp();
+initStorage()
+  .then(() => contentSync.syncBundledContent())
+  .then(() => startApp())
+  .catch(err => {
+    log.error('Storage initialization failed:', err);
+    // Start the app anyway — components can handle missing storage gracefully
+    startApp();
+  });

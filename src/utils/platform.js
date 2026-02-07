@@ -1,0 +1,188 @@
+/**
+ * Platform Detection Utilities
+ * 
+ * Centralized platform detection for cross-platform compatibility.
+ * Used to handle platform-specific behaviors and feature availability.
+ */
+
+import { Capacitor } from '@capacitor/core';
+
+/**
+ * Check if running in a native mobile environment (iOS/Android)
+ * @returns {boolean}
+ */
+export const isNativeMobile = () => {
+    return Capacitor.isNativePlatform() && !isWindowsNative();
+};
+
+/**
+ * Check if running in Windows native environment (Electron)
+ * @returns {boolean}
+ */
+export const isWindowsNative = () => {
+    // Check for Electron/Windows specific indicators
+    if (typeof window === 'undefined') return false;
+    
+    // Electron sets window.electron or process.versions.electron
+    const hasElectronAPI = !!(window.electron || window.process?.versions?.electron);
+    
+    // Windows platform check
+    const isWindows = window.navigator?.platform?.includes('Win') || 
+                      window.navigator?.userAgent?.includes('Windows');
+    
+    // Node.js context in renderer (Electron specific)
+    const hasNodeContext = typeof window.require !== 'undefined';
+    
+    return hasElectronAPI || (isWindows && hasNodeContext);
+};
+
+/**
+ * Check if running in iOS native app
+ * @returns {boolean}
+ */
+export const isIOSNative = () => {
+    return Capacitor.getPlatform() === 'ios';
+};
+
+/**
+ * Check if running in Android native app
+ * @returns {boolean}
+ */
+export const isAndroidNative = () => {
+    return Capacitor.getPlatform() === 'android';
+};
+
+/**
+ * Check if running in a WebView (iOS/Android WebView)
+ * @returns {boolean}
+ */
+export const isWebView = () => {
+    const userAgent = window.navigator?.userAgent || '';
+    const isIOSWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(userAgent);
+    const isAndroidWebView = userAgent.includes('wv') || userAgent.includes('WebView');
+    return isIOSWebView || isAndroidWebView;
+};
+
+/**
+ * Check if running in a browser (not native)
+ * @returns {boolean}
+ */
+export const isWeb = () => {
+    return !Capacitor.isNativePlatform();
+};
+
+/**
+ * Check if View Transitions API is supported and should be used
+ * @returns {boolean}
+ */
+export const supportsViewTransitions = () => {
+    // Windows native/Electron has inconsistent support
+    if (isWindowsNative()) return false;
+    
+    // iOS Safari doesn't support View Transitions
+    if (isIOSNative() || (isWeb() && /iPad|iPhone|iPod/.test(navigator.userAgent))) {
+        return false;
+    }
+    
+    // Android WebView has partial support that may flicker
+    if (isWebView() && isAndroidNative()) return false;
+    
+    // Check for API availability
+    return typeof document !== 'undefined' && !!document.startViewTransition;
+};
+
+/**
+ * Check if AI/ML features are available on current platform
+ * @returns {{ available: boolean, reason: string|null }}
+ */
+export const checkAIAvailability = () => {
+    // Windows native doesn't support transformers.js
+    if (isWindowsNative()) {
+        return {
+            available: false,
+            reason: 'AI features are not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI-powered assistance.'
+        };
+    }
+    
+    // WebGL/WebGPU required for transformers.js
+    if (typeof window === 'undefined') {
+        return { available: false, reason: 'Server-side rendering not supported' };
+    }
+    
+    const hasWebGL = !!window.WebGLRenderingContext;
+    const hasWebGPU = 'gpu' in navigator;
+    
+    if (!hasWebGL && !hasWebGPU) {
+        return {
+            available: false,
+            reason: 'Your device does not support the required graphics capabilities for AI features.'
+        };
+    }
+    
+    return { available: true, reason: null };
+};
+
+/**
+ * Get the best storage directory for current platform
+ * @returns {string} Directory constant from @capacitor/filesystem
+ */
+export const getStorageDirectory = async () => {
+    // Dynamically import to avoid issues in web environment
+    const { Directory } = await import('@capacitor/filesystem');
+    
+    // Windows native works better with Data directory
+    if (isWindowsNative()) {
+        return Directory.Data;
+    }
+    
+    // iOS/Android use Documents
+    if (isNativeMobile()) {
+        return Directory.Documents;
+    }
+    
+    // Web doesn't use filesystem
+    return null;
+};
+
+/**
+ * Check if user prefers reduced motion
+ * @returns {boolean}
+ */
+export const prefersReducedMotion = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+};
+
+/**
+ * Get platform information for debugging
+ * @returns {Object}
+ */
+export const getPlatformInfo = () => {
+    return {
+        isNativeMobile: isNativeMobile(),
+        isWindowsNative: isWindowsNative(),
+        isIOSNative: isIOSNative(),
+        isAndroidNative: isAndroidNative(),
+        isWebView: isWebView(),
+        isWeb: isWeb(),
+        supportsViewTransitions: supportsViewTransitions(),
+        aiAvailable: checkAIAvailability(),
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown'
+    };
+};
+
+// Default export
+export default {
+    isNativeMobile,
+    isWindowsNative,
+    isIOSNative,
+    isAndroidNative,
+    isWebView,
+    isWeb,
+    supportsViewTransitions,
+    checkAIAvailability,
+    getStorageDirectory,
+    prefersReducedMotion,
+    getPlatformInfo
+};

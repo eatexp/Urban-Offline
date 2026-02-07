@@ -63,7 +63,8 @@ export const PACK_CATEGORIES = {
     LEGAL: 'legal',
     SURVIVAL: 'survival',
     REGION: 'region',
-    AI_MODEL: 'ai-model'
+    AI_MODEL: 'ai-model',
+    ZIM_IMPORT: 'zim-import'  // User-imported ZIM files
 };
 
 // Resource Types
@@ -74,7 +75,8 @@ export const RESOURCE_TYPES = {
     MAP_TILES: 'map-tiles',
     PLACES: 'places',
     MODEL: 'model',
-    VECTOR_INDEX: 'vector-index'
+    VECTOR_INDEX: 'vector-index',
+    ZIM_ARTICLE: 'zim-article'  // Articles from imported ZIM files
 };
 
 // Pack Status
@@ -83,146 +85,77 @@ export const PACK_STATUS = {
     DOWNLOADING: 'downloading',
     INSTALLING: 'installing',
     INSTALLED: 'installed',
+    BUNDLED: 'bundled',
     UPDATE_AVAILABLE: 'update-available',
     ERROR: 'error'
 };
 
 /**
- * Example pack manifests (these would come from a server)
+ * Bundled content packs — these ship with the app and are synced on first launch.
+ * Used as fallback when the content-manifest.json can't be fetched.
  */
-export const EXAMPLE_PACKS = [
+export const BUNDLED_PACKS = [
     {
-        id: 'medical-core-v1',
-        name: 'Essential Medical Guide',
-        description: 'First aid, CPR, emergency triage decision trees, and common medical emergencies. Sourced from Wikipedia WikiProject Medicine.',
+        id: 'medical-core',
+        name: 'Emergency Medical Guide',
+        description: 'First aid, CPR, emergency triage, trauma care, medications, and anatomy reference. Sourced from Wikipedia WikiProject Medicine.',
         category: PACK_CATEGORIES.MEDICAL,
-        version: '1.2.0',
-        size: 15 * 1024 * 1024, // 15 MB
-        sizeDisplay: '15 MB',
-        tags: ['first-aid', 'cpr', 'emergency', 'medical', 'triage'],
+        version: '1.0.0',
+        store: 'health_content',
+        tags: ['first-aid', 'cpr', 'emergency', 'medical', 'trauma', 'medications'],
         icon: 'medical',
-        resources: [
-            { id: 'cpr-guide', type: RESOURCE_TYPES.ARTICLE, path: 'articles/cpr.json', size: 45000, checksum: '' },
-            { id: 'first-aid-guide', type: RESOURCE_TYPES.ARTICLE, path: 'articles/first-aid.json', size: 67000, checksum: '' },
-            { id: 'triage-breathing', type: RESOURCE_TYPES.INK_STORY, path: 'ink/breathing-emergency.ink.json', size: 12000, checksum: '' }
-        ],
-        dependencies: { required: [], optional: ['medical-advanced-v1'] },
+        dependencies: { required: [], optional: [] },
         metadata: {
             source: 'Wikipedia WikiProject Medicine',
             license: 'CC-BY-SA-4.0',
             licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
-            attribution: 'Content from Wikipedia contributors, licensed under CC-BY-SA 4.0',
-            lastVerified: '2024-12-01'
+            attribution: 'Content from Wikipedia contributors, licensed under CC-BY-SA 4.0'
         },
-        checksum: '',
-        downloadUrl: '/packs/medical-core-v1.zip',
-        updatedAt: '2024-12-15T00:00:00Z'
+        dataUrl: '/assets/packs/medical-core.json',
+        bundled: true
     },
     {
-        id: 'legal-uk-v1',
+        id: 'legal-uk',
         name: 'UK Legal Rights',
-        description: 'Know your rights when dealing with police, arrests, searches, and legal procedures in the UK. Based on PACE codes and legislation.gov.uk.',
+        description: 'Know your rights: PACE codes, arrest procedures, stop & search, police encounters, and legal protections.',
         category: PACK_CATEGORIES.LEGAL,
         version: '1.0.0',
-        size: 8 * 1024 * 1024, // 8 MB
-        sizeDisplay: '8 MB',
+        store: 'law_content',
         tags: ['legal', 'rights', 'police', 'arrest', 'uk', 'pace'],
         icon: 'legal',
-        resources: [
-            { id: 'pace-codes', type: RESOURCE_TYPES.ARTICLE, path: 'articles/pace-codes.json', size: 120000, checksum: '' },
-            { id: 'arrest-rights', type: RESOURCE_TYPES.INK_STORY, path: 'ink/arrest-rights.ink.json', size: 15000, checksum: '' }
-        ],
         dependencies: { required: [], optional: [] },
         metadata: {
-            source: 'UK Government / legislation.gov.uk',
-            license: 'OGL-3.0',
-            licenseUrl: 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/',
-            attribution: 'Contains public sector information licensed under the Open Government Licence v3.0',
-            lastVerified: '2024-11-01'
+            source: 'UK Government / legislation.gov.uk / Wikipedia',
+            license: 'CC-BY-SA-4.0',
+            licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+            attribution: 'Content from Wikipedia contributors'
         },
-        checksum: '',
-        downloadUrl: '/packs/legal-uk-v1.zip',
-        updatedAt: '2024-11-15T00:00:00Z'
+        dataUrl: '/assets/packs/legal-uk.json',
+        bundled: true
     },
     {
-        id: 'survival-core-v1',
+        id: 'survival-core',
         name: 'Survival Essentials',
-        description: 'Water purification, shelter building, fire starting, navigation, and emergency preparedness. Based on Red Cross and FEMA guidelines.',
+        description: 'Water purification, shelter building, fire starting, navigation, and emergency preparedness.',
         category: PACK_CATEGORIES.SURVIVAL,
-        version: '1.1.0',
-        size: 12 * 1024 * 1024, // 12 MB
-        sizeDisplay: '12 MB',
+        version: '1.0.0',
+        store: 'survival_content',
         tags: ['survival', 'emergency', 'water', 'shelter', 'fire', 'navigation'],
         icon: 'survival',
-        resources: [
-            { id: 'water-purification', type: RESOURCE_TYPES.ARTICLE, path: 'articles/water-purification.json', size: 35000, checksum: '' },
-            { id: 'shelter-building', type: RESOURCE_TYPES.ARTICLE, path: 'articles/shelter.json', size: 42000, checksum: '' }
-        ],
-        dependencies: { required: [], optional: ['region-wilderness-v1'] },
-        metadata: {
-            source: 'Red Cross / FEMA',
-            license: 'Public Domain',
-            licenseUrl: '',
-            attribution: 'Based on American Red Cross and FEMA emergency preparedness materials',
-            lastVerified: '2024-10-01'
-        },
-        checksum: '',
-        downloadUrl: '/packs/survival-core-v1.zip',
-        updatedAt: '2024-10-15T00:00:00Z'
-    },
-    {
-        id: 'region-london-v1',
-        name: 'London Offline Map',
-        description: 'Offline map tiles and points of interest for Greater London including hospitals, shelters, and emergency services.',
-        category: PACK_CATEGORIES.REGION,
-        version: '1.0.0',
-        size: 85 * 1024 * 1024, // 85 MB
-        sizeDisplay: '85 MB',
-        tags: ['london', 'uk', 'map', 'offline', 'hospitals', 'shelters'],
-        icon: 'map',
-        resources: [
-            { id: 'london-tiles', type: RESOURCE_TYPES.MAP_TILES, path: 'tiles/', size: 75 * 1024 * 1024, checksum: '' },
-            { id: 'london-hospitals', type: RESOURCE_TYPES.PLACES, path: 'places/hospitals.json', size: 250000, checksum: '' },
-            { id: 'london-shelters', type: RESOURCE_TYPES.PLACES, path: 'places/shelters.json', size: 120000, checksum: '' }
-        ],
         dependencies: { required: [], optional: [] },
         metadata: {
-            source: 'OpenStreetMap',
-            license: 'ODbL-1.0',
-            licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
-            attribution: '© OpenStreetMap contributors',
-            lastVerified: '2024-12-01'
+            source: 'Wikipedia',
+            license: 'CC-BY-SA-4.0',
+            licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+            attribution: 'Content from Wikipedia contributors'
         },
-        checksum: '',
-        downloadUrl: '/packs/region-london-v1.zip',
-        updatedAt: '2024-12-01T00:00:00Z'
-    },
-    {
-        id: 'ai-phi3-mini-v1',
-        name: 'Phi-3 Mini (Offline AI)',
-        description: 'Microsoft Phi-3 Mini quantized model for offline AI assistance. Provides intelligent answers using your downloaded content.',
-        category: PACK_CATEGORIES.AI_MODEL,
-        version: '1.0.0',
-        size: 2.3 * 1024 * 1024 * 1024, // 2.3 GB
-        sizeDisplay: '2.3 GB',
-        tags: ['ai', 'llm', 'offline', 'assistant', 'phi3'],
-        icon: 'ai',
-        resources: [
-            { id: 'phi3-mini-q4', type: RESOURCE_TYPES.MODEL, path: 'models/phi3-mini-q4.gguf', size: 2.3 * 1024 * 1024 * 1024, checksum: '' }
-        ],
-        dependencies: { required: [], optional: [] },
-        metadata: {
-            source: 'Microsoft Research',
-            license: 'MIT',
-            licenseUrl: 'https://opensource.org/licenses/MIT',
-            attribution: 'Phi-3 by Microsoft Research',
-            lastVerified: '2024-12-01'
-        },
-        checksum: '',
-        downloadUrl: '/packs/ai-phi3-mini-v1.gguf',
-        updatedAt: '2024-12-01T00:00:00Z'
+        dataUrl: '/assets/packs/survival-core.json',
+        bundled: true
     }
 ];
+
+// Keep backward-compatible export name
+export const EXAMPLE_PACKS = BUNDLED_PACKS;
 
 /**
  * Validates a pack manifest structure

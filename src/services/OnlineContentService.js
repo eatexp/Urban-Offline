@@ -26,6 +26,28 @@ const MEDICAL_CATEGORIES = [
     { id: 'respiratory', name: 'Respiratory', query: 'Category:Respiratory system' }
 ];
 
+// Cache for recent search results (sessionStorage-based for offline resilience)
+const SEARCH_CACHE_KEY = 'online_search_cache';
+
+// Pending request queue for offline retry
+const pendingRequests = [];
+let onlineListenerAttached = false;
+
+function attachOnlineListener() {
+    if (onlineListenerAttached || typeof window === 'undefined') return;
+    onlineListenerAttached = true;
+    window.addEventListener('online', () => {
+        log.info(`Connection restored, retrying ${pendingRequests.length} pending request(s)`);
+        const queue = pendingRequests.splice(0);
+        queue.forEach(({ resolve, fn }) => {
+            fn().then(resolve).catch(() => {
+                // If retry fails, re-queue
+                pendingRequests.push({ resolve, fn });
+            });
+        });
+    });
+}
+
 export const OnlineContentService = {
     /**
      * Check if currently online
@@ -48,8 +70,26 @@ export const OnlineContentService = {
      * @returns {Promise<Array>} Search results
      */
     async search(query, limit = 20) {
+        attachOnlineListener();
         if (!this.isOnline()) {
-            return { error: 'offline', results: [] };
+            // Check cache first
+            try {
+                const cache = JSON.parse(sessionStorage.getItem(SEARCH_CACHE_KEY) || '{}');
+                const cached = cache[query.toLowerCase()];
+                if (cached) {
+                    return { error: 'offline (cached)', results: cached.results };
+                }
+            } catch (_e) { /* ignore */ }
+
+            // Queue for retry when back online
+            return new Promise((resolve) => {
+                pendingRequests.push({
+                    resolve,
+                    fn: () => this.search(query, limit)
+                });
+                log.info(`Queued search for "${query}" — will retry when online`);
+                resolve({ error: 'offline', results: [], queued: true });
+            });
         }
 
         try {
@@ -62,7 +102,23 @@ export const OnlineContentService = {
                 origin: '*'
             });
 
-            const response = await fetch(`${WIKI_SEARCH_API}?${params}`);
+            // Fetch with retry and exponential backoff for transient network errors
+            const fetchWithRetry = async (url, maxRetries = 3) => {
+                for (let attempt = 0; attempt < maxRetries; attempt++) {
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) return response;
+                        // Non-retryable HTTP errors (4xx)
+                        if (response.status >= 400 && response.status < 500) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                    } catch (err) {
+                        if (attempt === maxRetries - 1) throw err;
+                    }
+                    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+                }
+            };
+            const response = await fetchWithRetry(`${WIKI_SEARCH_API}?${params}`);
 
             if (!response.ok) {
                 throw new Error(`Search failed: ${response.status}`);
@@ -77,12 +133,36 @@ export const OnlineContentService = {
                 timestamp: item.timestamp
             }));
 
+            // Cache results for offline access
+            try {
+                const cache = JSON.parse(sessionStorage.getItem(SEARCH_CACHE_KEY) || '{}');
+                cache[query.toLowerCase()] = { results, timestamp: Date.now() };
+                // Keep only last 20 searches
+                const keys = Object.keys(cache);
+                if (keys.length > 20) {
+                    const oldest = keys.sort((a, b) => cache[a].timestamp - cache[b].timestamp)[0];
+                    delete cache[oldest];
+                }
+                sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(cache));
+            } catch (e) {
+                // Caching failed, continue without
+            }
+
             return { error: null, results };
 
         } catch (error) {
             log.error('Search failed', error);
-            // TODO: Resilience - Cache search results for offline use
-            // If user goes offline, they should be able to see recent search results.
+            // Return cached results if available
+            try {
+                const cache = JSON.parse(sessionStorage.getItem(SEARCH_CACHE_KEY) || '{}');
+                const cached = cache[query.toLowerCase()];
+                if (cached) {
+                    log.info('Returning cached search results');
+                    return { error: 'offline (cached)', results: cached.results };
+                }
+            } catch (e) {
+                // Cache read failed
+            }
             return { error: error.message, results: [] };
         }
     },
@@ -259,25 +339,30 @@ export const OnlineContentService = {
      * Clean HTML for storage
      */
     _cleanHtml(html) {
-        // Create a simple DOM parser
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        try {
+            // Create a simple DOM parser
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
 
-        // Remove unwanted elements
-        const removeSelectors = [
-            'script', 'style', '[data-mw]', '.mw-editsection',
-            '.reference', '.navbox', '.sidebar', '.hatnote', '.metadata'
-        ];
+            // Remove unwanted elements
+            const removeSelectors = [
+                'script', 'style', '[data-mw]', '.mw-editsection',
+                '.reference', '.navbox', '.sidebar', '.hatnote', '.metadata'
+            ];
 
-        removeSelectors.forEach(selector => {
-            try {
-                doc.querySelectorAll(selector).forEach(el => el.remove());
-            } catch (_e) {
-                // Selector may be invalid
-            }
-        });
+            removeSelectors.forEach(selector => {
+                try {
+                    doc.querySelectorAll(selector).forEach(el => el.remove());
+                } catch (_e) {
+                    // Selector may be invalid
+                }
+            });
 
-        return doc.body?.innerHTML || html;
+            return doc.body?.innerHTML || html;
+        } catch (parseError) {
+            log.warn('HTML parsing failed, returning raw HTML', parseError);
+            return html; // Return unmodified as fallback
+        }
     },
 
     /**

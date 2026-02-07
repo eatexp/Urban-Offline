@@ -52,7 +52,8 @@ import {
     IntentClassificationViz
 } from '../components/ai-visualizations';
 import AIReadingViz from '../components/ai-visualizations/AIReadingViz';
-import ModelPicker from '../components/ModelPicker';
+// ModelPicker has been moved to dedicated /ai-models page
+// import ModelPicker from '../components/ModelPicker';
 
 const log = createLogger('AIChat');
 
@@ -90,7 +91,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
     const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback
     const [activeModel, setActiveModel] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
-    const [showModelPicker, setShowModelPicker] = useState(false);
+    // showModelPicker removed - model management moved to /ai-models page
     const [availableModels, setAvailableModels] = useState([]);
     const [availableDatasets, setAvailableDatasets] = useState([]);
     const [enabledDatasets, setEnabledDatasets] = useState([]);
@@ -498,7 +499,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
                         </div>
                         <div className="flex items-center gap-1">
                             <button
-                                onClick={() => setShowModelPicker(true)}
+                                onClick={() => navigate('/ai-models')}
                                 className="p-2 rounded-lg transition-colors"
                                 style={{ color: 'var(--color-text-muted)' }}
                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
@@ -757,27 +758,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
                 />
             )}
 
-            {/* Model Picker Modal */}
-            {showModelPicker && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in"
-                    onClick={() => setShowModelPicker(false)}
-                >
-                    <div
-                        className="w-full max-w-lg max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl animate-scale-in"
-                        style={{ background: 'var(--color-bg-primary)' }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <ModelPicker
-                            onClose={() => setShowModelPicker(false)}
-                            onModelChange={(modelId) => {
-                                setActiveModel(modelId);
-                                refreshAIModels();
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+            {/* Model Picker - now redirects to dedicated AI Models page */}
         </div>
     );
 };

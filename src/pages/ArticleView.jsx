@@ -1,11 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useNavigate, useLoaderData } from 'react-router-dom';
 import { ArrowLeft, BookOpen, AlertTriangle, ExternalLink } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import AskAIChip from '../components/AskAIChip';
 import { createLogger } from '../utils/logger';
+import DOMPurify from 'dompurify';
 
 const log = createLogger('ArticleView');
+
+// =============================================================================
+// TODO: [Performance] ARTICLE_VIEW_MEMOIZATION
+// What's wrong: Component re-renders on every parent update even when article
+//   data hasn't changed. The triageStory computation also runs on every render.
+// Why it matters: Article pages can be long, causing unnecessary computation
+//   and potential scroll position resets during navigation.
+// How to fix: 
+//   1. Wrap component with React.memo
+//   2. Memoize triageStory computation with useMemo
+//   3. Consider memoizing the DOMPurify sanitization
+// Priority: P2 | Effort: XS (15 min) | Impact: Medium
+// =============================================================================
 
 const ArticleView = () => {
     const article = useLoaderData();
@@ -63,7 +77,7 @@ const ArticleView = () => {
             {/* Article Content */}
             <main className="max-w-3xl mx-auto px-4 py-6">
                 <article className="prose prose-invert max-w-none prose-headings:text-slate-100 prose-p:text-slate-300 prose-a:text-blue-400 prose-strong:text-slate-200">
-                    <div dangerouslySetInnerHTML={{ __html: article.body_html }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.body_html) }} />
                 </article>
 
                 {/* Ask AI Chip */}
@@ -90,4 +104,6 @@ const ArticleView = () => {
     );
 };
 
-export default ArticleView;
+// TODO: [Performance] Optimize re-renders - ArticleView should be memoized
+//   to prevent unnecessary re-renders when parent Layout updates. VERIFIED 2026-02-05
+export default memo(ArticleView);

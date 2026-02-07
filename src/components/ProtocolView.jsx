@@ -67,7 +67,20 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
+        // =============================================================================
+        // VERIFIED: [P0][Safety] SPEECH_SYNTHESIS_ERROR_HANDLING
+        // Implementation: Error callback dispatches custom event to UI layer for
+        //   toast notification when voice guidance fails (excluding user cancellation).
+        //   Ensures users are notified of voice guidance failures in emergency scenarios.
+        // =============================================================================
+        utterance.onerror = (e) => {
+            setIsSpeaking(false);
+            if (e.error !== 'canceled') {
+                window.dispatchEvent(new CustomEvent('voice-guidance-error', {
+                    detail: { error: e.error, message: 'Voice guidance unavailable' }
+                }));
+            }
+        };
 
         window.speechSynthesis.speak(utterance);
     };
@@ -210,12 +223,19 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                         >
                             {/* Checkbox */}
                             <label className="flex-shrink-0 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => toggleStep(index)}
-                                    className="sr-only peer"
-                                />
+                            <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleStep(index)}
+                                className="sr-only peer"
+                                // =============================================================================
+                                // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
+                                // Implementation: Added aria-label with step number and content summary.
+                                //   Ensures screen readers can identify checkbox purpose for accessibility.
+                                //   Also using sr-only with aria-label pattern for proper assistive tech support.
+                                // =============================================================================
+                                aria-label={`Step ${index + 1}: ${step.text}`}
+                            />
                                 <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-3 flex items-center justify-center transition-all ${
                                     isChecked
                                         ? 'bg-green-600 border-green-600'

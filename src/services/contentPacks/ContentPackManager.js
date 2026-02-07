@@ -11,7 +11,8 @@
 
 import { db } from '../db';
 import { SearchService } from '../SearchService';
-import { PACK_STATUS, PACK_CATEGORIES, formatSize, validateManifest, EXAMPLE_PACKS } from './ContentPackSchema';
+import { PACK_STATUS, PACK_CATEGORIES, formatSize, validateManifest, BUNDLED_PACKS, RESOURCE_TYPES } from './ContentPackSchema';
+import { ZimReader } from '../zim/ZimReader';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('ContentPackManager');
@@ -29,6 +30,9 @@ export const ContentPackManager = {
     // In-memory cache of download progress
     _downloadProgress: new Map(),
     _abortControllers: new Map(),
+    // Queue of pack IDs that failed and should retry when online
+    _retryQueue: [],
+    _onlineListenerAttached: false,
 
     /**
      * Initialize the pack manager
@@ -47,27 +51,40 @@ export const ContentPackManager = {
     },
 
     /**
-     * Fetch available packs from server or local fallback
+     * Fetch available packs from manifest or local fallback
      * @returns {Promise<Array>} List of available packs with install status
      */
     async getAvailablePacks() {
         let packs = [];
 
-        // Try to fetch from server
+        // Try to read the bundled content manifest first
         try {
-            const response = await fetch(PACK_REGISTRY_URL);
+            const response = await fetch('/assets/content-manifest.json');
             if (response.ok) {
-                const data = await response.json();
-                packs = data.packs || [];
+                const manifest = await response.json();
+                packs = manifest.packs || [];
             }
         } catch (_fetchError) {
-            log.warn('Could not fetch registry, using local examples');
+            log.debug('No content manifest, trying registry');
         }
 
-        // Fall back to example packs if fetch failed
+        // Try pack registry as secondary source
         if (packs.length === 0) {
-            log.debug('Using local example packs');
-            packs = EXAMPLE_PACKS;
+            try {
+                const response = await fetch(PACK_REGISTRY_URL);
+                if (response.ok) {
+                    const data = await response.json();
+                    packs = data.packs || [];
+                }
+            } catch (_fetchError) {
+                log.warn('Could not fetch registry');
+            }
+        }
+
+        // Fall back to bundled pack definitions
+        if (packs.length === 0) {
+            log.debug('Using bundled pack definitions');
+            packs = BUNDLED_PACKS;
         }
 
         // Get installed packs to merge status
@@ -78,18 +95,17 @@ export const ContentPackManager = {
         return packs.map(pack => {
             const installedPack = installedMap.get(pack.id);
             if (installedPack) {
-                // Check if update available
-                const updateAvailable = this._compareVersions(pack.version, installedPack.version) > 0;
                 return {
                     ...pack,
-                    status: updateAvailable ? PACK_STATUS.UPDATE_AVAILABLE : PACK_STATUS.INSTALLED,
+                    status: installedPack.bundled ? PACK_STATUS.BUNDLED : PACK_STATUS.INSTALLED,
+                    articleCount: installedPack.articleCount || pack.articleCount || 0,
                     installedVersion: installedPack.version,
                     installedAt: installedPack.installedAt
                 };
             }
             return {
                 ...pack,
-                status: PACK_STATUS.NOT_INSTALLED
+                status: pack.bundled ? PACK_STATUS.NOT_INSTALLED : PACK_STATUS.NOT_INSTALLED
             };
         });
     },
@@ -122,10 +138,12 @@ export const ContentPackManager = {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     async downloadPack(packId, onProgress) {
+        this._attachOnlineListener();
+
         // Get pack info
         const packs = await this.getAvailablePacks();
         const pack = packs.find(p => p.id === packId);
-        
+
         if (!pack) {
             return { success: false, error: 'Pack not found' };
         }
@@ -150,6 +168,25 @@ export const ContentPackManager = {
         this._downloadProgress.set(packId, 0);
 
         let tempFileHandle = null;
+
+        // Proactive storage quota check before downloading large packs
+        try {
+            if (navigator.storage && navigator.storage.estimate) {
+                const { quota, usage } = await navigator.storage.estimate();
+                const availableBytes = quota - usage;
+                const requiredBytes = pack.size * 1.1; // 10% buffer for overhead
+
+                if (requiredBytes > availableBytes) {
+                    const availableMB = (availableBytes / (1024 * 1024)).toFixed(1);
+                    const requiredMB = (requiredBytes / (1024 * 1024)).toFixed(1);
+                    log.warn(`Proactive quota check failed: need ${requiredMB}MB, have ${availableMB}MB`);
+                    return { success: false, error: `Insufficient storage: need ${requiredMB}MB, have ${availableMB}MB` };
+                }
+                log.debug(`Quota check passed: ${(availableBytes / (1024 * 1024)).toFixed(1)}MB available`);
+            }
+        } catch (quotaError) {
+            log.warn('Quota check failed, proceeding with download', quotaError);
+        }
 
         try {
             // Update status to downloading
@@ -191,9 +228,9 @@ export const ContentPackManager = {
 
             while (true) {
                 const { done, value } = await reader.read();
-                
+
                 if (done) break;
-                
+
                 receivedLength += value.length;
 
                 if (useMemory) {
@@ -201,7 +238,7 @@ export const ContentPackManager = {
                 } else {
                     await writable.write(value);
                 }
-                
+
                 const progress = Math.round((receivedLength / totalSize) * 80); // 0-80% for download
                 this._downloadProgress.set(packId, progress);
                 if (onProgress) {
@@ -286,6 +323,23 @@ export const ContentPackManager = {
             }
 
             log.error('Download failed', error);
+
+            // Attempt to rollback any partially installed content
+            try {
+                await this._rollbackPartialInstall(pack);
+            } catch (rollbackErr) {
+                log.warn('Rollback of partial install failed', rollbackErr);
+            }
+
+            // Queue for retry when back online (network errors only)
+            if (!navigator.onLine || error.message.includes('fetch') || error.name === 'TypeError') {
+                if (!this._retryQueue.includes(packId)) {
+                    this._retryQueue.push(packId);
+                    log.info(`Queued pack "${packId}" for retry when online`);
+                }
+                return { success: false, error: error.message, queued: true };
+            }
+
             return { success: false, error: error.message };
         }
     },
@@ -370,12 +424,12 @@ export const ContentPackManager = {
     async _installPack(pack, packSource, onProgress) {
         // Parse pack data (ZIP or JSON depending on format)
         // For now, we'll simulate installation based on pack category
-        
+
         // Note: In a real implementation, if packSource is a File (from OPFS),
         // we would use a streaming unzip/parser here to avoid loading it all into memory.
 
         const category = pack.category;
-        
+
         if (onProgress) onProgress(10);
 
         switch (category) {
@@ -385,12 +439,12 @@ export const ContentPackManager = {
                 // Install articles to appropriate store
                 await this._installArticles(pack, onProgress);
                 break;
-                
+
             case PACK_CATEGORIES.REGION:
                 // Install map tiles and places
                 await this._installRegionData(pack, onProgress);
                 break;
-                
+
             case PACK_CATEGORIES.AI_MODEL:
                 // Store model file reference
                 await this._installAIModel(pack, onProgress);
@@ -445,7 +499,7 @@ export const ContentPackManager = {
         if (newDocs.length > 0) {
             await SearchService.addDocuments(newDocs);
         }
-        
+
         if (onProgress) onProgress(100);
     },
 
@@ -454,7 +508,7 @@ export const ContentPackManager = {
      */
     async _installRegionData(pack, onProgress) {
         if (onProgress) onProgress(30);
-        
+
         // Would install map tiles and places data
         for (const resource of pack.resources || []) {
             log.debug(`Would install ${resource.type}: ${resource.id}`);
@@ -468,7 +522,7 @@ export const ContentPackManager = {
      */
     async _installAIModel(pack, onProgress) {
         if (onProgress) onProgress(20);
-        
+
         // Store model reference (actual file would be stored in Filesystem API)
         const modelInfo = {
             id: pack.id,
@@ -477,9 +531,9 @@ export const ContentPackManager = {
             size: pack.size,
             installedAt: new Date().toISOString()
         };
-        
+
         await db.put('ai_models', modelInfo);
-        
+
         if (onProgress) onProgress(100);
     },
 
@@ -489,9 +543,52 @@ export const ContentPackManager = {
     async _removePackContent(packId, category) {
         // Remove content based on category
         log.debug(`Removing content for pack ${packId} (${category})`);
-        
+
         // In real implementation, would query and remove specific content
         // tied to this pack ID
+    },
+
+    /**
+     * Rollback a partially installed pack on failure
+     * @param {Object} pack - Pack metadata
+     */
+    async _rollbackPartialInstall(pack) {
+        log.info(`Rolling back partial install for pack ${pack.id}`);
+
+        try {
+            // Remove any pack content that may have been installed
+            await this._removePackContent(pack.id, pack.category);
+
+            // Remove pack metadata if it was written
+            try {
+                await db.delete(PACKS_STORE, pack.id);
+            } catch (_e) {
+                // Pack metadata may not have been written yet
+            }
+
+            log.info(`Rollback complete for pack ${pack.id}`);
+        } catch (error) {
+            log.error(`Rollback failed for pack ${pack.id}`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Attach a listener to retry queued downloads when connection is restored
+     */
+    _attachOnlineListener() {
+        if (this._onlineListenerAttached || typeof window === 'undefined') return;
+        this._onlineListenerAttached = true;
+        window.addEventListener('online', () => {
+            if (this._retryQueue.length === 0) return;
+            log.info(`Connection restored, retrying ${this._retryQueue.length} queued download(s)`);
+            const queue = this._retryQueue.splice(0);
+            queue.forEach(packId => {
+                this.downloadPack(packId, (progress, msg) => {
+                    log.debug(`Retry "${packId}": ${progress}% — ${msg}`);
+                });
+            });
+        });
     },
 
     /**
@@ -501,12 +598,311 @@ export const ContentPackManager = {
     _compareVersions(a, b) {
         const partsA = a.split('.').map(Number);
         const partsB = b.split('.').map(Number);
-        
+
         for (let i = 0; i < 3; i++) {
             if ((partsA[i] || 0) > (partsB[i] || 0)) return 1;
             if ((partsA[i] || 0) < (partsB[i] || 0)) return -1;
         }
         return 0;
+    },
+
+    /**
+     * Import a ZIM file and convert it to content pack format
+     * @param {File} file - ZIM file to import
+     * @param {Function} onProgress - Progress callback (0-100, message)
+     * @returns {Promise<{success: boolean, packId?: string, error?: string, stats?: object}>}
+     */
+    async importZimFile(file, onProgress) {
+        if (!file || !file.name.endsWith('.zim')) {
+            return { success: false, error: 'Invalid file. Please select a .zim file.' };
+        }
+
+        const packId = `zim-import-${Date.now()}`;
+        const reader = new ZimReader(file);
+
+        try {
+            if (onProgress) onProgress(0, 'Initializing ZIM reader...');
+
+            // Initialize ZIM reader
+            await reader.init();
+            const stats = reader.getStats();
+
+            log.info(`Importing ZIM file: ${stats.fileName}`, stats);
+
+            if (onProgress) onProgress(5, `Found ${stats.articleCount} articles...`);
+
+            // Check storage quota
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const { quota, usage } = await navigator.storage.estimate();
+                    const availableBytes = quota - usage;
+                    // Estimate: each article ~500 bytes metadata + content
+                    const estimatedSize = file.size * 0.5; // Rough estimate
+
+                    if (estimatedSize > availableBytes) {
+                        const availableMB = (availableBytes / (1024 * 1024)).toFixed(1);
+                        return {
+                            success: false,
+                            error: `Insufficient storage. Need ~${formatSize(estimatedSize)}, have ${availableMB}MB available.`
+                        };
+                    }
+                }
+            } catch (quotaError) {
+                log.warn('Storage quota check failed', quotaError);
+            }
+
+            // Process articles
+            const articles = [];
+            const targetStore = 'zim_content'; // Store for ZIM articles
+            let processedCount = 0;
+            let errorCount = 0;
+
+            // Clear existing content for this ZIM file if re-importing
+            // (We use a unique packId, so this shouldn't happen, but good to be safe)
+
+            if (onProgress) onProgress(10, 'Reading articles from ZIM...');
+
+            // Iterate through articles
+            for await (const article of reader.iterateArticles({
+                onlyHTML: true,
+                skipRedirects: true,
+                onProgress: (progressInfo) => {
+                    if (onProgress && progressInfo.percent % 10 === 0) {
+                        // Map 10-70% to reading progress
+                        const mappedProgress = 10 + Math.round(progressInfo.percent * 0.6);
+                        onProgress(mappedProgress, `Reading: ${progressInfo.processed} / ${progressInfo.total} articles...`);
+                    }
+                }
+            })) {
+                try {
+                    const content = await article.getContent();
+                    if (!content) continue;
+
+                    // Clean HTML content
+                    const cleanedHtml = this._cleanHtml(content);
+                    const plainText = this._extractPlainText(cleanedHtml);
+
+                    // Skip very short articles (likely redirects or stubs)
+                    if (plainText.length < 100) continue;
+
+                    // Create article record
+                    const articleId = `${packId}-${article.index}`;
+                    const articleRecord = {
+                        id: articleId,
+                        slug: article.url,
+                        title: article.title,
+                        content: plainText,
+                        fullText: plainText,
+                        html: cleanedHtml,
+                        category: PACK_CATEGORIES.ZIM_IMPORT,
+                        zimPath: article.url,
+                        zimNamespace: article.namespace,
+                        mimeType: article.mimeType,
+                        source: 'zim-import',
+                        importedAt: new Date().toISOString(),
+                        packId: packId
+                    };
+
+                    // Store in IndexedDB
+                    await db.put(targetStore, articleRecord);
+
+                    // Add to search index batch
+                    articles.push({
+                        id: articleId,
+                        slug: article.url,
+                        title: article.title,
+                        content: plainText,
+                        description: plainText.substring(0, 200) + '...',
+                        category: PACK_CATEGORIES.ZIM_IMPORT
+                    });
+
+                    processedCount++;
+
+                    // Index in batches
+                    if (articles.length >= 50) {
+                        await SearchService.addDocuments(articles);
+                        articles.length = 0;
+                    }
+                } catch (articleError) {
+                    log.warn(`Failed to process article "${article.title}": ${articleError.message}`);
+                    errorCount++;
+                }
+            }
+
+            // Index remaining articles
+            if (articles.length > 0) {
+                await SearchService.addDocuments(articles);
+            }
+
+            if (onProgress) onProgress(80, 'Saving pack metadata...');
+
+            // Save pack metadata
+            const packMetadata = {
+                id: packId,
+                name: file.name.replace('.zim', ''),
+                description: `Imported ZIM archive: ${stats.articleCount} articles, ${stats.fileSizeFormatted}`,
+                category: PACK_CATEGORIES.ZIM_IMPORT,
+                version: '1.0.0',
+                size: file.size,
+                sizeDisplay: formatSize(file.size),
+                articleCount: processedCount,
+                errorCount: errorCount,
+                installedAt: new Date().toISOString(),
+                metadata: {
+                    source: 'ZIM Import',
+                    license: 'Unknown', // Should extract from ZIM metadata
+                    licenseUrl: '',
+                    attribution: `Content from ${file.name}`,
+                    zimVersion: stats.version,
+                    mimeTypes: stats.mimeTypes
+                },
+                isZimImport: true
+            };
+
+            await db.put(PACKS_STORE, packMetadata);
+
+            if (onProgress) onProgress(100, 'Complete!');
+
+            log.info(`ZIM import complete: ${processedCount} articles imported, ${errorCount} errors`, {
+                packId,
+                processedCount,
+                errorCount
+            });
+
+            return {
+                success: true,
+                packId,
+                stats: {
+                    fileName: file.name,
+                    fileSize: stats.fileSizeFormatted,
+                    totalArticles: stats.articleCount,
+                    importedArticles: processedCount,
+                    errors: errorCount
+                }
+            };
+
+        } catch (error) {
+            log.error('ZIM import failed', error);
+
+            // Cleanup on failure
+            try {
+                await this._cleanupZimImport(packId);
+            } catch (cleanupError) {
+                log.warn('Cleanup failed after import error', cleanupError);
+            }
+
+            return {
+                success: false,
+                error: `Import failed: ${error.message}`
+            };
+        }
+    },
+
+    /**
+     * Clean HTML content for storage
+     * @param {string} html - Raw HTML
+     * @returns {string} Cleaned HTML
+     */
+    _cleanHtml(html) {
+        // Remove script and style tags
+        let cleaned = html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<!--[\s\S]*?-->/g, '');
+
+        // Remove data-mw attributes (Wikipedia metadata)
+        cleaned = cleaned.replace(/data-mw="[^"]*"/g, '');
+
+        // Remove edit sections
+        cleaned = cleaned.replace(/<span[^>]*class="[^"]*editsection[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+
+        // Remove reference links but keep the text
+        cleaned = cleaned.replace(/<sup[^>]*class="[^"]*reference[^"]*"[^>]*>[\s\S]*?<\/sup>/gi, '');
+
+        return cleaned;
+    },
+
+    /**
+     * Extract plain text from HTML
+     * @param {string} html - HTML content
+     * @returns {string} Plain text
+     */
+    _extractPlainText(html) {
+        // Simple HTML to text conversion
+        // Replace common block elements with newlines
+        let text = html
+            .replace(/<\/p>/gi, '\n\n')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/div>/gi, '\n')
+            .replace(/<\/li>/gi, '\n')
+            .replace(/<[^>]+>/g, ' '); // Remove remaining tags
+
+        // Decode HTML entities
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        text = textarea.value;
+
+        // Normalize whitespace
+        text = text
+            .replace(/\n{3,}/g, '\n\n') // Max 2 newlines
+            .replace(/[ \t]+/g, ' ')   // Normalize spaces
+            .trim();
+
+        return text;
+    },
+
+    /**
+     * Cleanup partial ZIM import on failure
+     * @param {string} packId 
+     */
+    async _cleanupZimImport(packId) {
+        log.info(`Cleaning up partial ZIM import: ${packId}`);
+
+        try {
+            // Remove pack metadata
+            await db.delete(PACKS_STORE, packId);
+        } catch (_e) {
+            // May not exist
+        }
+
+        // Note: Individual articles are tied to packId in their ID,
+        // so they would need to be cleaned up separately if partial import occurred
+        // This is a simplified cleanup - in production, track all article IDs
+    },
+
+    /**
+     * Get all ZIM-imported packs
+     * @returns {Promise<Array>}
+     */
+    async getZimImports() {
+        const allPacks = await this.getInstalledPacks();
+        return allPacks.filter(p => p.category === PACK_CATEGORIES.ZIM_IMPORT);
+    },
+
+    /**
+     * Uninstall a ZIM import
+     * @param {string} packId 
+     */
+    async uninstallZimImport(packId) {
+        try {
+            const packInfo = await db.get(PACKS_STORE, packId);
+            if (!packInfo || packInfo.category !== PACK_CATEGORIES.ZIM_IMPORT) {
+                return { success: false, error: 'ZIM import not found' };
+            }
+
+            // Remove all articles for this pack
+            // In production, query by packId and remove all
+            // For now, this is a placeholder
+
+            // Remove pack metadata
+            await db.delete(PACKS_STORE, packId);
+
+            log.info(`ZIM import uninstalled: ${packId}`);
+            return { success: true };
+        } catch (error) {
+            log.error('Failed to uninstall ZIM import', error);
+            return { success: false, error: error.message };
+        }
     }
 };
 

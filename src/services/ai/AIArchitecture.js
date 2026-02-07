@@ -55,34 +55,93 @@
  * - Separate from content to allow independent updates
  */
 
+import { createLogger } from '../../utils/logger';
+
+const log = createLogger('AIArchitecture');
+
 // Model Definitions - Using transformers.js compatible models
 // See TransformersEngine.js for the actual model configurations
+// Tier system: 'free' models available to all, 'pro' unlocked with one-time purchase
 export const AI_MODELS = {
+    'smollm-360m': {
+        id: 'smollm-360m',
+        name: 'SmolLM 360M',
+        description: 'Ultra-fast, perfect for quick emergency queries',
+        size: 200 * 1024 * 1024,
+        sizeDisplay: '200 MB',
+        contextLength: 2048,
+        quantization: 'q4',
+        recommended: false,
+        capabilities: ['general'],
+        hfId: 'HuggingFaceTB/SmolLM-360M-Instruct',
+        tier: 'free',
+        legacy: false
+    },
+    'qwen-0.5b': {
+        id: 'qwen-0.5b',
+        name: 'Qwen 0.5B',
+        description: 'Fast and capable, great balance for mobile',
+        size: 350 * 1024 * 1024,
+        sizeDisplay: '350 MB',
+        contextLength: 2048,
+        quantization: 'q4',
+        recommended: false,
+        capabilities: ['general', 'medical'],
+        hfId: 'Xenova/Qwen1.5-0.5B-Chat',
+        tier: 'free',
+        legacy: false
+    },
     'tinyllama': {
         id: 'tinyllama',
-        name: 'TinyLlama',
-        description: 'Faster responses, good for mobile',
-        size: 500 * 1024 * 1024, // ~500 MB
+        name: 'TinyLlama 1.1B',
+        description: 'Balanced speed and quality, recommended for most users',
+        size: 500 * 1024 * 1024,
         sizeDisplay: '500 MB',
         contextLength: 2048,
         quantization: 'q4',
-        recommended: true, // Default recommendation for most users
+        recommended: true,
         capabilities: ['general', 'medical'],
-        hfId: 'Xenova/TinyLlama-1.1B-Chat-v1.0'
+        hfId: 'Xenova/TinyLlama-1.1B-Chat-v1.0',
+        tier: 'pro',
+        legacy: false
     },
     'phi3-mini': {
         id: 'phi3-mini',
         name: 'Phi-3 Mini',
-        description: 'Best reasoning, larger download',
-        size: 800 * 1024 * 1024, // ~800 MB
+        description: 'Best reasoning ability, ideal for complex scenarios',
+        size: 800 * 1024 * 1024,
         sizeDisplay: '800 MB',
         contextLength: 4096,
         quantization: 'q4',
-        recommended: false, // Power users
+        recommended: false,
         capabilities: ['medical', 'general', 'reasoning'],
-        hfId: 'Xenova/Phi-3-mini-4k-instruct'
+        hfId: 'Xenova/Phi-3-mini-4k-instruct',
+        tier: 'pro',
+        legacy: false
+    },
+    'smollm-1.7b': {
+        id: 'smollm-1.7b',
+        name: 'SmolLM 1.7B',
+        description: 'High quality responses, best for detailed guidance',
+        size: 1200 * 1024 * 1024,
+        sizeDisplay: '1.2 GB',
+        contextLength: 4096,
+        quantization: 'q4',
+        recommended: false,
+        capabilities: ['medical', 'general', 'reasoning'],
+        hfId: 'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+        tier: 'pro',
+        legacy: false
     }
 };
+
+// Legacy models - retired versions that still work if installed but are deprioritized
+// When new models are added, old ones move here via legacy rotation
+export const LEGACY_MODELS = [
+    // Empty for now - models will be moved here as newer versions replace them
+    // Example:
+    // { id: 'tinyllama-v0', name: 'TinyLlama 1.0 (Legacy)', hfId: '...', tier: 'free', legacy: true }
+];
 
 // Embedding model for semantic search (auto-downloads)
 export const EMBEDDING_MODEL = {
@@ -251,6 +310,20 @@ export const AI_CONFIG = {
 };
 
 /**
+ * Detect if running in Windows native environment (Electron)
+ * @returns {boolean}
+ */
+const isWindowsNative = () => {
+    if (typeof window === 'undefined') return false;
+    
+    const hasElectronAPI = !!(window.electron || window.process?.versions?.electron);
+    const isWindows = window.navigator?.platform?.includes('Win') || 
+                      window.navigator?.userAgent?.includes('Windows');
+    
+    return hasElectronAPI || (isWindows && typeof window.require !== 'undefined');
+};
+
+/**
  * Check if AI features are available on this device
  */
 export async function checkAICapability() {
@@ -259,8 +332,21 @@ export async function checkAICapability() {
         wasmSIMD: false,
         sufficientMemory: false,
         sufficientStorage: false,
-        recommendedModel: null
+        recommendedModel: null,
+        aiAvailable: true,
+        isWindowsNative: false,
+        unavailableReason: null
     };
+
+    // P1 FIX: Check for Windows native environment first
+    // Windows native (Electron) doesn't support transformers.js
+    if (isWindowsNative()) {
+        capabilities.isWindowsNative = true;
+        capabilities.aiAvailable = false;
+        capabilities.unavailableReason = 'AI features are not available in the Windows desktop app. Please use the web version for AI-powered assistance.';
+        log.warn('AI unavailable: Windows native environment detected');
+        return capabilities;
+    }
 
     // Check WebGPU support
     if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
@@ -298,13 +384,21 @@ export async function checkAICapability() {
         }
     }
 
+    // Check if we have minimum requirements for AI
+    if (!capabilities.wasmSIMD && !capabilities.webGPU) {
+        capabilities.aiAvailable = false;
+        capabilities.unavailableReason = 'Your device does not support the required graphics capabilities for AI features.';
+    }
+
     // Recommend a model based on capabilities
     // Note: Only recommend models that exist in AI_MODELS
-    if (capabilities.webGPU && capabilities.sufficientMemory) {
-        capabilities.recommendedModel = AI_MODELS['phi3-mini'];
-    } else {
-        // TinyLlama works with WASM SIMD and is our lightweight fallback
-        capabilities.recommendedModel = AI_MODELS['tinyllama'];
+    if (capabilities.aiAvailable) {
+        if (capabilities.webGPU && capabilities.sufficientMemory) {
+            capabilities.recommendedModel = AI_MODELS['phi3-mini'];
+        } else {
+            // TinyLlama works with WASM SIMD and is our lightweight fallback
+            capabilities.recommendedModel = AI_MODELS['tinyllama'];
+        }
     }
 
     return capabilities;
@@ -312,6 +406,7 @@ export async function checkAICapability() {
 
 export default {
     AI_MODELS,
+    LEGACY_MODELS,
     SYSTEM_PROMPTS,
     FALLBACK_TEMPLATES,
     AI_CONFIG,

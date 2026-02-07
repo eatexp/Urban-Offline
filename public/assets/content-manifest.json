@@ -1,0 +1,93 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-02-07T04:14:46.858Z",
+  "bundled": true,
+  "packs": [
+    {
+      "id": "medical-core",
+      "name": "Emergency Medical Guide",
+      "description": "First aid, CPR, emergency triage, trauma care, medications, and anatomy reference. Sourced from Wikipedia WikiProject Medicine.",
+      "category": "medical",
+      "store": "health_content",
+      "tags": [
+        "first-aid",
+        "cpr",
+        "emergency",
+        "medical",
+        "trauma",
+        "medications"
+      ],
+      "metadata": {
+        "source": "Wikipedia WikiProject Medicine",
+        "license": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Content from Wikipedia contributors, licensed under CC-BY-SA 4.0",
+        "lastVerified": "2026-02-07"
+      },
+      "version": "1.0.0",
+      "articleCount": 75,
+      "size": 19780821,
+      "sizeDisplay": "18.9 MB",
+      "dataUrl": "/assets/packs/medical-core.json",
+      "bundled": true
+    },
+    {
+      "id": "legal-uk",
+      "name": "UK Legal Rights",
+      "description": "Know your rights: PACE codes, arrest procedures, stop & search, police encounters, and legal protections.",
+      "category": "legal",
+      "store": "law_content",
+      "tags": [
+        "legal",
+        "rights",
+        "police",
+        "arrest",
+        "uk",
+        "pace"
+      ],
+      "metadata": {
+        "source": "UK Government / legislation.gov.uk / Wikipedia",
+        "license": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Content from Wikipedia contributors",
+        "lastVerified": "2026-02-07"
+      },
+      "version": "1.0.0",
+      "articleCount": 8,
+      "size": 863730,
+      "sizeDisplay": "843 KB",
+      "dataUrl": "/assets/packs/legal-uk.json",
+      "bundled": true
+    },
+    {
+      "id": "survival-core",
+      "name": "Survival Essentials",
+      "description": "Water purification, shelter building, fire starting, navigation, and emergency preparedness.",
+      "category": "survival",
+      "store": "survival_content",
+      "tags": [
+        "survival",
+        "emergency",
+        "water",
+        "shelter",
+        "fire",
+        "navigation"
+      ],
+      "metadata": {
+        "source": "Wikipedia",
+        "license": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Content from Wikipedia contributors",
+        "lastVerified": "2026-02-07"
+      },
+      "version": "1.0.0",
+      "articleCount": 6,
+      "size": 562517,
+      "sizeDisplay": "549 KB",
+      "dataUrl": "/assets/packs/survival-core.json",
+      "bundled": true
+    }
+  ],
+  "totalArticles": 89,
+  "totalSize": 21207068
+}

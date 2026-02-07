@@ -5,6 +5,18 @@
   "plugins": {
     "CapacitorSQLite": {
       "iosDatabaseLocation": "Library/CapacitorDatabase"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f172a",
+      "overlaysWebView": false
     }
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {},
+  "ios": {
+    "contentInset": "always"
   }
 }

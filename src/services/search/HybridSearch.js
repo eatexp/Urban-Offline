@@ -6,6 +6,12 @@
  * - Category-aware search ranking
  * - Synonym expansion
  * - Emergency keyword prioritization
+ * 
+ * VERIFIED: [Consistency] UNIFIED_INTENT_CLASSIFIER
+ * - Uses IntentClassifier.classifyIntent() for ML + keyword classification
+ * - Shares EMERGENCY_PATTERNS from config/intentPatterns.js
+ * - TriageRouter also uses same EMERGENCY_PATTERNS - unified system
+ * - VERIFIED 2026-02-02
  */
 
 import { SearchService } from '../SearchService';
@@ -15,18 +21,12 @@ import { IntentClassifier } from '../ai/IntentClassifier';
 const log = createLogger('HybridSearch');
 
 // Synonym expansion for better search coverage
-const SYNONYMS = {
-    // TODO: Consistency - Derive synonyms or related terms from IntentClassifier.EMERGENCY_PATTERNS to avoid duplication
-    'cpr': ['resuscitation', 'chest compressions', 'rescue breathing'],
-    'heart attack': ['myocardial infarction', 'cardiac arrest', 'heart failure'],
-    'stroke': ['brain attack', 'cerebrovascular accident', 'cva'],
-    'bleeding': ['hemorrhage', 'blood loss', 'wound'],
-    'burn': ['thermal injury', 'scald', 'fire injury'],
-    'fracture': ['broken bone', 'break', 'crack'],
-    'hypothermia': ['cold exposure', 'freezing', 'low body temperature'],
-    'arrest': ['detained', 'custody', 'taken in'],
-    'rights': ['entitlements', 'legal rights', 'civil rights']
-};
+const SYNONYMS = IntentClassifier.SYNONYMS;
+
+// Search Cache Configuration
+const SEARCH_CACHE = new Map();
+const CACHE_MAX_SIZE = 20;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Hybrid Search Service
@@ -49,14 +49,14 @@ export const HybridSearchService = {
             return {
                 id: result.type, // e.g. 'medical_critical'
                 category: result.category,
-                priority: result.urgency,
+                priority: result.urgency, // Kept for backward compatibility if needed
+                urgency: result.urgency,  // Required by Search.jsx for styling
                 suggestedAction: result.route, // 'triage', 'search', 'protocol'
                 triageFlow: result.triageStory,
                 protocolId: result.protocolId,
-                // TODO: Consistency - Ensure mapped properties match what Search.jsx expects for alerts (message, cta)
-                // Currently 'message' and 'cta' are correctly mapped from emergency patterns, but keep in sync if IntentClassifier changes.
-                message: result.message,
-                cta: result.cta,
+                // Mapped properties for Search.jsx alerts with null coalescing for safety
+                message: result.message ?? 'Emergency detected',
+                cta: result.cta ?? 'Get Help',
                 score: result.confidence * 10
             };
         } catch (e) {
@@ -92,6 +92,14 @@ export const HybridSearchService = {
      * @returns {Promise<Object>} Search results with metadata
      */
     async search(query, options = {}) {
+        const cacheKey = `${query}|${JSON.stringify(options)}`;
+        const cached = SEARCH_CACHE.get(cacheKey);
+
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+            log.debug(`Cache hit for query: "${query}"`);
+            return cached.result;
+        }
+
         const {
             limit = 20,
             category = null,
@@ -112,6 +120,7 @@ export const HybridSearchService = {
         const seenIds = new Set();
 
         // Parallelize search if possible, but sequential for now to preserve order preference
+        const failedQueries = [];
         for (const expandedQuery of expandedQueries) {
             try {
                 const results = await SearchService.search(expandedQuery);
@@ -125,8 +134,9 @@ export const HybridSearchService = {
                         });
                     }
                 }
-            } catch (_e) {
-                log.warn('Search query failed', expandedQuery);
+            } catch (e) {
+                log.warn('Search query failed', expandedQuery, e);
+                failedQueries.push({ query: expandedQuery, error: e.message });
             }
         }
 
@@ -166,7 +176,7 @@ export const HybridSearchService = {
         // Limit results
         const limitedResults = scoredResults.slice(0, limit);
 
-        return {
+        const finalResult = {
             results: limitedResults,
             intent: intent,
             query: query,
@@ -174,8 +184,19 @@ export const HybridSearchService = {
             totalResults: allResults.length,
             suggestedAction: intent?.suggestedAction || 'search',
             triageFlow: intent?.triageFlow || null,
-            protocolId: intent?.protocolId || null
+            protocolId: intent?.protocolId || null,
+            failedQueries: failedQueries,
+            hasPartialResults: failedQueries.length > 0
         };
+
+        // Cache result
+        if (SEARCH_CACHE.size >= CACHE_MAX_SIZE) {
+            const oldestKey = SEARCH_CACHE.keys().next().value;
+            SEARCH_CACHE.delete(oldestKey);
+        }
+        SEARCH_CACHE.set(cacheKey, { result: finalResult, timestamp: Date.now() });
+
+        return finalResult;
     },
 
     /**

@@ -3,6 +3,25 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { tileManager } from '../services/tileManager';
 
+// Placeholder SVG for missing tiles (extracted to constant for performance)
+const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">' +
+    '<rect fill="#1e293b" width="256" height="256"/>' +
+    '<text x="128" y="128" text-anchor="middle" fill="#64748b" font-size="12">No Data</text>' +
+    '</svg>'
+);
+
+// Error SVG for network failures — visually distinct from "No Data"
+const ERROR_SVG = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">' +
+    '<rect fill="#1a1a2e" width="256" height="256"/>' +
+    '<text x="128" y="120" text-anchor="middle" fill="#ef4444" font-size="14">⚠</text>' +
+    '<text x="128" y="145" text-anchor="middle" fill="#94a3b8" font-size="11">Load failed</text>' +
+    '</svg>'
+);
+
+const MAX_TILE_RETRIES = 2;
+
 const OfflineTileLayer = () => {
     const map = useMap();
 
@@ -10,9 +29,25 @@ const OfflineTileLayer = () => {
         const CustomLayer = L.TileLayer.extend({
             createTile: function (coords, done) {
                 const tile = document.createElement('img');
+                let retryCount = 0;
 
                 L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
-                L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+
+                // On network error, retry up to MAX_TILE_RETRIES times, then show error state
+                const self = this;
+                const handleError = function () {
+                    if (retryCount < MAX_TILE_RETRIES && navigator.onLine) {
+                        retryCount++;
+                        setTimeout(() => {
+                            tile.src = self.getTileUrl(coords);
+                        }, 500 * retryCount);
+                    } else {
+                        tile.src = navigator.onLine ? ERROR_SVG : PLACEHOLDER_SVG;
+                        tile.classList.add('tile-error');
+                        done(null, tile);
+                    }
+                };
+                L.DomEvent.on(tile, 'error', handleError);
 
                 if (this.options.crossOrigin || this.options.crossOrigin === '') {
                     tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
@@ -21,20 +56,27 @@ const OfflineTileLayer = () => {
                 tile.alt = '';
                 tile.setAttribute('role', 'presentation');
 
-                // 1. Try to get from IndexedDB
+                // Try to get from IndexedDB
                 tileManager.getTile(coords.x, coords.y, coords.z).then(url => {
                     if (url) {
                         tile.src = url;
+                    } else if (!navigator.onLine) {
+                        tile.src = PLACEHOLDER_SVG;
+                        tile.classList.add('tile-missing');
+                        done(null, tile);
                     } else {
-                        // TODO: Map Integration - Add visual indicator (e.g. "No Data") if tile is missing and we are offline.
-                        // Ideally render a placeholder tile or canvas with "No Data" text.
-                        // 2. Fallback to online URL
+                        // Online: try to fetch from network
                         tile.src = this.getTileUrl(coords);
                     }
-                }).catch(() => {
-                    // TODO: Critical Map Integration - Add visual indicator (e.g. "No Data" placeholder) if tile is missing and we are offline
-                    // Users need feedback when offline tiles aren't available
-                    tile.src = this.getTileUrl(coords);
+                }).catch((err) => {
+                    console.debug('Tile fetch error:', coords.z, coords.x, coords.y, err?.message || err);
+
+                    if (!navigator.onLine) {
+                        tile.src = PLACEHOLDER_SVG;
+                        done(null, tile);
+                    } else {
+                        tile.src = this.getTileUrl(coords);
+                    }
                 });
 
                 return tile;
@@ -50,7 +92,17 @@ const OfflineTileLayer = () => {
 
         layer.addTo(map);
 
+        // Retry failed tiles when connection is restored
+        const retryFailedTiles = () => {
+            const errorTiles = map.getContainer().querySelectorAll('.tile-error, .tile-missing');
+            if (errorTiles.length > 0) {
+                layer.redraw();
+            }
+        };
+        window.addEventListener('online', retryFailedTiles);
+
         return () => {
+            window.removeEventListener('online', retryFailedTiles);
             map.removeLayer(layer);
         };
     }, [map]);

@@ -1,24 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Scale, BookOpen, Gavel, Shield, ChevronRight } from 'lucide-react';
+import { Scale, BookOpen, Gavel, Shield, ChevronRight, Search, Loader2 } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
+import { db } from '../services/db';
 import AskAIChip from '../components/AskAIChip';
 
 const Law = () => {
     const legalStories = TriageRouter.getStoriesByCategory('legal');
+    const [articles, setArticles] = useState([]);
+    const [loadingArticles, setLoadingArticles] = useState(true);
 
-    const getStoryTitle = (story) => {
-        if (story.includes('stop-and-search')) return 'Stop & Search (GOWISELY)';
-        if (story.includes('arrest')) return 'Arrest Rights & Custody';
-        if (story.includes('custody')) return 'Custody Welfare';
-        return 'Legal Guide';
-    };
+    useEffect(() => {
+        const loadArticles = async () => {
+            try {
+                const lawArticles = await db.getAll('law_content');
+                setArticles(lawArticles || []);
+            } catch (error) {
+                console.error('Failed to load law articles:', error);
+                setArticles([]);
+            } finally {
+                setLoadingArticles(false);
+            }
+        };
+        loadArticles();
+    }, []);
 
-    const getStoryDescription = (story) => {
-        if (story.includes('stop-and-search')) return 'Know your rights during police stop and search.';
-        if (story.includes('arrest')) return 'Your rights upon arrest and during custody.';
-        if (story.includes('custody')) return 'Welfare rights and procedures in custody.';
-        return 'Interactive legal guidance.';
+    const getIcon = (iconName) => {
+        const icons = { Shield, Search, Gavel, Scale };
+        return icons[iconName] || Scale;
     };
 
     return (
@@ -52,35 +61,41 @@ const Law = () => {
                         </h3>
                     </div>
                     <div className="grid gap-3">
-                        {legalStories.map((item, index) => (
-                            <Link
-                                key={index}
-                                to={`/triage/${item.story}`}
-                                className="card p-4 hover:shadow-lg transition-all animate-scale-in"
-                                style={{
-                                    background: 'rgba(59, 130, 246, 0.05)',
-                                    borderColor: 'rgba(59, 130, 246, 0.2)',
-                                    animationDelay: `${index * 50 + 100}ms`
-                                }}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="font-medium" style={{ color: 'var(--color-info)' }}>
-                                            {getStoryTitle(item.story)}
-                                        </span>
-                                        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                                            {getStoryDescription(item.story)}
-                                        </p>
+                        {legalStories.map((item, index) => {
+                            const Icon = getIcon(item.icon);
+                            return (
+                                <Link
+                                    key={item.key}
+                                    to={`/triage/${item.story}`}
+                                    className="card p-4 hover:shadow-lg transition-all animate-scale-in"
+                                    style={{
+                                        background: 'rgba(59, 130, 246, 0.05)',
+                                        borderColor: 'rgba(59, 130, 246, 0.2)',
+                                        animationDelay: `${index * 50 + 100}ms`
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Icon size={18} style={{ color: 'var(--color-info)' }} />
+                                            <div>
+                                                <span className="font-medium" style={{ color: 'var(--color-info)' }}>
+                                                    {item.title}
+                                                </span>
+                                                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                                                    {item.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={16} style={{ color: 'var(--color-info)' }} />
                                     </div>
-                                    <ChevronRight size={16} style={{ color: 'var(--color-info)' }} />
-                                </div>
-                            </Link>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
-            {/* Reference Materials */}
+            {/* Reference Materials - Fixed links */}
             <section className="animate-slide-up" style={{ animationDelay: '100ms' }}>
                 <h2 className="section-header section-header-with-line">Reference Materials</h2>
                 <div className="grid-responsive">
@@ -100,11 +115,11 @@ const Law = () => {
                             Police And Criminal Evidence Act Codes A-I
                         </p>
                         <Link
-                            to="/guides/pace-codes"
+                            to="/ai?q=PACE codes of practice police powers"
                             className="btn btn-ghost text-sm p-0"
                             style={{ color: 'var(--color-info)' }}
                         >
-                            Browse Codes
+                            Ask AI About PACE Codes
                         </Link>
                     </div>
 
@@ -124,14 +139,75 @@ const Law = () => {
                             Public Order Act, Human Rights Act
                         </p>
                         <Link
-                            to="/guides/legislation"
+                            to="/ai?q=UK emergency legislation human rights public order act"
                             className="btn btn-ghost text-sm p-0"
                             style={{ color: 'var(--color-info)' }}
                         >
-                            View Acts
+                            Ask AI About Legislation
                         </Link>
                     </div>
                 </div>
+            </section>
+
+            {/* Reference Articles Section */}
+            <section className="animate-slide-up" style={{ animationDelay: '150ms' }}>
+                <h2 className="section-header section-header-with-line">
+                    <BookOpen size={18} className="inline mr-2" />
+                    Legal Reference Articles
+                </h2>
+
+                {loadingArticles ? (
+                    <div className="card p-6 text-center">
+                        <Loader2 className="animate-spin mx-auto mb-2" size={24} style={{ color: 'var(--color-text-muted)' }} />
+                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Loading articles...</p>
+                    </div>
+                ) : articles.length > 0 ? (
+                    <div className="grid gap-3">
+                        {articles.slice(0, 10).map((article, index) => (
+                            <Link
+                                key={article.id}
+                                to={`/article/${article.id}`}
+                                className="card p-4 hover:shadow-lg transition-all animate-scale-in"
+                                style={{
+                                    borderColor: 'rgba(59, 130, 246, 0.15)',
+                                    animationDelay: `${index * 30 + 200}ms`
+                                }}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                                            {article.title}
+                                        </h4>
+                                        {article.summary && (
+                                            <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                                                {article.summary.substring(0, 100)}...
+                                            </p>
+                                        )}
+                                    </div>
+                                    <ChevronRight size={16} style={{ color: 'var(--color-text-muted)' }} />
+                                </div>
+                            </Link>
+                        ))}
+                        {articles.length > 10 && (
+                            <Link
+                                to="/browse?category=law"
+                                className="card p-4 text-center hover:shadow-lg transition-all"
+                                style={{ borderColor: 'rgba(59, 130, 246, 0.2)' }}
+                            >
+                                <span style={{ color: 'var(--color-info)' }}>
+                                    View all {articles.length} articles →
+                                </span>
+                            </Link>
+                        )}
+                    </div>
+                ) : (
+                    <div className="card p-6 text-center">
+                        <BookOpen size={24} className="mx-auto mb-2" style={{ color: 'var(--color-text-muted)' }} />
+                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                            Legal reference articles will appear here once synced.
+                        </p>
+                    </div>
+                )}
             </section>
 
             {/* Empty State if no stories */}
@@ -156,7 +232,7 @@ const Law = () => {
             )}
 
             {/* Ask AI Chip */}
-            <section className="mt-8 animate-slide-up" style={{ animationDelay: '150ms' }}>
+            <section className="mt-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
                 <AskAIChip
                     title="Law & Rights"
                     category="legal"

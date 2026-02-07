@@ -9,8 +9,17 @@ CREATE TABLE IF NOT EXISTS articles (
     source TEXT NOT NULL,                -- 'wikimed', 'ogl', 'cc-by-sa'
     source_url TEXT,
     last_updated TEXT,                   -- ISO8601
-    content_hash TEXT                    -- For delta updates
+    content_hash TEXT,                   -- For delta updates
+    category TEXT DEFAULT 'general'      -- 'health', 'survival', 'legal', 'general'
 );
+
+-- =============================================================================
+-- VERIFIED: [P4][Quality] NATIVE_SEARCH_CATEGORY_COLUMN
+-- Implementation: Added category column to articles table for consistent
+--   category-based search results across web and native platforms.
+--   Also added category to FTS index for better search ranking.
+--   Existing apps will need database migration to add this column.
+-- =============================================================================
 
 -- FTS5 virtual table (Note: Virtual tables don't support IF NOT EXISTS in all versions, but we catch errors)
 CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(

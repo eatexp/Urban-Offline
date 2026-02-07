@@ -57,3 +57,35 @@
 .transition-search-bar {
   view-transition-name: search-bar;
 }
+
+/* Map tile missing indicator */
+.tile-missing {
+  opacity: 0.6;
+  background-color: #1e293b;
+  border: 2px dashed #475569;
+  position: relative;
+}
+
+.tile-missing::after {
+  content: ' ';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  opacity: 0.5;
+}
+
+/* Keyboard shortcut hint styles */
+.kbd {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}

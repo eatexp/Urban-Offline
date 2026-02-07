@@ -1,14 +1,109 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { triggerHaptic } from '../utils/haptics';
 import { inkService } from '../services/InkService';
 import { ArrowLeft, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { createLogger } from '../utils/logger';
 
 const log = createLogger('TriageScreen');
 
-const TriageScreen = ({ storyFile, onClose }) => {
+// VERIFIED: [NativeUX] TRIAGE_TOUCH_FEEDBACK_HAPTIC - Haptic feedback added to handleChoice
+// VERIFIED: [Performance] CHOICE_BUTTON_MEMOIZATION - Extracted ChoiceButton component with memo
+// VERIFIED: [Safety] TRIAGE_OFFLINE_AVAILABILITY_CHECK - Added offline check before loading
+
+// TODO: [CrossPlatform] TRIAGE_DESKTOP_LAYOUT_RESPONSIVENESS
+// Current: TriageScreen uses mobile-first design with fixed heights (60vh)
+// 
+// GAPS:
+// - Desktop/Windows: 60vh may be too small on large screens
+// - Wide screens: Choice buttons could use horizontal layout
+// - Windows tablet mode: Touch targets may need adjustment
+// - Font sizes may be too large for desktop viewing
+//
+// RECOMMENDATION:
+// - Add responsive breakpoints for tablet/desktop
+// - Use max-width containers for readability
+// - Consider split-pane layout on wide screens
+// - Test on Windows touch devices specifically
+//
+// Effort: M | Impact: Medium - Better desktop experience
+
+// TODO: [CrossPlatform] INK_STORY_RENDERING_CONSISTENCY
+// Ink.js output rendering uses inline styles that may vary:
+// - Windows high contrast mode: May override colors
+// - Different browsers: Text wrapping differences
+// - Font availability: System fonts vary by platform
+//
+// SOLUTION:
+// - Add explicit font-family fallbacks
+// - Test high contrast mode compatibility
+// - Ensure color contrast meets WCAG 2.1
+//
+// Effort: S | Impact: Low - Accessibility and consistency
+
+
+// VERIFIED: [Performance] CHOICE_BUTTON_MEMOIZATION
+// Memoized to prevent re-renders during keyboard navigation and parent updates
+const ChoiceButton = memo(({ choice, index, onChoose }) => (
+    <button
+        onClick={() => onChoose(choice.index)}
+        className="choice-button text-left p-4 rounded-lg transition-all animate-scale-in flex-1 min-w-[200px]"
+        style={{
+            background: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border-primary)',
+            color: 'var(--color-text-primary)',
+            animationDelay: `${index * 50}ms`
+        }}
+        onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+            e.currentTarget.style.boxShadow = '0 0 0 1px var(--color-primary-500), var(--shadow-md)';
+        }}
+        onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+            e.currentTarget.style.boxShadow = 'none';
+        }}
+    >
+        <span className="font-semibold">{choice.text}</span>
+    </button>
+));
+
+const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
     const [storyState, setStoryState] = useState(null);
     const [error, setError] = useState(null);
     const [shouldLoad, setShouldLoad] = useState(true);
+
+    // Emergency Mode: For high-urgency stories (≥8), enable focused UI
+    const isEmergencyMode = urgency >= 8;
+
+    // P0 FIX: Check offline availability before loading triage story
+    useEffect(() => {
+        const checkOfflineAvailability = async () => {
+            if (!navigator.onLine) {
+                try {
+                    const cached = await inkService.checkCriticalStoriesCached();
+                    if (!cached.allPresent && cached.missing.includes(storyFile)) {
+                        setError('This emergency guide is not available offline. Connect to internet to download critical content.');
+                        setShouldLoad(false);
+                    }
+                } catch (e) {
+                    log.warn('Failed to check offline availability', e);
+                }
+            }
+        };
+        checkOfflineAvailability();
+    }, [storyFile]);
+
+    // Emergency Mode: Toggle body class for full-screen focused experience
+    useEffect(() => {
+        if (isEmergencyMode) {
+            document.body.classList.add('emergency-mode');
+            log.info('Emergency Mode enabled for high-urgency triage');
+            return () => {
+                document.body.classList.remove('emergency-mode');
+            };
+        }
+    }, [isEmergencyMode]);
+
+    // P3 FIX: Haptic feedback now uses shared utility from ../utils/haptics
 
     // Separate effect for loading story - triggered by shouldLoad flag
     useEffect(() => {
@@ -49,10 +144,12 @@ const TriageScreen = ({ storyFile, onClose }) => {
         setShouldLoad(true);
     }, []);
 
-    const handleChoice = (index) => {
+    // P3 FIX: Added haptic feedback on choice selection
+    const handleChoice = useCallback(async (index) => {
+        await triggerHaptic('light');
         const next = inkService.choose(index);
         setStoryState(next);
-    };
+    }, [triggerHaptic]);
 
     if (error) {
         return (
@@ -94,7 +191,7 @@ const TriageScreen = ({ storyFile, onClose }) => {
 
     return (
         <div
-            className="card rounded-xl overflow-hidden flex flex-col h-[60vh] animate-scale-in"
+            className="card triage-screen rounded-xl overflow-hidden flex flex-col h-[70vh] sm:h-[75vh] md:h-[80vh] lg:max-h-[600px] animate-scale-in"
             style={{
                 background: 'var(--color-bg-secondary)',
                 viewTransitionName: 'search-bar' // Morph from Search bar
@@ -135,8 +232,8 @@ const TriageScreen = ({ storyFile, onClose }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="prose prose-invert max-w-none">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+                <div className="max-w-2xl mx-auto lg:max-w-3xl xl:max-w-4xl prose prose-invert">
                     {storyState.text.split('\n').map((line, i) => {
                         // Simple Markdown Parser for **bold**
                         const parts = line.split(/(\*\*.*?\*\*)/g);
@@ -185,38 +282,25 @@ const TriageScreen = ({ storyFile, onClose }) => {
                 )}
             </div>
 
-            {/* Choices */}
+            {/* Choices - Responsive layout: horizontal on lg screens, vertical on mobile */}
             <div
-                className="p-4 space-y-3"
+                className="p-4 lg:p-6"
                 style={{
                     background: 'var(--color-bg-tertiary)',
                     borderTop: '1px solid var(--color-border-primary)'
                 }}
             >
                 {storyState.choices.length > 0 ? (
-                    storyState.choices.map((choice, index) => (
-                        <button
-                            key={choice.index}
-                            onClick={() => handleChoice(choice.index)}
-                            className="w-full text-left p-4 rounded-lg transition-all animate-scale-in"
-                            style={{
-                                background: 'var(--color-bg-secondary)',
-                                border: '1px solid var(--color-border-primary)',
-                                color: 'var(--color-text-primary)',
-                                animationDelay: `${index * 50}ms`
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                                e.currentTarget.style.boxShadow = '0 0 0 1px var(--color-primary-500), var(--shadow-md)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            <span className="font-semibold">{choice.text}</span>
-                        </button>
-                    ))
+                    <div className="max-w-4xl mx-auto flex flex-col lg:flex-row gap-3">
+                        {storyState.choices.map((choice, index) => (
+                            <ChoiceButton
+                                key={choice.index}
+                                choice={choice}
+                                index={index}
+                                onChoose={handleChoice}
+                            />
+                        ))}
+                    </div>
                 ) : (
                     <div className="text-center p-4 animate-fade-in">
                         <div

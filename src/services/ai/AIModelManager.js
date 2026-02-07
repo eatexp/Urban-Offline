@@ -11,6 +11,7 @@
 import { db } from '../db';
 import { checkAICapability } from './AIArchitecture';
 import TransformersEngine, { TRANSFORMERS_MODELS } from './TransformersEngine';
+import { PurchaseManager } from './PurchaseManager';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('AIModelManager');
@@ -37,16 +38,27 @@ export const AIModelManager = {
         }
 
         try {
-            // Check device capabilities
+            // Check device capabilities (includes Windows native detection)
             const capabilities = await checkAICapability();
 
             log.info('Device capabilities', {
                 webGPU: capabilities.webGPU,
                 wasmSIMD: capabilities.wasmSIMD,
+                aiAvailable: capabilities.aiAvailable,
+                isWindowsNative: capabilities.isWindowsNative,
                 recommendedModel: capabilities.recommendedModel?.name
             });
 
-            // Get the TransformersEngine singleton
+            // P1 FIX: Skip TransformersEngine initialization on Windows native
+            // AI is unavailable on Windows desktop app - transformers.js requires browser APIs
+            if (!capabilities.aiAvailable && capabilities.isWindowsNative) {
+                log.warn('AI Model Manager initialized in fallback mode: Windows native');
+                this._capabilities = capabilities;
+                this._isInitialized = true;
+                return capabilities;
+            }
+
+            // Get the TransformersEngine singleton (only for non-Windows platforms)
             this._engine = TransformersEngine.getInstance();
             this._capabilities = capabilities;
             this._isInitialized = true;
@@ -100,6 +112,30 @@ export const AIModelManager = {
             return { success: false, error: 'Model not found' };
         }
 
+        // Tier check: pro models require purchase
+        if (model.tier === 'pro') {
+            const canAccess = await PurchaseManager.canAccessTier('pro');
+            if (!canAccess) {
+                log.info('Pro model download blocked - not unlocked', { modelId });
+                return {
+                    success: false,
+                    error: 'This model requires Pro unlock. Upgrade for £10 to access all AI models.',
+                    requiresPro: true
+                };
+            }
+        }
+
+        // P1 FIX: Block AI model downloads on Windows native platform
+        // transformers.js requires browser APIs (IndexedDB, WebGPU) unavailable in Electron
+        if (this._capabilities?.isWindowsNative || !this._capabilities?.aiAvailable) {
+            log.warn('AI download blocked: Windows native platform');
+            return { 
+                success: false, 
+                error: 'AI models are not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI-powered assistance.',
+                isWindowsNative: true 
+            };
+        }
+
         // Check if already installed
         const installed = await this.isModelInstalled(modelId);
         if (installed) {
@@ -123,11 +159,32 @@ export const AIModelManager = {
         try {
             if (onProgress) onProgress(0, 'Initializing download...');
 
+            // Stall detection: timeout if no progress for 30 seconds
+            let lastProgressTime = Date.now();
+            let lastProgress = 0;
+            const stallCheck = setInterval(() => {
+                if (Date.now() - lastProgressTime > 30000) {
+                    log.warn('Download stalled, aborting', { modelId });
+                    if (this._engine) {
+                        this._engine.abort();
+                    }
+                    clearInterval(stallCheck);
+                }
+            }, 5000);
+
             // Use TransformersEngine to initialize (download) the model
             await this._engine.initialize(modelId, (progress, message) => {
+                // Update stall detection timer on any progress
+                if (progress !== lastProgress) {
+                    lastProgressTime = Date.now();
+                    lastProgress = progress;
+                }
                 this._downloadProgress.set(modelId, progress);
                 if (onProgress) onProgress(progress, message);
             });
+
+            // Clear stall check on success
+            clearInterval(stallCheck);
 
             // Save model metadata after successful download
             await db.put(MODELS_STORE, {
@@ -321,6 +378,29 @@ export const AIModelManager = {
             display: this._formatSize(totalBytes),
             modelCount: installed.length
         };
+    },
+
+    /**
+     * Get models filtered by tier
+     * @param {string} tier - 'free', 'pro', or 'all'
+     * @returns {Promise<Array>}
+     */
+    async getModelsByTier(tier = 'all') {
+        const allModels = await this.getAvailableModels();
+        if (tier === 'all') return allModels;
+        return allModels.filter(m => m.tier === tier);
+    },
+
+    /**
+     * Check if a specific model is accessible (tier-gated)
+     * @param {string} modelId
+     * @returns {Promise<boolean>}
+     */
+    async canAccessModel(modelId) {
+        const model = TRANSFORMERS_MODELS[modelId];
+        if (!model) return false;
+        if (model.tier === 'free' || model.source === 'local') return true;
+        return PurchaseManager.canAccessTier(model.tier);
     },
 
     _formatSize(bytes) {

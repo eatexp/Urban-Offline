@@ -23,34 +23,136 @@ env.cacheDir = 'indexeddb://urban-offline-models';
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
+// FIXME: [CrossPlatform] TRANSFORMERS_WINDOWS_INCOMPATIBILITY - P1
+// transformers.js requires browser APIs (IndexedDB, WebGPU, WebGL) unavailable in:
+// - Windows native (Electron/Node.js)
+// - Server-side rendering environments
+// 
+// SOLUTION:
+// - Add platform detection at initialization
+// - Throw descriptive error for Windows native with fallback instructions
+// - Disable AI features gracefully on Windows native
+//
+// ACTION: Add check for window.electron or process.platform in constructor
+// Effort: M-L | Impact: High - AI unavailable on Windows native without fix
+
 // Model configurations with transformers.js compatible IDs
+// Extended with rich metadata for Locally AI-style model picker
 export const TRANSFORMERS_MODELS = {
+    'smollm-360m': {
+        id: 'smollm-360m',
+        hfId: 'HuggingFaceTB/SmolLM-360M-Instruct',
+        name: 'SmolLM 360M',
+        description: 'Ultra-fast, perfect for quick emergency queries',
+        size: 200 * 1024 * 1024, // ~200MB
+        sizeDisplay: '200 MB',
+        contextLength: 2048,
+        task: 'text-generation',
+        chatTemplate: 'smollm',
+        qualityRating: 2,
+        speedRating: 5,
+        category: 'lightweight',
+        useCases: ['Quick lookups', 'Basic first aid', 'Simple questions'],
+        recommended: false,
+        tier: 'free',
+        legacy: false
+    },
+    'qwen-0.5b': {
+        id: 'qwen-0.5b',
+        hfId: 'Xenova/Qwen1.5-0.5B-Chat',
+        name: 'Qwen 0.5B',
+        description: 'Fast and capable, great balance for mobile',
+        size: 350 * 1024 * 1024, // ~350MB
+        sizeDisplay: '350 MB',
+        contextLength: 2048,
+        task: 'text-generation',
+        chatTemplate: 'qwen',
+        qualityRating: 3,
+        speedRating: 4,
+        category: 'lightweight',
+        useCases: ['Emergency guidance', 'Medical info', 'Survival tips'],
+        recommended: false,
+        tier: 'free',
+        legacy: false
+    },
     'tinyllama': {
         id: 'tinyllama',
         hfId: 'Xenova/TinyLlama-1.1B-Chat-v1.0',
-        name: 'TinyLlama',
-        description: 'Faster responses, good for mobile',
+        name: 'TinyLlama 1.1B',
+        description: 'Balanced speed and quality, recommended for most users',
         size: 500 * 1024 * 1024, // ~500MB
         sizeDisplay: '500 MB',
         contextLength: 2048,
         task: 'text-generation',
-        chatTemplate: 'tinyllama'
+        chatTemplate: 'tinyllama',
+        qualityRating: 3,
+        speedRating: 4,
+        category: 'balanced',
+        useCases: ['General assistance', 'Medical triage', 'Survival guidance'],
+        recommended: true,
+        tier: 'pro',
+        legacy: false
     },
     'phi3-mini': {
         id: 'phi3-mini',
         hfId: 'Xenova/Phi-3-mini-4k-instruct',
         name: 'Phi-3 Mini',
-        description: 'Best reasoning, larger download',
+        description: 'Best reasoning ability, ideal for complex scenarios',
         size: 800 * 1024 * 1024, // ~800MB
         sizeDisplay: '800 MB',
         contextLength: 4096,
         task: 'text-generation',
-        chatTemplate: 'phi3'
+        chatTemplate: 'phi3',
+        qualityRating: 4,
+        speedRating: 3,
+        category: 'quality',
+        useCases: ['Complex medical questions', 'Legal rights', 'Detailed analysis'],
+        recommended: false,
+        tier: 'pro',
+        legacy: false
+    },
+    'smollm-1.7b': {
+        id: 'smollm-1.7b',
+        hfId: 'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+        name: 'SmolLM 1.7B',
+        description: 'High quality responses, best for detailed guidance',
+        size: 1200 * 1024 * 1024, // ~1.2GB
+        sizeDisplay: '1.2 GB',
+        contextLength: 4096,
+        task: 'text-generation',
+        chatTemplate: 'smollm',
+        qualityRating: 4,
+        speedRating: 2,
+        category: 'quality',
+        useCases: ['In-depth medical advice', 'Emergency protocols', 'Comprehensive guidance'],
+        recommended: false,
+        tier: 'pro',
+        legacy: false
     }
 };
 
 // Chat templates for different models
 const CHAT_TEMPLATES = {
+    smollm: {
+        format: (systemPrompt, userMessage) => {
+            return `<|im_start|>system
+${systemPrompt}<|im_end|>
+<|im_start|>user
+${userMessage}<|im_end|>
+<|im_start|>assistant
+`;
+        }
+    },
+    qwen: {
+        format: (systemPrompt, userMessage) => {
+            return `<|im_start|>system
+${systemPrompt}<|im_end|>
+<|im_start|>user
+${userMessage}<|im_end|>
+<|im_start|>assistant
+`;
+        }
+    },
     tinyllama: {
         format: (systemPrompt, userMessage) => {
             return `<|system|>
@@ -104,7 +206,7 @@ class TransformersEngine {
      * @param {Function} onProgress - Progress callback (progress, status)
      * @returns {Promise<boolean>} - Success status
      */
-    async initialize(modelId, onProgress = () => {}) {
+    async initialize(modelId, onProgress = () => { }) {
         const modelConfig = TRANSFORMERS_MODELS[modelId];
 
         if (!modelConfig) {

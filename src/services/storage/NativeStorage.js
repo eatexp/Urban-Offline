@@ -1,11 +1,33 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
 import { SCHEMA_SQL } from './schema';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('NativeStorage');
 const mSQLite = new SQLiteConnection(CapacitorSQLite);
 let db = null; // SQLite DB Connection
+
+// VERIFIED: [Resilience] NATIVE_STORAGE_QUOTA_HANDLING
+// Added detection for "no space" errors on Filesystem writes with event dispatch
+
+/**
+ * Get the appropriate storage directory for the current platform.
+ * Windows native uses Directory.Data instead of Directory.Documents.
+ * @returns {string} Directory constant from @capacitor/filesystem
+ */
+const getStorageDirectory = () => {
+    const platform = Capacitor.getPlatform();
+    // Windows native works better with Data directory
+    if (platform === 'electron' || platform === 'windows') {
+        return Directory.Data;
+    }
+    // iOS/Android use Documents
+    return Directory.Documents;
+};
+
+// Cache the directory to avoid repeated platform checks
+const STORAGE_DIR = getStorageDirectory();
 
 export const initDB = async () => {
     try {
@@ -50,7 +72,7 @@ export const get = async (storeName, key) => {
         try {
             const file = await Filesystem.readFile({
                 path: `${storeName}/${key}`,
-                directory: Directory.Documents,
+                directory: STORAGE_DIR,
                 encoding: Encoding.UTF8
             });
             return JSON.parse(file.data);
@@ -79,17 +101,35 @@ export const put = async (storeName, value, key) => {
         try {
             await Filesystem.mkdir({
                 path: storeName,
-                directory: Directory.Documents,
+                directory: STORAGE_DIR,
                 recursive: true
             });
             await Filesystem.writeFile({
                 path: `${storeName}/${key}`,
                 data: JSON.stringify(value),
-                directory: Directory.Documents,
+                directory: STORAGE_DIR,
                 encoding: Encoding.UTF8
             });
             return key;
         } catch (e) {
+            // P1 FIX: Detect "no space" errors and dispatch warning event
+            const errorMsg = e.message?.toLowerCase() || '';
+            if (errorMsg.includes('no space') ||
+                errorMsg.includes('enospc') ||
+                errorMsg.includes('disk is full') ||
+                errorMsg.includes('not enough storage')) {
+                log.error('Storage quota exceeded on device', e);
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('storage-quota-warning', {
+                        detail: { store: storeName, key, error: e.message }
+                    }));
+                }
+                const quotaError = new Error('Storage quota exceeded on device');
+                quotaError.name = 'QuotaExceededError';
+                quotaError.store = storeName;
+                quotaError.key = key;
+                throw quotaError;
+            }
             log.error('FS Write Error', e);
             throw e;
         }
@@ -127,22 +167,22 @@ export const iterate = async (storeName, callback) => {
         try {
             const result = await Filesystem.readdir({
                 path: storeName,
-                directory: Directory.Documents
+                directory: STORAGE_DIR
             });
 
             for (const file of result.files) {
-                 const fileName = file.name || file; // Handle object or string
+                const fileName = file.name || file; // Handle object or string
 
-                 try {
-                     const fileContent = await Filesystem.readFile({
-                         path: `${storeName}/${fileName}`,
-                         directory: Directory.Documents,
-                         encoding: Encoding.UTF8
-                     });
-                     await callback(JSON.parse(fileContent.data));
-                 } catch (readErr) {
-                     log.warn(`Failed to read file ${fileName} in store ${storeName}`, readErr);
-                 }
+                try {
+                    const fileContent = await Filesystem.readFile({
+                        path: `${storeName}/${fileName}`,
+                        directory: STORAGE_DIR,
+                        encoding: Encoding.UTF8
+                    });
+                    await callback(JSON.parse(fileContent.data));
+                } catch (readErr) {
+                    log.warn(`Failed to read file ${fileName} in store ${storeName}`, readErr);
+                }
             }
         } catch (_error) {
             // Directory doesn't exist or other error -> assume empty
@@ -170,7 +210,7 @@ export const deleteItem = async (storeName, key) => {
         try {
             await Filesystem.deleteFile({
                 path: `${storeName}/${key}`,
-                directory: Directory.Documents
+                directory: STORAGE_DIR
             });
         } catch (_error) {
             // File doesn't exist - ignore
@@ -179,6 +219,59 @@ export const deleteItem = async (storeName, key) => {
 
     if (!db) await initDB();
     await db.run(`DELETE FROM kv_store WHERE store_name = ? AND key = ?`, [storeName, key]);
+};
+
+/**
+ * Clear all items from a store
+ * @param {string} storeName - Store to clear
+ */
+export const clear = async (storeName) => {
+    // 1. Large Content -> Filesystem
+    if (DATA_STORES.includes(storeName)) {
+        try {
+            const result = await Filesystem.readdir({
+                path: storeName,
+                directory: STORAGE_DIR
+            });
+            await Promise.all(result.files.map(file =>
+                Filesystem.deleteFile({
+                    path: `${storeName}/${file.name || file}`,
+                    directory: STORAGE_DIR
+                }).catch(() => { }) // Ignore individual file delete failures
+            ));
+        } catch (_e) {
+            // Directory doesn't exist - ignore
+        }
+    }
+
+    // 2. Metadata -> SQLite
+    if (!db) await initDB();
+    await db.run(`DELETE FROM kv_store WHERE store_name = ?`, [storeName]);
+};
+
+/**
+ * Get all keys from a store
+ * @param {string} storeName - Store to enumerate
+ * @returns {Promise<string[]>} Array of keys
+ */
+export const getAllKeys = async (storeName) => {
+    // 1. Large Content -> Filesystem
+    if (DATA_STORES.includes(storeName)) {
+        try {
+            const result = await Filesystem.readdir({
+                path: storeName,
+                directory: STORAGE_DIR
+            });
+            return result.files.map(f => f.name || f);
+        } catch (_e) {
+            return []; // Directory doesn't exist
+        }
+    }
+
+    // 2. Metadata -> SQLite
+    if (!db) await initDB();
+    const res = await db.query(`SELECT key FROM kv_store WHERE store_name = ?`, [storeName]);
+    return res.values ? res.values.map(r => r.key) : [];
 };
 
 export const getArticleBySlug = async (slug) => {
@@ -193,4 +286,53 @@ export const getArticleBySlug = async (slug) => {
         log.error('SQLite getArticleBySlug Error', e);
     }
     return null;
+};
+
+// VERIFIED: [Performance] NATIVE_STORAGE_BATCH_OPERATIONS
+// Added batch operations using SQLite transactions for performance
+
+/**
+ * Batch put multiple items in a single transaction
+ * @param {string} storeName - Store name
+ * @param {Array<{key: string, value: any}>} items - Items to put
+ */
+export const batchPut = async (storeName, items) => {
+    if (!db) await initDB();
+    try {
+        await db.execute('BEGIN TRANSACTION');
+        for (const item of items) {
+            await db.run(
+                `INSERT OR REPLACE INTO kv_store (store_name, key, value) VALUES (?, ?, ?)`,
+                [storeName, item.key, JSON.stringify(item.value)]
+            );
+        }
+        await db.execute('COMMIT');
+    } catch (e) {
+        await db.execute('ROLLBACK');
+        log.error('SQLite batchPut Error', e);
+        throw e;
+    }
+};
+
+/**
+ * Batch delete multiple items in a single transaction
+ * @param {string} storeName - Store name
+ * @param {string[]} keys - Keys to delete
+ */
+export const batchDelete = async (storeName, keys) => {
+    if (!db) await initDB();
+    try {
+        await db.execute('BEGIN TRANSACTION');
+        for (const key of keys) {
+            await db.run(
+                `DELETE FROM kv_store WHERE store_name = ? AND key = ?`,
+                [storeName, key]
+            );
+        }
+        await db.execute('COMMIT');
+    } catch (e) {
+        await db.execute('ROLLBACK');
+        log.error('SQLite batchDelete Error', e);
+        throw e;
+    }
 };

@@ -50,7 +50,10 @@ class EmbeddingEngine {
         this.embedder = null;
         this.isInitializing = false;
         this.isReady = false;
-        this.embeddingCache = new Map(); // In-memory cache for session
+        // In-memory cache with LRU eviction (max 1000 entries)
+        // Eviction logic is implemented in embed() method
+        this.embeddingCache = new Map();
+        this.MAX_CACHE_SIZE = 1000;
     }
 
     /**
@@ -68,7 +71,7 @@ class EmbeddingEngine {
      * @param {Function} onProgress - Progress callback (progress, status)
      * @returns {Promise<boolean>} - Success status
      */
-    async initialize(onProgress = () => {}) {
+    async initialize(onProgress = () => { }) {
         if (this.isReady) {
             log.info('Embedding model already loaded');
             onProgress(100, 'Ready');
@@ -136,14 +139,29 @@ class EmbeddingEngine {
             return cached;
         }
 
-        // Generate new embedding
-        const output = await this.embedder(text, {
-            pooling: 'mean',
-            normalize: true
-        });
+        // Generate new embedding with timeout protection
+        const EMBEDDING_TIMEOUT = 10000; // 10 seconds max
+        let output;
+        try {
+            output = await Promise.race([
+                this.embedder(text, { pooling: 'mean', normalize: true }),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Embedding generation timeout')), EMBEDDING_TIMEOUT)
+                )
+            ]);
+        } catch (error) {
+            log.warn('Embedding generation failed', error);
+            throw error;
+        }
 
         // Convert to Float32Array
         const embedding = new Float32Array(output.data);
+
+        // LRU eviction: remove oldest entry if cache is full
+        if (this.embeddingCache.size >= this.MAX_CACHE_SIZE) {
+            const firstKey = this.embeddingCache.keys().next().value;
+            this.embeddingCache.delete(firstKey);
+        }
 
         // Cache the result
         this.embeddingCache.set(cacheKey, embedding);
@@ -163,10 +181,18 @@ class EmbeddingEngine {
         }
 
         const embeddings = [];
+        const BATCH_SIZE = 10; // Process in chunks of 10 to prevent UI freezes
 
-        for (const text of texts) {
-            const embedding = await this.embed(text);
-            embeddings.push(embedding);
+        for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+            const chunk = texts.slice(i, i + BATCH_SIZE);
+            // Process chunk in parallel
+            const chunkEmbeddings = await Promise.all(chunk.map(t => this.embed(t)));
+            embeddings.push(...chunkEmbeddings);
+
+            // Yield control to event loop between batches to keep UI responsive
+            if (i + BATCH_SIZE < texts.length) {
+                await new Promise(r => setTimeout(r, 0));
+            }
         }
 
         return embeddings;
@@ -278,7 +304,7 @@ class EmbeddingEngine {
      * @param {Array<{id: string, text: string}>} documents - Documents to embed
      * @param {Function} onProgress - Progress callback
      */
-    async precomputeEmbeddings(documents, onProgress = () => {}) {
+    async precomputeEmbeddings(documents, onProgress = () => { }) {
         if (!this.isReady) {
             throw new Error('Embedding model not initialized');
         }

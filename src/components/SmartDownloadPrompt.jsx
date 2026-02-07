@@ -362,7 +362,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             </p>
                         </>
                     ) : (
-                        /* Download progress */
+                        /* Download progress with cancel button */
                         <div className="py-2">
                             <div className="flex items-center justify-between mb-2">
                                 <span
@@ -390,12 +390,29 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                     }}
                                 />
                             </div>
-                            <p
-                                className="text-xs text-center mt-3"
-                                style={{ color: 'var(--color-text-muted)' }}
-                            >
-                                Don't close the app during download
-                            </p>
+                            <div className="flex items-center justify-between mt-3">
+                                <p
+                                    className="text-xs"
+                                    style={{ color: 'var(--color-text-muted)' }}
+                                >
+                                    Don't close the app during download
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        AIModelManager.cancelDownload(selectedModel);
+                                        setIsDownloading(false);
+                                        setDownloadProgress(0);
+                                    }}
+                                    className="text-xs px-3 py-1 rounded-lg transition-colors"
+                                    style={{
+                                        background: 'var(--color-bg-tertiary)',
+                                        color: 'var(--color-danger)',
+                                        border: '1px solid var(--color-border-primary)'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

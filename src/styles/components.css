@@ -4,8 +4,71 @@
    ================================================================= */
 
 /* =================================================================
+   VERIFIED: [NativeUX] COMPONENT_TOUCH_FEEDBACK_SYSTEM
+   =================================================================
+   Implementation: Added :active states with scale transforms to all
+   interactive elements. Applied -webkit-tap-highlight-color: transparent
+   to remove iOS grey flash. Added touch-action: manipulation for
+   immediate response. Created .ripple class for Material-style feedback.
+   ================================================================= */
+
+/* =================================================================
    BASE COMPONENT STYLES
    ================================================================= */
+
+/* Touch feedback system - global reset for all interactive elements */
+button, a, [role="button"], .interactive {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Active state feedback for immediate touch response */
+:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-out;
+}
+
+/* Ripple effect for Material-style touch feedback */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at var(--tap-x, 50%) var(--tap-y, 50%),
+        rgba(255, 255, 255, 0.3) 0%,
+        transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    pointer-events: none;
+}
+
+.ripple:active::after {
+    opacity: 1;
+}
+
+/* iOS-specific: Remove grey tap highlight and add custom feedback */
+@supports (-webkit-touch-callout: none) {
+    /* iOS devices */
+    button:active, .btn:active, .nav-item:active, .card-link:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+}
+
+/* Android-specific: Slightly different feedback timing */
+@supports not (-webkit-touch-callout: none) {
+    /* Android and other */
+    button:active, .btn:active, .nav-item:active, .card-link:active {
+        transform: scale(0.98);
+        transition: transform 0.08s ease-out;
+    }
+}
 
 /* Reset and base styles */
 .component-reset {
@@ -1099,3 +1162,483 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* =================================================================
+   ZIM IMPORT MANAGER COMPONENT
+   ================================================================= */
+
+.zim-import-manager {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.zim-import-manager .section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.zim-import-manager .section-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+  line-height: var(--line-height-normal);
+}
+
+.zim-import-manager .section-description a {
+  color: var(--color-primary-400);
+  text-decoration: none;
+}
+
+.zim-import-manager .section-description a:hover {
+  text-decoration: underline;
+}
+
+/* Upload Area */
+.zim-import-manager .upload-area {
+  border: 2px dashed var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  background: var(--color-bg-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.zim-import-manager .upload-area:hover {
+  border-color: var(--color-primary-400);
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.zim-import-manager .upload-area.dragging {
+  border-color: var(--color-primary-400);
+  background: rgba(249, 115, 22, 0.1);
+  transform: scale(1.02);
+}
+
+.zim-import-manager .upload-area.importing {
+  cursor: default;
+  border-color: var(--color-border-primary);
+  background: var(--color-bg-secondary);
+}
+
+.zim-import-manager .upload-icon {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.zim-import-manager .upload-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.zim-import-manager .upload-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Import Progress */
+.zim-import-manager .import-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.zim-import-manager .import-progress .spin {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary-400);
+}
+
+.zim-import-manager .progress-info {
+  width: 100%;
+  max-width: 300px;
+}
+
+.zim-import-manager .progress-bar {
+  height: 8px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+.zim-import-manager .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-400));
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.zim-import-manager .progress-message {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.zim-import-manager .progress-percent {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-400);
+}
+
+/* Import Result */
+.zim-import-manager .import-result {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  position: relative;
+}
+
+.zim-import-manager .import-result.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: var(--color-success);
+}
+
+.zim-import-manager .import-result.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--color-danger);
+}
+
+.zim-import-manager .import-result .result-details {
+  flex: 1;
+}
+
+.zim-import-manager .import-result strong {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.zim-import-manager .import-result p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.zim-import-manager .import-result .btn-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: none;
+  border: none;
+  font-size: var(--font-size-xl);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  line-height: 1;
+}
+
+.zim-import-manager .import-result .btn-close:hover {
+  color: var(--color-text-primary);
+}
+
+/* Storage Info */
+.zim-import-manager .storage-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  color: var(--color-info);
+  font-size: var(--font-size-sm);
+}
+
+/* ZIM List */
+.zim-import-manager .zim-list {
+  margin-top: var(--space-6);
+}
+
+.zim-import-manager .zim-list h3 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-4);
+}
+
+.zim-import-manager .zim-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-3);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.zim-import-manager .zim-item:hover {
+  border-color: var(--color-border-secondary);
+  box-shadow: var(--shadow-md);
+}
+
+.zim-import-manager .zim-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.zim-import-manager .zim-icon {
+  color: var(--color-primary-400);
+  flex-shrink: 0;
+}
+
+.zim-import-manager .zim-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.zim-import-manager .zim-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zim-import-manager .zim-meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.zim-import-manager .btn-uninstall {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.zim-import-manager .btn-uninstall:hover {
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Empty State */
+.zim-import-manager .empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.zim-import-manager .empty-state p:first-child {
+  font-size: var(--font-size-base);
+  margin-bottom: var(--space-2);
+}
+
+.zim-import-manager .empty-hint {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* Loading State */
+.zim-import-manager .loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.zim-import-manager .loading-state .spin {
+  animation: spin 1s linear infinite;
+}
+
+/* =================================================================
+   EMERGENCY COMMAND BAR
+   Hero search component for rapid emergency access
+   ================================================================= */
+
+.emergency-command-bar {
+  background: linear-gradient(180deg, 
+    rgba(220, 38, 38, 0.12), 
+    rgba(220, 38, 38, 0.04)
+  );
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.emergency-search-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 var(--space-12) 0 var(--space-12);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.emergency-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.emergency-search-input:focus {
+  outline: none;
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Emergency Suggestions Dropdown */
+.emergency-suggestions {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  background: var(--color-bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+  animation: slide-down var(--duration-fast) var(--ease-out);
+}
+
+.emergency-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.emergency-suggestion-item:last-of-type {
+  border-bottom: none;
+}
+
+.emergency-suggestion-item:hover,
+.emergency-suggestion-item.highlighted {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.emergency-suggestion-item.highlighted {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.suggestion-urgency {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Critical Action Buttons */
+.critical-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  background: var(--action-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--action-color, var(--color-danger));
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  min-height: 88px;
+}
+
+.critical-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+}
+
+.critical-action-btn:active {
+  transform: scale(0.96);
+}
+
+.critical-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--action-color, var(--color-danger));
+  border-radius: var(--radius-full);
+  color: white;
+}
+
+.critical-action-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--action-color, var(--color-danger));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =================================================================
+   EMERGENCY MODE
+   Full-screen focus mode for high-urgency triage stories
+   ================================================================= */
+
+body.emergency-mode {
+  --emergency-bg: #0a0a0a;
+  --emergency-text: #ffffff;
+}
+
+body.emergency-mode .nav-header,
+body.emergency-mode .navbar,
+body.emergency-mode .nav-footer {
+  display: none !important;
+}
+
+body.emergency-mode .page-container {
+  padding-bottom: var(--space-6);
+}
+
+body.emergency-mode .triage-screen {
+  font-size: 1.25rem;
+  background: var(--emergency-bg);
+}
+
+body.emergency-mode .triage-screen .prose p {
+  font-size: 1.3rem;
+  line-height: 1.6;
+}
+
+body.emergency-mode .choice-button {
+  font-size: 1.1rem;
+  padding: var(--space-5);
+  min-height: 60px;
+}
+

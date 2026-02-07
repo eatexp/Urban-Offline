@@ -1,8 +1,11 @@
-import { Shield, HardDrive, CheckCircle, AlertTriangle, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff } from 'lucide-react';
-import { Link, useLoaderData } from 'react-router-dom';
+import { Shield, Library, CheckCircle, AlertTriangle, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
+import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { dataManager } from '../services/dataManager';
+import { AIModelManager } from '../services/ai/AIModelManager';
 import { createLogger } from '../utils/logger';
+import { triggerHaptic } from '../utils/haptics';
+import EmergencyCommandBar from '../components/EmergencyCommandBar';
 
 const log = createLogger('Home');
 
@@ -11,9 +14,24 @@ const Home = () => {
     const [status, setStatus] = useState(initialStatus);
     const [activeRegion, setActiveRegion] = useState(initialRegion);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [aiModelCount, setAiModelCount] = useState(0);
+    const navigate = useNavigate();
 
-    // Use semantic ease-out for hover effects if needed via inline style or class
-    // const easeOut = "var(--ease-out)"; 
+    // =============================================================================
+    // VERIFIED: [NativeUX] EMERGENCY_BUTTON_HAPTIC_FEEDBACK
+    // =============================================================================
+    // Implementation: Uses shared triggerHaptic() utility from ../utils/haptics.js
+    //   for consistent haptic feedback across all emergency buttons.
+    // =============================================================================
+
+    /**
+     * Handle emergency button press with haptic feedback and navigation
+     * @param {string} route - The route to navigate to
+     */
+    const handleEmergencyPress = (route) => {
+        triggerHaptic('heavy');
+        navigate(route);
+    };
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -28,8 +46,25 @@ const Home = () => {
         };
     }, []);
 
+    // Check AI model count
+    useEffect(() => {
+        const checkAI = async () => {
+            try {
+                await AIModelManager.init();
+                const installed = await AIModelManager.getInstalledModels();
+                setAiModelCount(installed.length);
+            } catch (_e) {
+                // AI unavailable - leave at 0
+            }
+        };
+        checkAI();
+    }, []);
+
     return (
         <div className="home-page space-y-6 animate-slide-up">
+            {/* Emergency Command Bar - Hero Element for instant access */}
+            <EmergencyCommandBar />
+
             {/* Enhanced Status Section */}
             <section className="animate-scale-in">
                 <div className="glass-card relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-xl border border-white/10 hover:shadow-2xl transition-all duration-300">
@@ -73,11 +108,11 @@ const Home = () => {
                             <h2 className="text-xl font-bold mb-2 text-orange-400">Prepare for Emergencies</h2>
                             <p className="text-sm text-slate-300 mb-4">Download regional data to enable full offline intelligence capabilities.</p>
                             <Link
-                                to="/resources"
+                                to="/library"
                                 className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 transform"
                             >
-                                <HardDrive size={16} />
-                                Download Region Data
+                                <Library size={16} />
+                                Open Library
                             </Link>
                         </div>
                     )}
@@ -98,6 +133,35 @@ const Home = () => {
                         <p className="text-sm text-white/90">Get intelligent answers about medical emergencies, survival skills, and legal rights</p>
                     </div>
                     <Navigation className="w-6 h-6 text-white/70 group-hover:text-white transition-all duration-300 transform group-hover:translate-x-1" />
+                </Link>
+
+                {/* AI Model Status Badge */}
+                <Link
+                    to="/ai-models"
+                    className="group flex items-center justify-between mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-purple-500/20 hover:border-purple-400/30 hover:bg-white/[0.07] transition-all"
+                >
+                    <div className="flex items-center gap-2">
+                        <Brain size={16} className="text-purple-400" />
+                        <span className="text-sm text-slate-300">
+                            {aiModelCount > 0
+                                ? `${aiModelCount} model${aiModelCount !== 1 ? 's' : ''} installed`
+                                : 'No AI models installed'
+                            }
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-purple-400 group-hover:text-purple-300">
+                        {aiModelCount === 0 ? (
+                            <>
+                                <Download size={12} />
+                                Download
+                            </>
+                        ) : (
+                            <>
+                                Manage
+                                <Navigation size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                            </>
+                        )}
+                    </div>
                 </Link>
             </section>
 
@@ -167,11 +231,17 @@ const Home = () => {
                     </div>
                     <p className="text-sm text-slate-400 mb-4">Immediate access to critical emergency protocols</p>
                     <div className="grid grid-cols-2 gap-3">
-                        <button className="btn btn-emergency btn-sm">
+                        <button
+                            className="btn btn-emergency btn-sm"
+                            onClick={() => handleEmergencyPress('/protocol/evacuate-now')}
+                        >
                             <Navigation size={16} />
                             Evacuate Now
                         </button>
-                        <button className="btn btn-emergency btn-sm">
+                        <button
+                            className="btn btn-emergency btn-sm"
+                            onClick={() => handleEmergencyPress('/triage/health/cpr.ink.json')}
+                        >
                             <Heart size={16} />
                             Medical Alert
                         </button>

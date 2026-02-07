@@ -180,10 +180,27 @@
      ================================================================= */
   
   /* Button System */
-  --button-height-sm: 2rem;    /* 32px */
-  --button-height-md: 2.5rem;  /* 40px */
-  --button-height-lg: 3rem;    /* 48px */
+  --button-height-sm: 2rem;    /* 32px - NON-CRITICAL USE ONLY */
+  --button-height-md: 2.5rem;  /* 40px - Minimum for secondary actions */
+  --button-height-lg: 3rem;    /* 48px - Standard for primary actions */
   --button-height-xl: 3.5rem;  /* 56px - Emergency CTA size */
+  --button-height-emergency: 3rem; /* 48px - Minimum for emergency scenarios (exceeds iOS 44px) */
+
+  /* =============================================================================
+     VERIFIED: [P3][NativeUX] TOUCH_TARGET_SIZE_VERIFICATION
+     Implementation: Added --button-height-emergency (48px) for critical touch targets.
+       iOS HIG recommends 44px minimum touch targets; we use 48px for emergency
+       scenarios to account for high-stress motor control degradation.
+
+     Usage Guidelines:
+       - Emergency buttons: Use --button-height-emergency (48px) or --button-height-xl (56px)
+       - Primary actions: Use --button-height-lg (48px)
+       - Secondary actions: Use --button-height-md (40px) minimum
+       - Avoid --button-height-sm (32px) for critical/emergency interactions
+       - Always maintain 8px minimum spacing between adjacent touch targets
+
+     Reference: Apple HIG - https://developer.apple.com/design/human-interface-guidelines/ios/overview/interaction/
+     ============================================================================= */
   
   /* Input System */
   --input-height-sm: 2rem;     /* 32px */

@@ -9,6 +9,7 @@ import { articleService } from './services/articleService';
 const Guides = lazy(() => import('./pages/Guides'));
 const Map = lazy(() => import('./pages/Map'));
 const Resources = lazy(() => import('./pages/Resources'));
+const Library = lazy(() => import('./pages/Library'));
 const ArticleView = lazy(() => import('./pages/ArticleView'));
 const ContentBrowser = lazy(() => import('./pages/ContentBrowser'));
 const AIChat = lazy(() => import('./pages/AIChat'));
@@ -17,6 +18,8 @@ const TriagePage = lazy(() => import('./pages/TriagePage'));
 const Survival = lazy(() => import('./pages/Survival'));
 const Law = lazy(() => import('./pages/Law'));
 const ProtocolPage = lazy(() => import('./pages/ProtocolPage'));
+const AIModels = lazy(() => import('./pages/AIModels'));
+const DevDashboard = lazy(() => import('./components/clawdBot/DevDashboard'));
 
 // Loaders
 const homeLoader = async () => {
@@ -69,8 +72,12 @@ export const router = createBrowserRouter([
                 element: <SuspenseWrapper><Map /></SuspenseWrapper>
             },
             {
+                path: "library",
+                element: <SuspenseWrapper><Library /></SuspenseWrapper>
+            },
+            {
                 path: "resources",
-                element: <SuspenseWrapper><Resources /></SuspenseWrapper>
+                element: <Navigate to="/library" replace />
             },
             {
                 path: "browse",
@@ -79,6 +86,10 @@ export const router = createBrowserRouter([
             {
                 path: "ai",
                 element: <SuspenseWrapper><AIChat /></SuspenseWrapper>
+            },
+            {
+                path: "ai-models",
+                element: <SuspenseWrapper><AIModels /></SuspenseWrapper>
             },
             {
                 path: "article/:slug",
@@ -90,7 +101,7 @@ export const router = createBrowserRouter([
                 element: <SuspenseWrapper><Health /></SuspenseWrapper>
             },
             {
-                path: "triage/:storyId",
+                path: "triage/*",
                 element: <SuspenseWrapper><TriagePage /></SuspenseWrapper>
             },
             {
@@ -104,6 +115,10 @@ export const router = createBrowserRouter([
             {
                 path: "protocol/:scenarioId",
                 element: <SuspenseWrapper><ProtocolPage /></SuspenseWrapper>
+            },
+            {
+                path: "dev",
+                element: <SuspenseWrapper><DevDashboard /></SuspenseWrapper>
             }
         ]
     }

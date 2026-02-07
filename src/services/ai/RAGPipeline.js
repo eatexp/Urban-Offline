@@ -505,6 +505,161 @@ Response:`;
     },
 
     /**
+     * Process a query with stage-by-stage event callbacks for visualization.
+     * Does NOT change existing query() behavior — this is an additive method.
+     *
+     * @param {string} query - User's question
+     * @param {Object} options - Same options as query()
+     * @param {Function} onStage - Callback: ({ stage, data, progress }) => void
+     *   Stages: 'intent' | 'retrieval' | 'context' | 'generation'
+     * @returns {Promise<{response: string, sources: Array, usedFallback: boolean}>}
+     */
+    async queryWithEvents(query, options = {}, onStage) {
+        const {
+            category = 'general',
+            maxSources = AI_CONFIG.rag.maxContextChunks,
+            useAI = true,
+            datasets = null,
+            stream = false
+        } = options;
+
+        const emit = (stage, data, progress) => {
+            if (onStage) {
+                try { onStage({ stage, data, progress }); } catch (_) {}
+            }
+        };
+
+        try {
+            // Stage 1: Intent classification
+            const fallbackResponse = this._checkFallback(query);
+            const intentCategory = category;
+            emit('intent', {
+                classification: intentCategory,
+                hasFallback: !!fallbackResponse,
+                confidence: fallbackResponse ? 0.9 : 0.7
+            }, 100);
+
+            if (fallbackResponse && !useAI) {
+                emit('generation', {
+                    fullText: fallbackResponse.response,
+                    citations: [],
+                    usedFallback: true
+                }, 100);
+                return {
+                    response: fallbackResponse.response,
+                    sources: [],
+                    usedFallback: true,
+                    confidence: 0.9
+                };
+            }
+
+            // Stage 2: Retrieval
+            emit('retrieval', { query, sources: [] }, 0);
+            const { results: retrievedDocs, searchMethod } = await this._retrieveContext(query, maxSources, datasets);
+
+            const sourceSummaries = retrievedDocs.map((d, i) => ({
+                index: i,
+                title: d.title || 'Untitled',
+                store: d.store || 'unknown',
+                score: d.score || 0,
+                snippet: (d.content || d.description || '').substring(0, 120)
+            }));
+
+            emit('retrieval', {
+                query,
+                sources: sourceSummaries,
+                searchMethod,
+                count: retrievedDocs.length
+            }, 100);
+
+            // Stage 3: Context assembly
+            const chunks = retrievedDocs.map((doc, i) => {
+                const content = doc.fullContent || doc.content || doc.description || '';
+                return {
+                    index: i,
+                    title: doc.title || 'Untitled',
+                    store: doc.store || 'unknown',
+                    score: doc.score || 0,
+                    length: content.length,
+                    preview: content.substring(0, 200)
+                };
+            });
+
+            emit('context', {
+                chunks,
+                scores: chunks.map(c => c.score),
+                totalTokensEstimate: chunks.reduce((sum, c) => sum + Math.ceil(c.length / 4), 0)
+            }, 100);
+
+            // Check if AI model is available
+            const modelLoaded = AIModelManager.isModelLoaded();
+
+            if (!modelLoaded || !useAI) {
+                // Fallback: search-based response
+                const searchResponse = fallbackResponse
+                    ? {
+                        response: fallbackResponse.response,
+                        sources: retrievedDocs.map(d => ({
+                            title: d.title,
+                            id: d.id,
+                            snippet: d.content?.substring(0, 150) + '...'
+                        })),
+                        usedFallback: true,
+                        confidence: 0.7
+                    }
+                    : this._buildSearchResponse(query, retrievedDocs);
+
+                emit('generation', {
+                    fullText: searchResponse.response,
+                    citations: searchResponse.sources || [],
+                    usedFallback: true
+                }, 100);
+
+                return { ...searchResponse, searchMethod };
+            }
+
+            // Stage 4: Generation
+            const prompt = this._buildPrompt(query, retrievedDocs, category, datasets);
+            emit('generation', { fullText: '', citations: [], generating: true }, 0);
+
+            const llmResponse = await this._generateWithLLM(prompt, { stream });
+
+            // Parse citations
+            const formattedResponse = this._formatResponse(llmResponse, retrievedDocs);
+
+            emit('generation', {
+                fullText: formattedResponse.response,
+                citations: formattedResponse.sources,
+                usedFallback: false
+            }, 100);
+
+            return { ...formattedResponse, searchMethod };
+
+        } catch (error) {
+            log.error('queryWithEvents failed', error);
+
+            const fallback = this._checkFallback(query);
+            const errorResponse = fallback
+                ? { response: fallback.response, sources: [], usedFallback: true, error: error.message }
+                : {
+                    response: "I'm sorry, I couldn't process your question. Please try searching for specific topics using the search bar.",
+                    sources: [],
+                    usedFallback: true,
+                    error: error.message
+                };
+
+            emit('generation', {
+                fullText: errorResponse.response,
+                citations: [],
+                usedFallback: true,
+                error: error.message
+            }, 100);
+
+            return errorResponse;
+        }
+    },
+
+    /**
      * Check if semantic search is available
      */
     isSemanticSearchReady() {
