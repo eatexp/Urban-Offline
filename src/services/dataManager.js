@@ -68,6 +68,22 @@ const fetchRegionsManifest = async () => {
             log.error('Error loading regions manifest from cache', cacheError);
         }
 
+        // Try to load from Service Worker cache (Cache API)
+        try {
+            if (typeof window !== 'undefined' && 'caches' in window) {
+                const cacheMatch = await caches.match('/regions.json');
+                if (cacheMatch) {
+                    const cachedData = await cacheMatch.json();
+                    if (Array.isArray(cachedData)) {
+                        log.info('Loaded regions manifest from Service Worker cache');
+                        return cachedData;
+                    }
+                }
+            }
+        } catch (swCacheError) {
+            log.warn('Error checking Service Worker cache', swCacheError);
+        }
+
         // Return default embedded data as last resort
         log.warn('Network and cache failed, using embedded default regions');
         return defaultRegions;
