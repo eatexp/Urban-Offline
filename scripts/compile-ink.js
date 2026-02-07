@@ -2,7 +2,7 @@
 // Compiles all .ink source files to .ink.json
 
 import { execSync } from 'child_process';
-import { readdirSync, existsSync, mkdirSync } from 'fs';
+import { readdirSync, existsSync, mkdirSync, chmodSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname, basename, relative } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -28,7 +28,7 @@ function findInkFiles(dir) {
     return files;
 }
 
-function compileInkFile(sourceFile) {
+function compileInkFile(sourceFile, compilerPath) {
     // Determine output path
     const relativePath = relative(SOURCE_DIR, sourceFile);
     const outputFile = join(OUTPUT_BASE, relativePath.replace('.ink', '.ink.json'));
@@ -41,14 +41,25 @@ function compileInkFile(sourceFile) {
     
     try {
         console.log(`Compiling: ${basename(sourceFile)}`);
-        execSync(`inklecate -o "${outputFile}" "${sourceFile}"`, {
+        // Use node to run the inkjs-compiler
+        execSync(`node "${compilerPath}" -o "${outputFile}" "${sourceFile}"`, {
             stdio: 'pipe',
             encoding: 'utf8'
         });
-        console.log(`  ✅ Output: ${relative(PROJECT_ROOT, outputFile)}`);
+
+        // P0 FIX: Remove BOM if present (inkjs-compiler adds it by default)
+        const content = readFileSync(outputFile);
+        if (content.length >= 3 && content[0] === 0xEF && content[1] === 0xBB && content[2] === 0xBF) {
+            writeFileSync(outputFile, content.subarray(3));
+            console.log(`  ✅ Output (BOM removed): ${relative(PROJECT_ROOT, outputFile)}`);
+        } else {
+            console.log(`  ✅ Output: ${relative(PROJECT_ROOT, outputFile)}`);
+        }
+
         return { success: true, file: sourceFile };
     } catch (e) {
         console.error(`  ❌ Error: ${e.message}`);
+        if (e.stderr) console.error(`  Stderr: ${e.stderr}`);
         return { success: false, file: sourceFile, error: e.message };
     }
 }
@@ -61,14 +72,27 @@ async function main() {
         process.exit(1);
     }
     
-    // Check for inklecate
-    try {
-        execSync('inklecate --version', { stdio: 'pipe' });
-    } catch (_e) {
-        console.error('❌ inklecate not found. Install with: npm install -g inklecate');
+    // Find inkjs-compiler.js
+    let compilerPath = join(PROJECT_ROOT, 'node_modules', 'inkjs', 'bin', 'inkjs-compiler.js');
+    if (!existsSync(compilerPath)) {
+        // Try resolving if pnpm flattened structure is different
+        try {
+            const { createRequire } = await import('module');
+            const require = createRequire(import.meta.url);
+            compilerPath = join(dirname(require.resolve('inkjs/package.json')), 'bin', 'inkjs-compiler.js');
+        } catch (e) {
+            console.error('❌ inkjs compiler not found.');
+            process.exit(1);
+        }
+    }
+
+    if (!existsSync(compilerPath)) {
+        console.error(`❌ Compiler not found at: ${compilerPath}`);
         process.exit(1);
     }
     
+    console.log(`Using compiler: ${compilerPath}`);
+
     const inkFiles = findInkFiles(SOURCE_DIR);
     console.log(`Found ${inkFiles.length} .ink files\n`);
     
@@ -79,7 +103,7 @@ async function main() {
     };
     
     for (const file of inkFiles) {
-        const result = compileInkFile(file);
+        const result = compileInkFile(file, compilerPath);
         if (result.success) {
             results.success++;
         } else {
@@ -105,6 +129,3 @@ main().catch(err => {
     console.error('Error:', err);
     process.exit(1);
 });
-
-
-

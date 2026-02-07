@@ -15,26 +15,21 @@
 
 import { pipeline, env } from '@xenova/transformers';
 import { createLogger } from '../../utils/logger';
+import { isWindowsNative } from '../../utils/platform';
 
 const log = createLogger('TransformersEngine');
 
 // Configure transformers.js for offline-first operation
-env.cacheDir = 'indexeddb://urban-offline-models';
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-
-// FIXME: [CrossPlatform] TRANSFORMERS_WINDOWS_INCOMPATIBILITY - P1
-// transformers.js requires browser APIs (IndexedDB, WebGPU, WebGL) unavailable in:
-// - Windows native (Electron/Node.js)
-// - Server-side rendering environments
-// 
-// SOLUTION:
-// - Add platform detection at initialization
-// - Throw descriptive error for Windows native with fallback instructions
-// - Disable AI features gracefully on Windows native
-//
-// ACTION: Add check for window.electron or process.platform in constructor
-// Effort: M-L | Impact: High - AI unavailable on Windows native without fix
+// P1 FIX: Avoid configuring env on Windows Native where it might crash or is unsupported
+if (!isWindowsNative()) {
+    try {
+        env.cacheDir = 'indexeddb://urban-offline-models';
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+    } catch (e) {
+        log.warn('Failed to configure transformers env', e);
+    }
+}
 
 // Model configurations with transformers.js compatible IDs
 // Extended with rich metadata for Locally AI-style model picker
@@ -195,6 +190,9 @@ class TransformersEngine {
      */
     static getInstance() {
         if (!TransformersEngine.instance) {
+            if (isWindowsNative()) {
+                log.warn('TransformersEngine instantiated on Windows Native - AI features disabled');
+            }
             TransformersEngine.instance = new TransformersEngine();
         }
         return TransformersEngine.instance;

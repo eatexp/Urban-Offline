@@ -52,6 +52,7 @@ import {
     IntentClassificationViz
 } from '../components/ai-visualizations';
 import AIReadingViz from '../components/ai-visualizations/AIReadingViz';
+import DOMPurify from 'dompurify';
 // ModelPicker has been moved to dedicated /ai-models page
 // import ModelPicker from '../components/ModelPicker';
 
@@ -776,6 +777,12 @@ Ask me anything, and I'll search through your downloaded content to find answers
 const MessageBubble = React.memo(({ message, onSourceClick, animationDelay = 0 }) => {
     const isUser = message.role === 'user';
 
+    // P1 FIX: Sanitize content to prevent XSS
+    const sanitizedContent = React.useMemo(() => {
+        if (!message.content) return '';
+        return DOMPurify.sanitize(message.content);
+    }, [message.content]);
+
     return (
         <div
             className={`flex gap-3 animate-fade-in ${isUser ? 'flex-row-reverse' : ''}`}
@@ -820,7 +827,7 @@ const MessageBubble = React.memo(({ message, onSourceClick, animationDelay = 0 }
                             ...(message.error && { color: 'var(--color-danger)' })
                         }}
                     >
-                        {formatContent(message.content, isUser)}
+                        {formatContent(sanitizedContent, isUser)}
                     </div>
                 </div>
 

@@ -177,6 +177,7 @@ Difficulty breathing is a medical emergency. Quick assessment is critical.
    * [No asthma history]
        -> check_allergy
 
+=== check_allergy ===
 2. **Recent exposure to allergen?**
    * [Yes, possible allergy]
        -> allergic_reaction
