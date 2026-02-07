@@ -40,7 +40,7 @@ Make these large (3m+) and high contrast.
 
 **V**: Require Assistance.
 **X**: Require Medical Assistance.
-**->**: Proceeding in this direction.
+**Arrow**: Proceeding in this direction.
 **Y**: Yes.
 **N**: No.
 

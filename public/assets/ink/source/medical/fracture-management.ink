@@ -103,6 +103,7 @@ What type of fracture do you suspect?
    * [No, normal shape]
        -> check_movement
 
+=== check_movement ===
 3. **Movement:** Can they move the limb?
    * [No, cannot move]
        -> cannot_move

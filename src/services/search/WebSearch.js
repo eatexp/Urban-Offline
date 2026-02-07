@@ -22,103 +22,107 @@ export const SearchService = {
 
         isIndexing = true;
 
-        // Initialize FlexSearch Document Index
-        index = new Document({
-            document: {
-                id: 'id',
-                index: ['title', 'content', 'description'],
-                store: ['title', 'description', 'category', 'slug']
-            },
-            tokenize: 'forward'
-        });
-
-        // Try to load persisted index
         try {
-            const savedIndex = await db.get('search_index', 'main_index');
-            if (savedIndex && savedIndex.data) {
-                try {
-                    // FlexSearch export/import
-                    const exported = JSON.parse(savedIndex.data);
-                    index.import(exported);
-                    log.info('Loaded persisted search index');
-                    isIndexing = false;
-                    return;
-                } catch (error) {
-                    log.warn('Failed to import saved index, rebuilding...', error);
-                }
-            }
-        } catch (_error) {
-            log.debug('No saved search index found, building new one...');
-        }
+            // Initialize FlexSearch Document Index
+            index = new Document({
+                document: {
+                    id: 'id',
+                    index: ['title', 'content', 'description'],
+                    store: ['title', 'description', 'category', 'slug']
+                },
+                tokenize: 'forward'
+            });
 
-        // Index articles from health_content, survival_content, law_content stores
-        try {
-            let count = 0;
-            const YIELD_EVERY = 50;
-
-            // Helper to prevent blocking main thread
-            const yieldToMain = async () => {
-                if (++count % YIELD_EVERY === 0) {
-                    await new Promise(resolve => setTimeout(resolve, 0));
-                }
-            };
-
-            // Index health content
-            await db.iterate('health_content', async (item) => {
-                index.add({
-                    id: item.id,
-                    slug: item.id,
-                    title: item.title || '',
-                    content: (item.summary || '') + ' ' + (item.content || ''),
-                    description: item.summary || '',
-                    category: 'health'
-                });
-                await yieldToMain();
-            }).catch(e => log.warn('Failed to iterate health_content', e));
-
-            // Index survival content
-            await db.iterate('survival_content', async (item) => {
-                index.add({
-                    id: item.id,
-                    slug: item.id,
-                    title: item.title || item.name || '',
-                    content: item.searchableText || item.description || '',
-                    description: item.description || '',
-                    category: 'survival'
-                });
-                await yieldToMain();
-            }).catch(e => log.warn('Failed to iterate survival_content', e));
-
-            // Index law content
-            await db.iterate('law_content', async (item) => {
-                index.add({
-                    id: item.id,
-                    slug: item.id,
-                    title: item.title || '',
-                    content: item.fullText || item.summary || '',
-                    description: item.summary || '',
-                    category: 'law'
-                });
-                await yieldToMain();
-            }).catch(e => log.warn('Failed to iterate law_content', e));
-
-            log.info(`Indexed ${count} items`);
-
-            // Persist index - search_index uses out-of-line keys, so pass key separately
+            // Try to load persisted index
             try {
-                const exported = index.export();
-                await db.put('search_index', {
-                    data: JSON.stringify(exported),
-                    updatedAt: new Date().toISOString()
-                }, 'main_index');
-            } catch (e) {
-                log.warn('Failed to persist search index', e);
+                const savedIndex = await db.get('search_index', 'main_index');
+                if (savedIndex && savedIndex.data) {
+                    try {
+                        // FlexSearch export/import
+                        const exported = JSON.parse(savedIndex.data);
+                        index.import(exported);
+                        log.info('Loaded persisted search index');
+                        return;
+                    } catch (error) {
+                        log.warn('Failed to import saved index, rebuilding...', error);
+                    }
+                }
+            } catch (_error) {
+                log.debug('No saved search index found, building new one...');
             }
-        } catch (e) {
-            log.error('Failed to index content', e);
-        }
 
-        isIndexing = false;
+            // Index articles from health_content, survival_content, law_content stores
+            try {
+                let count = 0;
+                const YIELD_EVERY = 50;
+
+                // Helper to prevent blocking main thread
+                const yieldToMain = async () => {
+                    if (++count % YIELD_EVERY === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                };
+
+                // Index health content
+                await db.iterate('health_content', async (item) => {
+                    index.add({
+                        id: item.id,
+                        slug: item.id,
+                        title: item.title || '',
+                        content: (item.summary || '') + ' ' + (item.content || ''),
+                        description: item.summary || '',
+                        category: 'health'
+                    });
+                    await yieldToMain();
+                }).catch(e => log.warn('Failed to iterate health_content', e));
+
+                // Index survival content
+                await db.iterate('survival_content', async (item) => {
+                    index.add({
+                        id: item.id,
+                        slug: item.id,
+                        title: item.title || item.name || '',
+                        content: item.searchableText || item.description || '',
+                        description: item.description || '',
+                        category: 'survival'
+                    });
+                    await yieldToMain();
+                }).catch(e => log.warn('Failed to iterate survival_content', e));
+
+                // Index law content
+                await db.iterate('law_content', async (item) => {
+                    index.add({
+                        id: item.id,
+                        slug: item.id,
+                        title: item.title || '',
+                        content: item.fullText || item.summary || '',
+                        description: item.summary || '',
+                        category: 'law'
+                    });
+                    await yieldToMain();
+                }).catch(e => log.warn('Failed to iterate law_content', e));
+
+                log.info(`Indexed ${count} items`);
+
+                // Persist index - search_index uses out-of-line keys, so pass key separately
+                try {
+                    const exported = index.export();
+                    await db.put('search_index', {
+                        data: JSON.stringify(exported),
+                        updatedAt: new Date().toISOString()
+                    }, 'main_index');
+                } catch (e) {
+                    log.warn('Failed to persist search index', e);
+                }
+            } catch (e) {
+                log.error('Failed to index content', e);
+            }
+        } catch (error) {
+            log.error('Search init failed fatally', error);
+            index = null;
+        } finally {
+            isIndexing = false;
+        }
     },
 
     async addDocument(doc) {
