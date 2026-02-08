@@ -14,10 +14,10 @@ import {
 /**
  * Star rating display
  */
-const StarRating = ({ rating, max = 5, icon: Icon = Star, color = 'rgb(234, 179, 8)' }) => (
+const StarRating = ({ rating, max = 5, icon: RatingIcon = Star, color = 'rgb(234, 179, 8)' }) => (
     <div className="flex gap-0.5">
         {[...Array(max)].map((_, i) => (
-            <Icon
+            <RatingIcon
                 key={i}
                 size={12}
                 className={i < rating ? '' : 'opacity-30'}
@@ -99,11 +99,10 @@ const ModelCard = ({
 
     return (
         <div
-            className={`rounded-2xl border p-4 transition-all duration-300 animate-scale-in ${
-                isActive
+            className={`rounded-2xl border p-4 transition-all duration-300 animate-scale-in ${isActive
                     ? 'border-orange-400/40 shadow-lg shadow-orange-500/10 bg-white/5'
                     : 'border-white/10 bg-white/[0.02] hover:bg-white/5'
-            } ${isProLocked ? 'opacity-75' : ''}`}
+                } ${isProLocked ? 'opacity-75' : ''}`}
         >
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
@@ -218,11 +217,10 @@ const ModelCard = ({
                         <button
                             onClick={() => onSelect(model.id)}
                             disabled={isActive}
-                            className={`flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                                isActive
+                            className={`flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
                                     ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                     : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
-                            }`}
+                                }`}
                         >
                             {isActive ? (
                                 <>

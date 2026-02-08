@@ -1,0 +1,18 @@
+    // Independent async indexing
+    const indexNativeArticles = async (db) => {
+        const articles = await db.query('SELECT id, slug, title, body_plain FROM articles LIMIT 1000');
+        if (articles.values && articles.values.length > 0) {
+            for (const article of articles.values) {
+                await SearchService.addDocument({
+                    id: article.id,
+                    slug: article.slug,
+                    title: article.title,
+                    content: article.body_plain || '',
+                    description: article.title,
+                    category: 'health'
+                });
+            }
+            log.info(`Indexed ${articles.values.length} articles from SQLite`);
+            localStorage.setItem('native_index_complete', 'true');
+        }
+    };

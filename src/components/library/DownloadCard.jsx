@@ -259,7 +259,6 @@ const styles = `
 export default function DownloadCard({
   title,
   description,
-  size,
   sizeDisplay,
   status = 'available',
   progress = 0,

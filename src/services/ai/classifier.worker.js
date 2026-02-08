@@ -38,7 +38,7 @@ self.onmessage = async (event) => {
                 }
 
                 // Check if model is cached before attempting load
-                let hasCachedModel = false;
+                let _hasCachedModel = false;
                 try {
                     const cache = await caches.open('transformers-cache');
                     // Check for Xenova model files in cache
@@ -49,7 +49,7 @@ self.onmessage = async (event) => {
                     for (const modelUrl of modelFiles) {
                         const cached = await cache.match(modelUrl);
                         if (cached) {
-                            hasCachedModel = true;
+                            _hasCachedModel = true;
                             console.debug('Found cached model:', modelUrl);
                             break;
                         }
@@ -94,7 +94,7 @@ self.onmessage = async (event) => {
             console.debug('Worker received retry_load, attempting to load model...');
             try {
                 // Reset offline flag to allow load attempt
-                const previousFallback = isOfflineFallback;
+                const _previousFallback = isOfflineFallback;
                 isOfflineFallback = false;
 
                 classifier = await pipeline('zero-shot-classification', 'Xenova/nli-deberta-v3-xsmall');

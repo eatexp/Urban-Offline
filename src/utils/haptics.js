@@ -38,7 +38,7 @@ export const triggerHaptic = async (type = 'heavy') => {
         } else {
             await Haptics.impact({ style: styleMap[type] || ImpactStyle.Heavy });
         }
-    } catch (e) {
+    } catch (_e) {
         // Capacitor not available - use web fallback
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
             navigator.vibrate(VIBRATION_PATTERNS[type] || VIBRATION_PATTERNS.heavy);

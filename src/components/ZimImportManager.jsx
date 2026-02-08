@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, FileArchive, Loader, CheckCircle, XCircle, Trash2, AlertCircle } from 'lucide-react';
 import { ContentPackManager } from '../services/contentPacks/ContentPackManager';
-import { formatSize } from '../services/contentPacks/ContentPackSchema';
 
 /**
  * ZimImportManager - UI for importing ZIM files
@@ -26,7 +25,7 @@ export const ZimImportManager = () => {
     loadZimImports();
   }, []);
 
-  const loadZimImports = async () => {
+  const loadZimImports = useCallback(async () => {
     try {
       setLoading(true);
       const imports = await ContentPackManager.getZimImports();
@@ -36,7 +35,7 @@ export const ZimImportManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Handle drag events
   const handleDragOver = useCallback((e) => {

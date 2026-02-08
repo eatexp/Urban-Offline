@@ -65,7 +65,7 @@ export class ZimReader {
 
       if (fileSizeMB > maxSizeMB) {
         reason = `File size (${fileSizeMB.toFixed(0)}MB) exceeds safe limit for ${deviceMemory}GB device (${maxSizeMB.toFixed(0)}MB). ` +
-                 `Large ZIM files may cause out-of-memory errors on this device.`;
+          `Large ZIM files may cause out-of-memory errors on this device.`;
       }
     } else {
       // Unknown device memory - be conservative
@@ -114,25 +114,25 @@ export class ZimReader {
       // For large files, we may want to implement chunked reading in the future
       this.arrayBuffer = await this.file.arrayBuffer();
       this.view = new DataView(this.arrayBuffer);
-      
+
       // Parse ZIM header
       await this._parseHeader();
-      
+
       // Parse URL pointer list
       await this._parseUrlPtrList();
-      
+
       // Parse title pointer list
       await this._parseTitlePtrList();
-      
+
       // Parse cluster pointer list
       await this._parseClusterPtrList();
-      
+
       // Parse MIME type list
       await this._parseMimeTypeList();
-      
+
       this.ready = true;
       log.info(`ZIM archive loaded: ${this.articleCount} articles`);
-      
+
       return true;
     } catch (error) {
       log.error('Failed to initialize ZIM archive', error);
@@ -145,7 +145,7 @@ export class ZimReader {
    */
   async _parseHeader() {
     const view = this.view;
-    
+
     // ZIM header format (little-endian):
     // Offset  Size  Field
     // 0       4     Magic number (0x44, 0x49, 0x4D, 0x5A = "ZIMD")
@@ -163,13 +163,13 @@ export class ZimReader {
     // 80      4     Layout page
     // 84      8     Checksum position
     // 92      8     Geo index position (optional)
-    
+
     // Check magic number
     const magic = view.getUint32(0, true);
     if (magic !== 0x5A494D44) { // "ZIMD" in little-endian
       throw new Error('Invalid ZIM file: wrong magic number');
     }
-    
+
     this.metadata = {
       majorVersion: view.getUint32(4, true),
       minorVersion: view.getUint32(8, true),
@@ -183,9 +183,9 @@ export class ZimReader {
       layoutPage: view.getUint32(80, true),
       checksumPos: this._readUint64(84)
     };
-    
+
     this.articleCount = Number(this.metadata.articleCount);
-    
+
     log.debug('ZIM header parsed', {
       version: `${this.metadata.majorVersion}.${this.metadata.minorVersion}`,
       articles: this.metadata.articleCount,
@@ -199,11 +199,11 @@ export class ZimReader {
   async _parseMimeTypeList() {
     const pos = Number(this.metadata.mimeListPos);
     const view = this.view;
-    
+
     // MIME type list is null-terminated strings
     let offset = pos;
     const mimeTypes = [];
-    
+
     // Read until we hit an empty string (double null)
     while (offset < view.byteLength) {
       const str = this._readNullTerminatedString(offset);
@@ -211,7 +211,7 @@ export class ZimReader {
       mimeTypes.push(str);
       offset += str.length + 1; // +1 for null terminator
     }
-    
+
     this.mimeTypeList = mimeTypes;
     log.debug(`Parsed ${mimeTypes.length} MIME types`);
   }
@@ -222,7 +222,7 @@ export class ZimReader {
   async _parseUrlPtrList() {
     const pos = Number(this.metadata.urlPtrPos);
     const count = Number(this.metadata.articleCount);
-    
+
     // URL pointer list is an array of 64-bit offsets
     this.urlPtrList = new BigUint64Array(this.arrayBuffer, pos, count);
   }
@@ -233,7 +233,7 @@ export class ZimReader {
   async _parseTitlePtrList() {
     const pos = Number(this.metadata.titlePtrPos);
     const count = Number(this.metadata.articleCount);
-    
+
     // Title pointer list is an array of 32-bit article indices
     this.titlePtrList = new Uint32Array(this.arrayBuffer, pos, count);
   }
@@ -244,7 +244,7 @@ export class ZimReader {
   async _parseClusterPtrList() {
     const pos = Number(this.metadata.clusterPtrPos);
     const count = Number(this.metadata.clusterCount);
-    
+
     // Cluster pointer list is an array of 64-bit offsets
     this.clusterPtrList = new BigUint64Array(this.arrayBuffer, pos, count);
   }
@@ -257,7 +257,7 @@ export class ZimReader {
   async getArticleByIndex(index) {
     if (!this.ready) throw new Error('ZIM archive not initialized');
     if (index < 0 || index >= this.articleCount) return null;
-    
+
     try {
       const entryPtr = this.urlPtrList[index];
       return await this._parseDirectoryEntry(Number(entryPtr));
@@ -274,18 +274,18 @@ export class ZimReader {
    */
   async getArticleByTitle(title) {
     if (!this.ready) throw new Error('ZIM archive not initialized');
-    
+
     // Binary search through title pointer list
     // This is simplified - full implementation would need proper collation
     const normalizedTitle = title.toLowerCase();
-    
+
     for (let i = 0; i < this.articleCount; i++) {
       const article = await this.getArticleByIndex(this.titlePtrList[i]);
       if (article && article.title.toLowerCase() === normalizedTitle) {
         return article;
       }
     }
-    
+
     return null;
   }
 
@@ -297,17 +297,17 @@ export class ZimReader {
    */
   async searchByPrefix(prefix, maxResults = 20) {
     if (!this.ready) throw new Error('ZIM archive not initialized');
-    
+
     const results = [];
     const normalizedPrefix = prefix.toLowerCase();
-    
+
     for (let i = 0; i < this.articleCount && results.length < maxResults; i++) {
       const article = await this.getArticleByIndex(this.titlePtrList[i]);
       if (article && article.title.toLowerCase().startsWith(normalizedPrefix)) {
         results.push(article);
       }
     }
-    
+
     return results;
   }
 
@@ -317,31 +317,31 @@ export class ZimReader {
    */
   async *iterateArticles(options = {}) {
     if (!this.ready) throw new Error('ZIM archive not initialized');
-    
-    const { 
+
+    const {
       onlyHTML = true,
       skipRedirects = true,
-      onProgress = null 
+      onProgress = null
     } = options;
-    
+
     const batchSize = 100;
     let processed = 0;
-    
+
     for (let i = 0; i < this.articleCount; i++) {
       const article = await this.getArticleByIndex(i);
-      
+
       if (!article) continue;
-      
+
       // Skip redirects if requested
       if (skipRedirects && article.isRedirect) continue;
-      
+
       // Filter by MIME type if requested
       if (onlyHTML && !article.isHTML) continue;
-      
+
       yield article;
-      
+
       processed++;
-      
+
       // Report progress
       if (onProgress && processed % batchSize === 0) {
         onProgress({
@@ -351,7 +351,7 @@ export class ZimReader {
         });
       }
     }
-    
+
     if (onProgress) {
       onProgress({
         processed,
@@ -368,7 +368,7 @@ export class ZimReader {
    */
   async _parseDirectoryEntry(offset) {
     const view = this.view;
-    
+
     // Directory entry format:
     // Offset  Size  Field
     // 0       2     MIME type number
@@ -379,41 +379,41 @@ export class ZimReader {
     // varies  varies  Title (null-terminated, optional)
     // varies  varies  Cluster index (4 bytes, for content entries)
     // varies  varies  Blob index (4 bytes, for content entries)
-    
+
     let pos = offset;
-    
+
     const mimeTypeNum = view.getUint16(pos, true);
     pos += 2;
-    
-    const parameterLen = view.getUint8(pos);
+
+    const _parameterLen = view.getUint8(pos);
     pos += 1;
-    
+
     const namespace = String.fromCharCode(view.getUint8(pos));
     pos += 1;
-    
+
     const revision = view.getUint32(pos, true);
     pos += 4;
-    
+
     // Read URL (null-terminated)
     const url = this._readNullTerminatedString(pos);
     pos += url.length + 1;
-    
+
     // Read title (null-terminated, may be empty)
     let title = this._readNullTerminatedString(pos);
     pos += title.length + 1;
-    
+
     // If title is empty, use URL as title
     if (!title) {
       title = url.replace(/_/g, ' ');
     }
-    
+
     const isRedirect = mimeTypeNum === 0xFFFF;
     const mimeType = isRedirect ? 'redirect' : (this.mimeTypeList[mimeTypeNum] || 'application/octet-stream');
-    
+
     let clusterIndex = null;
     let blobIndex = null;
     let redirectIndex = null;
-    
+
     if (isRedirect) {
       // Redirect entry: 4 bytes redirect index
       redirectIndex = view.getUint32(pos, true);
@@ -423,7 +423,7 @@ export class ZimReader {
       pos += 4;
       blobIndex = view.getUint32(pos, true);
     }
-    
+
     return new ZimArticle({
       index: offset,
       title,
@@ -449,31 +449,31 @@ export class ZimReader {
     if (clusterIndex >= this.metadata.clusterCount) {
       throw new Error(`Invalid cluster index: ${clusterIndex}`);
     }
-    
+
     // Get cluster offset
     const clusterOffset = Number(this.clusterPtrList[clusterIndex]);
-    
+
     // Read cluster header
     // First byte: compression type
     const compressionType = this.view.getUint8(clusterOffset);
-    
+
     // Read blob offsets
     const blobOffsets = await this._readBlobOffsets(clusterOffset, compressionType);
-    
+
     if (blobIndex >= blobOffsets.length - 1) {
       throw new Error(`Invalid blob index: ${blobIndex}`);
     }
-    
+
     const startOffset = blobOffsets[blobIndex];
     const endOffset = blobOffsets[blobIndex + 1];
     const blobSize = endOffset - startOffset;
-    
+
     // Get blob data
     const dataOffset = this._getDataOffset(clusterOffset, compressionType, blobOffsets.length);
     const blobStart = dataOffset + startOffset;
-    
+
     const compressedData = new Uint8Array(this.arrayBuffer, blobStart, blobSize);
-    
+
     // Decompress if necessary
     return await this._decompressBlob(compressedData, compressionType);
   }
@@ -484,16 +484,16 @@ export class ZimReader {
   async _readBlobOffsets(clusterOffset, compressionType) {
     const headerSize = compressionType === COMPRESSION_ZSTD ? 1 : 4;
     const offsetPos = clusterOffset + headerSize;
-    
+
     // First offset gives us the number of blobs
     const firstOffset = this.view.getUint32(offsetPos, true);
     const numBlobs = (firstOffset - headerSize) / 4;
-    
+
     const offsets = [];
     for (let i = 0; i <= numBlobs; i++) {
       offsets.push(this.view.getUint32(offsetPos + i * 4, true));
     }
-    
+
     return offsets;
   }
 
@@ -512,7 +512,7 @@ export class ZimReader {
     switch (compressionType) {
       case COMPRESSION_NONE:
         return data;
-        
+
       case COMPRESSION_ZSTD:
         // =============================================================================
         // TODO: [P2][Performance] ZSTANDARD_COMPRESSION_IMPLEMENTATION
@@ -528,7 +528,7 @@ export class ZimReader {
         // Priority: P2 | Effort: M (2-3 hours) | Impact: High (content availability)
         // =============================================================================
         throw new Error('Zstandard compression not yet implemented');
-        
+
       case COMPRESSION_LZMA:
         // =============================================================================
         // TODO: [P2][Performance] LZMA_XZ_COMPRESSION_IMPLEMENTATION
@@ -542,11 +542,11 @@ export class ZimReader {
         // Priority: P3 | Effort: M (2-3 hours) | Impact: Medium
         // =============================================================================
         throw new Error('LZMA/XZ compression not yet implemented');
-        
+
       case COMPRESSION_ZLIB:
         // Use browser's DecompressionStream
         return await this._decompressZlib(data);
-        
+
       default:
         throw new Error(`Unsupported compression type: ${compressionType}`);
     }
@@ -566,7 +566,7 @@ export class ZimReader {
         const stream = new Response(data).body;
         const decompressed = stream.pipeThrough(new DecompressionStream('deflate-raw'));
         return new Uint8Array(await new Response(decompressed).arrayBuffer());
-      } catch (fallbackError) {
+      } catch (_fallbackError) {
         throw new Error(`Failed to decompress zlib data: ${error.message}`);
       }
     }
@@ -578,14 +578,14 @@ export class ZimReader {
   _readNullTerminatedString(offset) {
     const bytes = [];
     let pos = offset;
-    
+
     while (pos < this.view.byteLength) {
       const byte = this.view.getUint8(pos);
       if (byte === 0) break;
       bytes.push(byte);
       pos++;
     }
-    
+
     return new TextDecoder().decode(new Uint8Array(bytes));
   }
 
@@ -597,12 +597,12 @@ export class ZimReader {
     // but for ZIM files under 8GB, the low 32 bits should suffice
     const low = this.view.getUint32(offset, true);
     const high = this.view.getUint32(offset + 4, true);
-    
+
     if (high > 0) {
       // File is >4GB, we may have issues
       log.warn(`Large file detected: high 32 bits = ${high}`);
     }
-    
+
     return BigInt(low) | (BigInt(high) << BigInt(32));
   }
 
@@ -622,7 +622,7 @@ export class ZimReader {
    */
   getStats() {
     if (!this.ready) return null;
-    
+
     return {
       fileName: this.file.name,
       fileSize: this.file.size,
@@ -678,7 +678,7 @@ export class ZimArticle {
    */
   async getContent() {
     if (this._content !== null) return this._content;
-    
+
     if (this.isRedirect) {
       // Follow redirect
       const redirectArticle = await this._zimReader.getArticleByIndex(this.redirectIndex);
@@ -688,11 +688,11 @@ export class ZimArticle {
       }
       return null;
     }
-    
+
     if (this.clusterIndex === null || this.blobIndex === null) {
       return null;
     }
-    
+
     try {
       const blob = await this._zimReader._getBlob(this.clusterIndex, this.blobIndex);
       this._content = new TextDecoder().decode(blob);
@@ -709,7 +709,7 @@ export class ZimArticle {
   async getPlainText() {
     const html = await this.getContent();
     if (!html) return '';
-    
+
     // Simple HTML to text conversion
     // In production, use a proper HTML parser
     return html

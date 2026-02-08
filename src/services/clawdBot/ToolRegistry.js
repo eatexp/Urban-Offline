@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '../../utils/logger';
-import { devTools, registerDevTools } from './DevToolRegistry';
+import { registerDevTools } from './DevToolRegistry';
 
 const log = createLogger('clawdBot:ToolRegistry');
 
@@ -75,7 +75,7 @@ class ToolRegistry {
    */
   async execute(name, params = {}, context = {}) {
     const tool = this.tools.get(name);
-    
+
     if (!tool) {
       log.error(`Tool not found: ${name}`);
       return { success: false, error: `Unknown tool: ${name}` };
@@ -93,7 +93,7 @@ class ToolRegistry {
       log.info(`Executing tool: ${name}`, params);
       const result = await Promise.race([
         tool.execute(params, context),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Tool execution timeout')), 10000)
         )
       ]);
@@ -103,10 +103,10 @@ class ToolRegistry {
 
     } catch (error) {
       log.error(`Tool execution failed: ${name}`, error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message || 'Tool execution failed',
-        tool: name 
+        tool: name
       };
     }
   }
@@ -127,13 +127,13 @@ class ToolRegistry {
       if (config.required && !(key in params)) {
         return { valid: false, error: `Missing required parameter: ${key}` };
       }
-      
+
       if (key in params && config.type) {
         const actualType = typeof params[key];
         if (actualType !== config.type && !(config.type === 'array' && Array.isArray(params[key]))) {
-          return { 
-            valid: false, 
-            error: `Parameter ${key} should be ${config.type}, got ${actualType}` 
+          return {
+            valid: false,
+            error: `Parameter ${key} should be ${config.type}, got ${actualType}`
           };
         }
       }
@@ -165,9 +165,9 @@ class ToolRegistry {
         if (!context.navigate) {
           throw new Error('Navigation function not available in context');
         }
-        
+
         const { destination, context: navContext } = params;
-        
+
         // Use view transition if available
         if (context.transition) {
           await context.transition(() => {
@@ -176,7 +176,7 @@ class ToolRegistry {
         } else {
           context.navigate(destination, navContext ? { state: navContext } : undefined);
         }
-        
+
         return { navigated: true, destination };
       }
     });
@@ -205,7 +205,7 @@ class ToolRegistry {
       },
       execute: async (params, context) => {
         const { ProtocolGenerator } = await import('../ai/ProtocolGenerator');
-        
+
         const protocol = await ProtocolGenerator.generate(params.scenario, {
           useAI: true,
           maxRetries: 1
@@ -216,10 +216,10 @@ class ToolRegistry {
           context.setProtocol(protocol);
         }
 
-        return { 
-          protocol, 
+        return {
+          protocol,
           scenario: params.scenario,
-          steps: protocol.steps?.length || 0 
+          steps: protocol.steps?.length || 0
         };
       }
     });
@@ -246,7 +246,7 @@ class ToolRegistry {
       },
       execute: async (params) => {
         const { HybridSearchService } = await import('../search/HybridSearch');
-        
+
         const response = await HybridSearchService.search(params.query, {
           limit: params.limit || 10,
           category: params.category,
@@ -284,7 +284,7 @@ class ToolRegistry {
       },
       execute: async (params) => {
         const { userContextManager } = await import('../context/UserContextManager');
-        
+
         if (params.category) {
           const getters = {
             inventory: () => userContextManager.getInventory(),
@@ -316,7 +316,7 @@ class ToolRegistry {
           description: 'Category hint: health, medical, legal, survival'
         }
       },
-      execute: async (params, context) => {
+      execute: async (params, _context) => {
         // Map condition to story file
         const conditionMap = {
           // Medical
@@ -340,12 +340,12 @@ class ToolRegistry {
         };
 
         const storyFile = conditionMap[params.condition.toLowerCase()];
-        
+
         if (!storyFile) {
           // Try to infer from category
           const category = params.category || 'health';
           const inferredFile = `${category}/${params.condition}.ink.json`;
-          
+
           return {
             storyFile: inferredFile,
             condition: params.condition,
@@ -380,7 +380,7 @@ class ToolRegistry {
       },
       execute: async (params) => {
         const { userContextManager } = await import('../context/UserContextManager');
-        
+
         let targetLocation = params.location;
         let targetZoom = params.zoom || 13;
 
@@ -410,7 +410,7 @@ class ToolRegistry {
       execute: async () => {
         const { getAllScenarios } = await import('../ai/scenarioTemplates');
         const scenarios = getAllScenarios();
-        
+
         return {
           scenarios: scenarios.map(s => ({
             id: s.id,
@@ -429,7 +429,7 @@ class ToolRegistry {
       execute: async () => {
         const { dataManager } = await import('../dataManager');
         const { AIModelManager } = await import('../ai/AIModelManager');
-        
+
         const [regions, storage, aiReady] = await Promise.all([
           dataManager.getInstalledRegions(),
           dataManager.getStorageUsage(),
@@ -447,7 +447,7 @@ class ToolRegistry {
     });
 
     log.info('Core tools registered:', this.getToolNames());
-    
+
     // Register development tools
     registerDevTools(this);
     log.info('Development tools registered');

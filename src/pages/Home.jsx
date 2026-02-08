@@ -1,18 +1,14 @@
-import { Shield, Library, CheckCircle, AlertTriangle, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
+import { Shield, Library, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { dataManager } from '../services/dataManager';
 import { AIModelManager } from '../services/ai/AIModelManager';
-import { createLogger } from '../utils/logger';
 import { triggerHaptic } from '../utils/haptics';
 import EmergencyCommandBar from '../components/EmergencyCommandBar';
 
-const log = createLogger('Home');
-
 const Home = () => {
     const { status: initialStatus, activeRegion: initialRegion } = useLoaderData();
-    const [status, setStatus] = useState(initialStatus);
-    const [activeRegion, setActiveRegion] = useState(initialRegion);
+    const status = initialStatus;
+    const activeRegion = initialRegion;
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [aiModelCount, setAiModelCount] = useState(0);
     const navigate = useNavigate();

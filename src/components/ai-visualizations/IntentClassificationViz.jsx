@@ -9,7 +9,7 @@
  * - Route destination animation
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Brain,
   Search,

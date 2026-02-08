@@ -20,7 +20,7 @@ const startApp = () => {
 
   // Preload critical triage stories for offline availability
   // This ensures life-safety guides (CPR, choking, etc.) are cached
-  inkService.preloadCriticalStories().then(({ loaded, failed }) => {
+  inkService.preloadCriticalStories().then(({ failed }) => {
     if (failed.length > 0) {
       log.warn(`Failed to preload ${failed.length} critical stories:`, failed);
     }

@@ -1,9 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import { dataManager } from './services/dataManager';
-import { articleService } from './services/articleService';
 
 // Lazy Components
 const Guides = lazy(() => import('./pages/Guides'));
@@ -22,36 +20,9 @@ const AIModels = lazy(() => import('./pages/AIModels'));
 const DevDashboard = lazy(() => import('./components/clawdBot/DevDashboard'));
 
 // Loaders
-const homeLoader = async () => {
-    try {
-        const regions = await dataManager.getInstalledRegions();
-        return {
-            status: regions.length > 0 ? 'prepared' : 'not-prepared',
-            activeRegion: regions[0] || null
-        };
-    } catch (error) {
-        return { status: 'not-prepared', activeRegion: null, error };
-    }
-};
+import { homeLoader, articleLoader } from './loaders';
 
-const articleLoader = async ({ params }) => {
-    try {
-        const article = await articleService.getArticleBySlug(params.slug);
-        if (!article) throw new Error('Article not found');
-        return article;
-    } catch (error) {
-        throw error;
-    }
-};
-
-import SkeletonPage from './components/SkeletonPage';
-
-// Loading Wrapper
-const SuspenseWrapper = ({ children }) => (
-    <Suspense fallback={<SkeletonPage />}>
-        {children}
-    </Suspense>
-);
+import SuspenseWrapper from './components/SuspenseWrapper';
 
 export const router = createBrowserRouter([
     {

@@ -87,6 +87,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [streamingContent, setStreamingContent] = useState('');
+
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [aiCapabilities, setAiCapabilities] = useState(null);
     const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback
@@ -100,13 +101,7 @@ Ask me anything, and I'll search through your downloaded content to find answers
 
     // Visualization state
     const [showVisualizations, setShowVisualizations] = useState(false);
-    const [pipelineState, setPipelineState] = useState({
-        isActive: false,
-        currentStage: null,
-        stageData: {}
-    });
-    const [queryActivity, setQueryActivity] = useState([]);
-    const [lastClassification, setLastClassification] = useState(null);
+
     const [vizStages, setVizStages] = useState([]);
     const [vizActive, setVizActive] = useState(false);
 

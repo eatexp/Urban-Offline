@@ -525,13 +525,13 @@ class TransformersEngine {
         try {
             // Check if model files exist in IndexedDB cache
             // transformers.js uses a specific cache structure
-            const cacheKey = `transformers-cache-${modelConfig.hfId}`;
+            const _cacheKey = `transformers-cache-${modelConfig.hfId}`;
 
             // Open IndexedDB to check for cached model
             return new Promise((resolve) => {
                 const request = indexedDB.open('transformers-cache', 1);
 
-                request.onerror = () => resolve(false);
+                request.onerror = () => { /* Ignore DB access errors */ resolve(false); };
 
                 request.onsuccess = (event) => {
                     const db = event.target.result;

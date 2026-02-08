@@ -1,12 +1,12 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { useNavigate, useLoaderData } from 'react-router-dom';
-import { ArrowLeft, BookOpen, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ExternalLink } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import AskAIChip from '../components/AskAIChip';
 import { createLogger } from '../utils/logger';
 import DOMPurify from 'dompurify';
 
-const log = createLogger('ArticleView');
+
 
 // =============================================================================
 // TODO: [Performance] ARTICLE_VIEW_MEMOIZATION
@@ -24,14 +24,9 @@ const log = createLogger('ArticleView');
 const ArticleView = () => {
     const article = useLoaderData();
     const navigate = useNavigate();
-    const [triageStory, setTriageStory] = useState(null);
-
-    // Analyze for triage opportunities (Client-side lightweight check)
-    useEffect(() => {
-        if (article) {
-            const story = TriageRouter.findTriageStory(article.title + " " + (article.body_plain || ""));
-            setTriageStory(story);
-        }
+    const triageStory = useMemo(() => {
+        if (!article) return null;
+        return TriageRouter.findTriageStory(article.title + " " + (article.body_plain || ""));
     }, [article]);
 
     return (

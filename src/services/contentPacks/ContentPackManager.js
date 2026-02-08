@@ -310,7 +310,7 @@ export const ContentPackManager = {
                 try {
                     const root = await navigator.storage.getDirectory();
                     await root.removeEntry(tempFileHandle.name);
-                } catch (cleanupErr) {
+                } catch (_cleanupErr) {
                     // Ignore
                 }
             }

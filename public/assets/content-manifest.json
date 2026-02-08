@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-07T04:14:46.858Z",
+  "generatedAt": "2026-02-08T03:37:57.132Z",
   "bundled": true,
   "packs": [
     {
@@ -22,11 +22,11 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors, licensed under CC-BY-SA 4.0",
-        "lastVerified": "2026-02-07"
+        "lastVerified": "2026-02-08"
       },
       "version": "1.0.0",
       "articleCount": 75,
-      "size": 19780821,
+      "size": 19775716,
       "sizeDisplay": "18.9 MB",
       "dataUrl": "/assets/packs/medical-core.json",
       "bundled": true
@@ -50,12 +50,12 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-07"
+        "lastVerified": "2026-02-08"
       },
       "version": "1.0.0",
       "articleCount": 8,
-      "size": 863730,
-      "sizeDisplay": "843 KB",
+      "size": 864172,
+      "sizeDisplay": "844 KB",
       "dataUrl": "/assets/packs/legal-uk.json",
       "bundled": true
     },
@@ -78,7 +78,7 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-07"
+        "lastVerified": "2026-02-08"
       },
       "version": "1.0.0",
       "articleCount": 6,
@@ -89,5 +89,5 @@
     }
   ],
   "totalArticles": 89,
-  "totalSize": 21207068
+  "totalSize": 21202405
 }

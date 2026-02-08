@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Loader } from 'lucide-react';
 import ProtocolView from '../components/ProtocolView';
@@ -32,9 +32,9 @@ const ProtocolPage = () => {
     // Generate protocol on mount
     useEffect(() => {
         generateProtocol();
-    }, [scenarioId]);
+    }, [generateProtocol]);
 
-    const generateProtocol = async () => {
+    const generateProtocol = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -83,7 +83,7 @@ const ProtocolPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [scenarioId]);
 
     // Handle regeneration (user clicks "Regenerate" button)
     const handleRegenerate = async () => {

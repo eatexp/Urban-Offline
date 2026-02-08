@@ -43,10 +43,10 @@ class ClawdBot {
     if (this.initialized) return;
 
     log.info('Initializing clawdBot');
-    
+
     // Load previous session history
     await this.memory.loadPreviousSession();
-    
+
     // Cleanup old sessions
     await this.memory.cleanupOldSessions();
 
@@ -73,7 +73,7 @@ class ClawdBot {
 
     // Route query to action
     const action = await this.router.route(query, executionContext);
-    
+
     // Check if action requires confirmation
     if (this.requiresConfirmation(action)) {
       this.memory.setPendingAction(action, this.describeAction(action));
@@ -137,13 +137,13 @@ class ClawdBot {
   requiresConfirmation(action) {
     // High-confidence actions don't need confirmation
     if (action.confidence > 0.85) return false;
-    
+
     // Fallback actions should confirm
     if (action.isFallback) return true;
-    
+
     // Navigation to external (non-app) destinations should confirm
     // (None currently, but future-proofing)
-    
+
     return false;
   }
 
@@ -170,7 +170,7 @@ class ClawdBot {
    */
   formatConfirmationResponse(action) {
     const description = this.describeAction(action);
-    
+
     return {
       type: 'confirmation',
       message: `I'll ${description.toLowerCase()}. Is that right?`,
@@ -253,23 +253,23 @@ class ClawdBot {
 
     const messages = {
       'navigate_to': `Going to ${result.result?.destination}...`,
-      
-      'generate_protocol': result.result?.protocol?.usedFallback 
+
+      'generate_protocol': result.result?.protocol?.usedFallback
         ? `Here's the ${result.result.scenario} protocol.`
         : `I've generated a personalized ${result.result.scenario} protocol for you.`,
-      
-      'search_content': result.result?.total > 0 
+
+      'search_content': result.result?.total > 0
         ? `Found ${result.result.total} result${result.result.total !== 1 ? 's' : ''}.`
         : 'No results found.',
-      
+
       'start_triage': `Starting ${result.result?.condition} guide...`,
-      
+
       'get_user_context': 'Here is your information.',
-      
+
       'show_map_location': 'Opening map...',
-      
+
       'list_scenarios': `Available emergency scenarios:`,
-      
+
       'get_status': 'Current status:'
     };
 
@@ -339,7 +339,7 @@ class ClawdBot {
           return '✅ No immediate improvements needed. The app looks good!';
         }
         let msg = `💡 ${data.suggestions.length} Improvement Suggestions\n\n`;
-        data.suggestions.forEach((s, i) => {
+        data.suggestions.forEach((s, _i) => {
           const priorityEmoji = s.priority === 'high' ? '🔴' : s.priority === 'medium' ? '🟠' : '🟡';
           msg += `${priorityEmoji} ${s.title}\n`;
           msg += `   ${s.description}\n`;
@@ -384,9 +384,9 @@ class ClawdBot {
 
       case 'search_content':
         if (result.result?.triageFlow) {
-          actions.push({ 
-            label: 'Start guide', 
-            query: `start ${result.result.triageFlow.replace('.ink.json', '')}` 
+          actions.push({
+            label: 'Start guide',
+            query: `start ${result.result.triageFlow.replace('.ink.json', '')}`
           });
         }
         break;
@@ -447,7 +447,7 @@ class ClawdBot {
    */
   getProactiveSuggestion() {
     const summary = this.memory.getSessionSummary();
-    
+
     // No suggestions for new sessions
     if (summary.interactionCount === 0) return null;
 

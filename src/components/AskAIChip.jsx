@@ -23,7 +23,7 @@ const log = createLogger('AskAIChip');
  * Generate context-aware question suggestions based on content
  */
 function generateSuggestions(context) {
-    const { title, category, content } = context;
+    const { title, category } = context;
 
     // Default suggestions by category
     const categorySuggestions = {

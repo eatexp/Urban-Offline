@@ -11,7 +11,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { triggerHaptic } from '../utils/haptics';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Search, Heart, Wind, Droplets, AlertTriangle, ChevronRight, X } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { TRIAGE_STORIES } from '../config/intentPatterns';
@@ -91,6 +91,16 @@ const EmergencyCommandBar = () => {
         setHighlightedIndex(-1);
     }, [query]);
 
+    // Navigate to triage story
+    const handleSuggestionClick = useCallback((suggestion) => {
+        triggerHaptic('heavy');
+        setQuery('');
+        setSuggestions([]);
+        navigate(`/triage/${suggestion.story}`, {
+            state: { urgency: suggestion.urgency }
+        });
+    }, [navigate, triggerHaptic]);
+
     // Handle keyboard navigation
     const handleKeyDown = useCallback((e) => {
         if (suggestions.length === 0) return;
@@ -124,14 +134,7 @@ const EmergencyCommandBar = () => {
     }, [suggestions, highlightedIndex]);
 
     // Navigate to triage story
-    const handleSuggestionClick = useCallback((suggestion) => {
-        triggerHaptic('heavy');
-        setQuery('');
-        setSuggestions([]);
-        navigate(`/triage/${suggestion.story}`, {
-            state: { urgency: suggestion.urgency }
-        });
-    }, [navigate, triggerHaptic]);
+
 
     // Handle critical action button click
     const handleCriticalAction = useCallback((action) => {

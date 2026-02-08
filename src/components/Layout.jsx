@@ -21,6 +21,7 @@ const Layout = () => {
 
     useEffect(() => {
         // Trigger mount animation
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMounted(true);
 
         // Preload critical emergency stories for offline availability

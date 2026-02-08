@@ -1,0 +1,363 @@
+
+> urban-offline@0.0.0 lint
+> eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0
+
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\scripts\compile-ink.js
+   5:46  warning  'chmodSync' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  83:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u      no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\scripts\setup-mobile-dev.js
+  27:12  warning  'error' is defined but never used. Allowed unused caught errors must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\App.jsx
+  10:11  error  'exitToastShown' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  55:22  error  'e' is defined but never used. Allowed unused caught errors must match /^_/u                    no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\AskAIChip.jsx
+  26:30  error  'content' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\EmergencyCommandBar.jsx
+  112:21  error    Error: Cannot access variable before it is declared
+
+`handleSuggestionClick` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  110 |                 e.preventDefault();
+  111 |                 if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+> 112 |                     handleSuggestionClick(suggestions[highlightedIndex]);
+      |                     ^^^^^^^^^^^^^^^^^^^^^ `handleSuggestionClick` accessed before it is declared
+  113 |                 } else if (suggestions.length > 0) {
+  114 |                     handleSuggestionClick(suggestions[0]);
+  115 |                 }
+
+  125 |
+  126 |     // Navigate to triage story
+> 127 |     const handleSuggestionClick = useCallback((suggestion) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 128 |         triggerHaptic('heavy');
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 129 |         setQuery('');
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 130 |         setSuggestions([]);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 131 |         navigate(`/triage/${suggestion.story}`, {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 132 |             state: { urgency: suggestion.urgency }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 133 |         });
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 134 |     }, [navigate, triggerHaptic]);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `handleSuggestionClick` is declared here
+  135 |
+  136 |     // Handle critical action button click
+  137 |     const handleCriticalAction = useCallback((action) => {  react-hooks/immutability
+  124:8   warning  React Hook useCallback has a missing dependency: 'handleSuggestionClick'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+  134:8   warning  React Hook useCallback has an unnecessary dependency: 'triggerHaptic'. Either exclude it or remove the dependency array. Outer scope values like 'triggerHaptic' aren't valid dependencies because mutating them doesn't re-render the component                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+  142:8   warning  React Hook useCallback has an unnecessary dependency: 'triggerHaptic'. Either exclude it or remove the dependency array. Outer scope values like 'triggerHaptic' aren't valid dependencies because mutating them doesn't re-render the component                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\Layout.jsx
+  24:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  22 |     useEffect(() => {
+  23 |         // Trigger mount animation
+> 24 |         setIsMounted(true);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |
+  26 |         // Preload critical emergency stories for offline availability
+  27 |         // This runs in background, doesn't block initial render  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ModelCard.jsx
+  17:46  error  'Icon' is assigned a value but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ModelPicker.jsx
+   25:46  error  'Icon' is assigned a value but never used. Allowed unused args must match /^_/u         no-unused-vars
+  291:12  error  'models' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  360:65  error  'progress' is defined but never used. Allowed unused args must match /^_/u              no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\Navbar.jsx
+  12:14  error  'e' is defined but never used. Allowed unused caught errors must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\Search.jsx
+  147:8  warning  React Hook useEffect has missing dependencies: 'handleEmergencyClick' and 'handleResultClick'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\SmartDownloadPrompt.jsx
+  162:8  warning  React Hook useEffect has a missing dependency: 'isVisible'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\TriageScreen.jsx
+  152:8  warning  React Hook useCallback has an unnecessary dependency: 'triggerHaptic'. Either exclude it or remove the dependency array. Outer scope values like 'triggerHaptic' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ZimImportManager.jsx
+   4:10  error    'formatSize' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                  no-unused-vars
+  67:6   warning  React Hook useCallback has a missing dependency: 'handleImport'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\AIReadingViz.jsx
+  199:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  197 |     useEffect(() => {
+  198 |         if (isActive && stages.length > 0) {
+> 199 |             setExpanded(true);
+      |             ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  200 |         }
+  201 |     }, [isActive, stages.length]);
+  202 |  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\BookshelfGrid.jsx
+  228:22  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  226 |         title: ['Medical', 'Survival', 'Legal', 'First Aid', 'Shelter', 'Water', 'Navigation', 'Signals'][i],
+  227 |         color: SPINE_COLORS[i % SPINE_COLORS.length],
+> 228 |         height: 40 + Math.random() * 20,
+      |                      ^^^^^^^^^^^^^ Cannot call impure function
+  229 |         category: ['health', 'survival', 'law', 'health', 'survival', 'survival', 'survival', 'survival'][i]
+  230 |       }));
+  231 |     }  react-hooks/purity
+  232:28  error  'i' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\ContextAssemblyViz.jsx
+  105:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  103 |     useEffect(() => {
+  104 |         if (!active || chunks.length === 0) {
+> 105 |             setVisibleCount(0);
+      |             ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  106 |             return;
+  107 |         }
+  108 |  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\DatasetNetworkGraph.jsx
+   96:10  error  'hoveredNode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+  125:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  123 |       timestamp: Date.now()
+  124 |     };
+> 125 |     setPulses(prev => [...prev, newPulse]);
+      |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  126 |     setTimeout(() => {
+  127 |       setPulses(prev => prev.filter(p => p.id !== newPulse.id));
+  128 |     }, 2000);  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\GenerationStreamViz.jsx
+  125:5   error  'usedFallback' is assigned a value but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+  147:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  145 |             const startFrom = Math.min(prevWordCount, newWords);
+  146 |
+> 147 |             setDisplayedWords(startFrom);
+      |             ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  148 |
+  149 |             // Reveal words progressively
+  150 |             if (startFrom < newWords) {  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\IntentClassificationViz.jsx
+   12:38  error  'useMemo' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+   73:3   error  'query' is assigned a value but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        no-unused-vars
+   76:10  error  'showWinner' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+   82:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  80 |   useEffect(() => {
+  81 |     if (finalResult && !isActive) {
+> 82 |       setShowWinner(true);
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  83 |
+  84 |       // Create celebration particles
+  85 |       const newParticles = Array.from({ length: 12 }, (_, i) => ({  react-hooks/set-state-in-effect
+  681:68  error  'isActive' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\RAGPipelineVisualizer.jsx
+   86:3   error  'onStageClick' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+  102:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  100 |       return () => clearInterval(interval);
+  101 |     } else {
+> 102 |       setElapsedTime(0);
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  103 |       startTimeRef.current = null;
+  104 |     }
+  105 |   }, [isActive]);  react-hooks/set-state-in-effect
+  466:56  error  'stageData' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\ai-visualizations\VisualizationEffects.jsx
+  332:16  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  330 |         return [...Array(count)].map((_, i) => ({
+  331 |             id: i,
+> 332 |             x: Math.random() * 100,
+      |                ^^^^^^^^^^^^^ Cannot call impure function
+  333 |             y: Math.random() * 100,
+  334 |             size: size * (0.5 + Math.random() * 0.5),
+  335 |             delay: (i / count) * speed,                     react-hooks/purity
+  333:16  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  331 |             id: i,
+  332 |             x: Math.random() * 100,
+> 333 |             y: Math.random() * 100,
+      |                ^^^^^^^^^^^^^ Cannot call impure function
+  334 |             size: size * (0.5 + Math.random() * 0.5),
+  335 |             delay: (i / count) * speed,
+  336 |             duration: speed * (0.8 + Math.random() * 0.4)             react-hooks/purity
+  334:33  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  332 |             x: Math.random() * 100,
+  333 |             y: Math.random() * 100,
+> 334 |             size: size * (0.5 + Math.random() * 0.5),
+      |                                 ^^^^^^^^^^^^^ Cannot call impure function
+  335 |             delay: (i / count) * speed,
+  336 |             duration: speed * (0.8 + Math.random() * 0.4)
+  337 |         }));  react-hooks/purity
+  336:38  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  334 |             size: size * (0.5 + Math.random() * 0.5),
+  335 |             delay: (i / count) * speed,
+> 336 |             duration: speed * (0.8 + Math.random() * 0.4)
+      |                                      ^^^^^^^^^^^^^ Cannot call impure function
+  337 |         }));
+  338 |     }, [count, size, speed]);
+  339 |                                       react-hooks/purity
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\clawdBot\DevDashboard.jsx
+  78:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  76 |   // Initial load
+  77 |   useEffect(() => {
+> 78 |     runAllChecks();
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  79 |   }, [runAllChecks]);
+  80 |
+  81 |   // Calculate overall health score  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\library\DownloadCard.jsx
+  262:3  error  'size' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\context\AppProvider.jsx
+  16:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-refresh/only-export-components
+  62:28  error  Error: Cannot access variable before it is declared
+
+`indexNativeArticles` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  60 |                            // but for now let's keep it simple: just do a quick check.
+  61 |                            // Actually, let's allow the app to boot even if this is running.
+> 62 |                            indexNativeArticles(db).catch(err => log.warn('Background indexing error', err));
+     |                            ^^^^^^^^^^^^^^^^^^^ `indexNativeArticles` accessed before it is declared
+  63 |                         }
+  64 |                     } catch (e) {
+  65 |                         log.warn('Native indexing setup failed', e);
+
+   81 |
+   82 |     // Independent async indexing
+>  83 |     const indexNativeArticles = async (db) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  84 |         const articles = await db.query('SELECT id, slug, title, body_plain FROM articles LIMIT 1000');
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  85 |         if (articles.values && articles.values.length > 0) {
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |         }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     };
+      | ^^^^^^^ `indexNativeArticles` is declared here
+  100 |
+  101 |     if (status === 'error') {
+  102 |         return (  react-hooks/immutability
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\main.jsx
+  23:47  error  'loaded' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\AIChat.jsx
+   88:12  error    'isStreaming' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                    no-unused-vars
+   89:12  error    'streamingContent' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u               no-unused-vars
+  300:8   warning  React Hook useEffect has a missing dependency: 'handleSend'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\AIModels.jsx
+  37:12  error    'models' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                            no-unused-vars
+  81:8   warning  React Hook useEffect has a missing dependency: 'refreshModels'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\ArticleView.jsx
+   9:7   error  'log' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-unused-vars
+  33:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  31 |         if (article) {
+  32 |             const story = TriageRouter.findTriageStory(article.title + " " + (article.body_plain || ""));
+> 33 |             setTriageStory(story);
+     |             ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |         }
+  35 |     }, [article]);
+  36 |  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\Home.jsx
+  10:20  error  'setStatus' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+  11:26  error  'setActiveRegion' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\router.jsx
+   1:1  error  Unused eslint-disable directive (no problems were reported from 'react-refresh/only-export-components')
+  29:7  error  Fast refresh only works when a file only exports components. Move your component(s) to a separate file   react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\ai\RAGPipeline.js
+  528:71  error  Empty block statement  no-empty
+
+✖ 58 problems (46 errors, 12 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

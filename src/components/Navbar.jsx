@@ -9,7 +9,7 @@ const triggerNavHaptic = async () => {
         // Try Capacitor Haptics first
         const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
-    } catch (e) {
+    } catch {
         // Web fallback
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
             navigator.vibrate(5);

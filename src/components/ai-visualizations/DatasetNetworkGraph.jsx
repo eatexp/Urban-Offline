@@ -93,7 +93,7 @@ const DatasetNetworkGraph = ({
   const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
   const [pulses, setPulses] = useState([]);
   const [particles, setParticles] = useState([]);
-  const [hoveredNode, setHoveredNode] = useState(null);
+  // const [hoveredNode, setHoveredNode] = useState(null); // Unused
 
   // Update dimensions on resize
   useEffect(() => {
@@ -591,8 +591,7 @@ const DatasetNetworkGraph = ({
             className={`dataset-node ${isActive ? '' : 'disabled'}`}
             style={{ left: position.x, top: position.y }}
             onClick={() => onDatasetClick?.(dataset.id)}
-            onMouseEnter={() => setHoveredNode(dataset.id)}
-            onMouseLeave={() => setHoveredNode(null)}
+
           >
             {/* Floating wrapper */}
             <div

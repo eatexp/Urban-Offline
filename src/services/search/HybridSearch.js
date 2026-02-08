@@ -251,7 +251,7 @@ export const HybridSearchService = {
         const normalizedQuery = query.toLowerCase();
 
         // Check all emergency patterns for keyword matches
-        for (const [type, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
+        for (const [_type, pattern] of Object.entries(IntentClassifier.EMERGENCY_PATTERNS)) {
             const matches = pattern.keywords.filter(kw =>
                 normalizedQuery.includes(kw.toLowerCase()) ||
                 kw.toLowerCase().includes(normalizedQuery)

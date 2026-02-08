@@ -159,7 +159,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
         }, 60000); // Check every minute
 
         return () => clearInterval(interval);
-    }, [forceShow, hasAIModel]);
+    }, [forceShow, hasAIModel, isVisible]);
 
     // Handle dismiss
     const handleDismiss = () => {

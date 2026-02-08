@@ -349,7 +349,7 @@ Response:`;
      * @param {string} prompt - Full prompt with context
      * @param {Object} options - Generation options
      */
-    async _generateWithLLM(prompt, options = {}) {
+    async _generateWithLLM(prompt, _options = {}) {
         const engine = AIModelManager.getEngine();
 
         if (!engine || !engine.isModelLoaded()) {
@@ -525,7 +525,7 @@ Response:`;
 
         const emit = (stage, data, progress) => {
             if (onStage) {
-                try { onStage({ stage, data, progress }); } catch (_) {}
+                try { onStage({ stage, data, progress }); } catch (_) { /* ignore */ }
             }
         };
 

@@ -349,8 +349,7 @@ class EmbeddingEngine {
         this.embeddingCache.clear();
         try {
             // Clear IndexedDB cache
-            const store = EMBEDDINGS_STORE;
-            // This would clear all cached embeddings
+            // Would need to implement actual IndexedDB cache clear
             log.info('Embedding cache cleared');
         } catch (error) {
             log.error('Failed to clear cache', error);

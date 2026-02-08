@@ -34,7 +34,7 @@ const log = createLogger('AIModels');
 
 const AIModels = () => {
     // State
-    const [models, setModels] = useState([]);
+
     const [importedModels, setImportedModels] = useState([]);
     const [installedModels, setInstalledModels] = useState(new Set());
     const [activeModel, setActiveModel] = useState(null);
@@ -147,7 +147,7 @@ const AIModels = () => {
     // Handle model select
     const handleSelect = async (modelId) => {
         triggerHaptic('light');
-        const result = await AIModelManager.loadModel(modelId, () => {});
+        const result = await AIModelManager.loadModel(modelId, () => { });
 
         if (result.success) {
             setActiveModel(modelId);
@@ -309,19 +309,17 @@ const AIModels = () => {
                             setFilter(tab.id);
                             triggerHaptic('light');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                            filter === tab.id
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filter === tab.id
                                 ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
                                 : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-300'
-                        }`}
+                            }`}
                     >
                         {tab.label}
                         {tab.id === 'installed' && installedModels.size > 0 && (
-                            <span className={`ml-1.5 text-xs px-1.5 rounded-full ${
-                                filter === tab.id
+                            <span className={`ml-1.5 text-xs px-1.5 rounded-full ${filter === tab.id
                                     ? 'bg-white/20 text-white'
                                     : 'bg-purple-500/20 text-purple-400'
-                            }`}>
+                                }`}>
                                 {installedModels.size}
                             </span>
                         )}
@@ -391,7 +389,7 @@ const AIModels = () => {
                             isActive={activeModel === model.id}
                             isDownloading={false}
                             downloadProgress={0}
-                            onDownload={() => {}}
+                            onDownload={() => { }}
                             onSelect={handleSelect}
                             onDelete={handleDeleteImported}
                             isProLocked={false}

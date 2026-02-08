@@ -144,7 +144,7 @@ const Search = () => {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, results, highlightedIndex, emergencyAlert]);
+    }, [isOpen, results, highlightedIndex, emergencyAlert, handleEmergencyClick, handleResultClick]);
 
     // Close search when clicking outside
     useEffect(() => {

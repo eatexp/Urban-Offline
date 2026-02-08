@@ -30,14 +30,14 @@ const ACTION_PATTERNS = [
         'survival': /survival|preparedness/i,
         'law': /law|legal|rights/i
       };
-      
+
       for (const [dest, regex] of Object.entries(destinations)) {
         if (regex.test(query)) return { destination: dest };
       }
       return null;
     }
   },
-  
+
   // Protocol generation patterns
   {
     patterns: ['protocol', 'riot', 'evacuate', 'shelter', 'power out', 'no water', 'what do i do', 'emergency plan'],
@@ -50,14 +50,14 @@ const ACTION_PATTERNS = [
         'power-out': /power|electricity|blackout|no lights/i,
         'no-water': /water|tap|supply/i
       };
-      
+
       for (const [scenario, regex] of Object.entries(scenarios)) {
         if (regex.test(query)) return { scenario };
       }
       return null;
     }
   },
-  
+
   // Search patterns
   {
     patterns: ['search', 'find', 'look up', 'information about', 'how to', 'what is', 'tell me about'],
@@ -67,17 +67,17 @@ const ACTION_PATTERNS = [
       const cleanQuery = query
         .replace(/search|find|look up|information about|how to|what is|tell me about/gi, '')
         .trim();
-      
+
       // Detect category from query
       let category = null;
       if (/medical|health|first aid|cpr|bleeding|injury/i.test(query)) category = 'medical';
       else if (/survival|shelter|fire|water|food/i.test(query)) category = 'survival';
       else if (/law|legal|rights|arrest|police/i.test(query)) category = 'legal';
-      
+
       return { query: cleanQuery || query, category };
     }
   },
-  
+
   // User context patterns
   {
     patterns: ['what do i have', 'my kit', 'my inventory', 'my supplies', 'what\'s in my', 'my location', 'my medical'],
@@ -90,7 +90,7 @@ const ACTION_PATTERNS = [
       return {}; // All categories
     }
   },
-  
+
   // Triage patterns
   {
     patterns: ['start', 'begin', 'help with', 'i need help', 'emergency', 'someone is'],
@@ -108,14 +108,14 @@ const ACTION_PATTERNS = [
         'shelter': /shelter|build shelter/i,
         'water': /water|purify/i
       };
-      
+
       for (const [condition, regex] of Object.entries(conditions)) {
         if (regex.test(query)) return { condition };
       }
       return null;
     }
   },
-  
+
   // Map patterns
   {
     patterns: ['map', 'show map', 'where is', 'find nearest', 'locate', 'directions to'],
@@ -128,21 +128,21 @@ const ACTION_PATTERNS = [
         'home': /home|my house/i,
         'current': /current|here|my location/i
       };
-      
+
       for (const [location, regex] of Object.entries(locations)) {
         if (regex.test(query)) return { location };
       }
       return { location: 'current' };
     }
   },
-  
+
   // List scenarios
   {
     patterns: ['what scenarios', 'available protocols', 'emergency types', 'what can you do', 'help'],
     tool: 'list_scenarios',
     extractParams: () => ({})
   },
-  
+
   // Status check
   {
     patterns: ['status', 'check', 'am i ready', 'what\'s installed', 'offline mode', 'storage'],
@@ -162,7 +162,7 @@ const ACTION_PATTERNS = [
         'maps': /map|tile/i,
         'triage': /triage|emergency|medical/i
       };
-      
+
       for (const [component, regex] of Object.entries(components)) {
         if (regex.test(query)) return { component };
       }
@@ -181,7 +181,7 @@ const ACTION_PATTERNS = [
         'maps': /map|location/i,
         'search': /search/i
       };
-      
+
       for (const [path, regex] of Object.entries(paths)) {
         if (regex.test(query)) return { criticalPath: path };
       }
@@ -200,7 +200,7 @@ const ACTION_PATTERNS = [
         'render': /render|display|ui/i,
         'storage': /storage|save/i
       };
-      
+
       for (const [metric, regex] of Object.entries(metrics)) {
         if (regex.test(query)) return { metric };
       }
@@ -218,7 +218,7 @@ const ACTION_PATTERNS = [
         'offline': /offline|cache/i,
         'ux': /ux|ui|interface|user/i
       };
-      
+
       for (const [focus, regex] of Object.entries(focusAreas)) {
         if (regex.test(query)) return { focus };
       }
@@ -235,7 +235,7 @@ const ACTION_PATTERNS = [
         'full': /full|complete|thorough/i,
         'critical': /critical|important|essential/i
       };
-      
+
       for (const [scope, regex] of Object.entries(scopes)) {
         if (regex.test(query)) return { scope };
       }
@@ -253,7 +253,7 @@ class ActionRouter {
    * Route user query to appropriate action
    * Returns: { tool, params, confidence, reasoning }
    */
-  async route(query, context = {}) {
+  async route(query, _context = {}) {
     log.info('Routing query', { query: query.substring(0, 50) });
 
     // Step 1: Try pattern matching first (fast, deterministic)
@@ -265,16 +265,16 @@ class ActionRouter {
 
     // Step 2: Use IntentClassifier for ambiguous queries
     const intentResult = await classifyIntent(query);
-    
+
     // Step 3: Map intent to action
     const intentMatch = this.mapIntentToAction(intentResult, query);
-    
+
     // Step 4: Choose best match
     const bestMatch = this.selectBestMatch(patternMatch, intentMatch);
-    
-    log.info('Route result', { 
-      tool: bestMatch?.tool, 
-      confidence: bestMatch?.confidence 
+
+    log.info('Route result', {
+      tool: bestMatch?.tool,
+      confidence: bestMatch?.confidence
     });
 
     return bestMatch || this.getFallbackAction(query);
@@ -285,20 +285,20 @@ class ActionRouter {
    */
   matchPatterns(query) {
     const lowerQuery = query.toLowerCase();
-    
+
     for (const pattern of this.patterns) {
       // Check if any pattern keyword matches
       const matchesPattern = pattern.patterns.some(p => lowerQuery.includes(p.toLowerCase()));
-      
+
       if (matchesPattern) {
         const params = pattern.extractParams(query);
-        
+
         if (params !== null) {
           // Calculate confidence based on specificity
           let confidence = 0.6;
           if (Object.keys(params).length > 0) confidence += 0.2;
           if (pattern.patterns.some(p => lowerQuery.startsWith(p.toLowerCase()))) confidence += 0.1;
-          
+
           return {
             tool: pattern.tool,
             params,
@@ -308,7 +308,7 @@ class ActionRouter {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -358,12 +358,12 @@ class ActionRouter {
     // If only one has result, use it
     if (!patternMatch) return intentMatch;
     if (!intentMatch) return patternMatch;
-    
+
     // Compare confidence
     if (intentMatch.confidence > patternMatch.confidence + 0.15) {
       return intentMatch;
     }
-    
+
     return patternMatch;
   }
 
@@ -391,7 +391,7 @@ class ActionRouter {
     log.info('Executing routed action', { tool: action.tool, params: action.params });
 
     const result = await toolRegistry.execute(action.tool, action.params, executionContext);
-    
+
     return {
       ...result,
       action: action.tool,
@@ -406,7 +406,7 @@ class ActionRouter {
   async process(query, executionContext = {}) {
     const action = await this.route(query, executionContext);
     const result = await this.execute(action, executionContext);
-    
+
     return {
       query,
       action,

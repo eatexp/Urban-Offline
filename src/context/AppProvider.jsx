@@ -32,6 +32,25 @@ export const AppProvider = ({ children }) => {
         };
     }, []);
 
+    // Independent async indexing
+    const indexNativeArticles = async (db) => {
+        const articles = await db.query('SELECT id, slug, title, body_plain FROM articles LIMIT 1000');
+        if (articles.values && articles.values.length > 0) {
+            for (const article of articles.values) {
+                await SearchService.addDocument({
+                    id: article.id,
+                    slug: article.slug,
+                    title: article.title,
+                    content: article.body_plain || '',
+                    description: article.title,
+                    category: 'health'
+                });
+            }
+            log.info(`Indexed ${articles.values.length} articles from SQLite`);
+            localStorage.setItem('native_index_complete', 'true');
+        }
+    };
+
     // Initialization Logic
     useEffect(() => {
         const init = async () => {
@@ -55,11 +74,11 @@ export const AppProvider = ({ children }) => {
                         // Check if we need to index
                         const isIndexed = localStorage.getItem('native_index_complete');
                         if (!isIndexed) {
-                           log.info('Starting native article indexing...');
-                           // We run this without awaiting the *results* to block UI, 
-                           // but for now let's keep it simple: just do a quick check.
-                           // Actually, let's allow the app to boot even if this is running.
-                           indexNativeArticles(db).catch(err => log.warn('Background indexing error', err));
+                            log.info('Starting native article indexing...');
+                            // We run this without awaiting the *results* to block UI, 
+                            // but for now let's keep it simple: just do a quick check.
+                            // Actually, let's allow the app to boot even if this is running.
+                            indexNativeArticles(db).catch(err => log.warn('Background indexing error', err));
                         }
                     } catch (e) {
                         log.warn('Native indexing setup failed', e);
@@ -79,24 +98,7 @@ export const AppProvider = ({ children }) => {
         }
     }, [status]);
 
-    // Independent async indexing
-    const indexNativeArticles = async (db) => {
-        const articles = await db.query('SELECT id, slug, title, body_plain FROM articles LIMIT 1000');
-        if (articles.values && articles.values.length > 0) {
-            for (const article of articles.values) {
-                await SearchService.addDocument({
-                    id: article.id,
-                    slug: article.slug,
-                    title: article.title,
-                    content: article.body_plain || '',
-                    description: article.title,
-                    category: 'health'
-                });
-            }
-            log.info(`Indexed ${articles.values.length} articles from SQLite`);
-            localStorage.setItem('native_index_complete', 'true');
-        }
-    };
+
 
     if (status === 'error') {
         return (
@@ -107,7 +109,7 @@ export const AppProvider = ({ children }) => {
                     <div className="bg-slate-950 p-4 rounded text-left font-mono text-xs text-red-400 mb-6 overflow-auto max-h-32">
                         {error?.message || 'Unknown Error'}
                     </div>
-                    <button 
+                    <button
                         onClick={() => window.location.reload()}
                         className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold w-full transition-colors"
                     >
@@ -125,14 +127,14 @@ export const AppProvider = ({ children }) => {
         // High-performance loading skeleton
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-slate-900">
-                 <div className="relative w-24 h-24 mb-6">
+                <div className="relative w-24 h-24 mb-6">
                     <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
                     <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-8 h-8 bg-orange-500 rounded-sm animate-pulse"></div>
                     </div>
-                 </div>
-                 <h2 className="text-orange-500 font-bold tracking-[0.2em] text-sm animate-pulse">INITIALIZING SYSTEMS</h2>
+                </div>
+                <h2 className="text-orange-500 font-bold tracking-[0.2em] text-sm animate-pulse">INITIALIZING SYSTEMS</h2>
             </div>
         );
     }

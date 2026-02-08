@@ -178,7 +178,7 @@ export class ProtocolGenerator {
             const match = trimmed.match(numberRegex);
 
             if (match) {
-                const [, num, text, context] = match;
+                const [, , text, context] = match;
                 steps.push({
                     text: text.trim(),
                     context: context?.trim() || ''

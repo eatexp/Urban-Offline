@@ -144,7 +144,7 @@ export const OnlineContentService = {
                     delete cache[oldest];
                 }
                 sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(cache));
-            } catch (e) {
+            } catch (_e) {
                 // Caching failed, continue without
             }
 
@@ -160,7 +160,7 @@ export const OnlineContentService = {
                     log.info('Returning cached search results');
                     return { error: 'offline (cached)', results: cached.results };
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Cache read failed
             }
             return { error: error.message, results: [] };

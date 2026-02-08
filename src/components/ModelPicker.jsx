@@ -22,10 +22,10 @@ const log = createLogger('ModelPicker');
 /**
  * Star rating component
  */
-const StarRating = ({ rating, max = 5, icon: Icon = Star, color = 'var(--color-warning)' }) => (
+const StarRating = ({ rating, max = 5, icon: RatingIcon = Star, color = 'var(--color-warning)' }) => (
     <div className="flex gap-0.5">
         {[...Array(max)].map((_, i) => (
-            <Icon
+            <RatingIcon
                 key={i}
                 size={12}
                 style={{
@@ -288,7 +288,7 @@ const ModelCard = ({
  * Main ModelPicker component
  */
 const ModelPicker = ({ onClose, onModelChange }) => {
-    const [models, setModels] = useState([]);
+
     const [installedModels, setInstalledModels] = useState(new Set());
     const [activeModel, setActiveModel] = useState(null);
     const [downloadingModel, setDownloadingModel] = useState(null);
@@ -357,7 +357,7 @@ const ModelPicker = ({ onClose, onModelChange }) => {
 
     // Handle select
     const handleSelect = async (modelId) => {
-        const result = await AIModelManager.loadModel(modelId, (progress, _message) => {
+        const result = await AIModelManager.loadModel(modelId, (_progress, _message) => {
             // Could show loading state
         });
 
