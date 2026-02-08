@@ -15,14 +15,14 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'robots.txt'],
       manifest: {
         id: '/',
         name: 'Urban-Offline',
         short_name: 'UrbanOffline',
         description: 'Offline-First Emergency Preparedness App',
         theme_color: '#f97316',
-        background_color: '#f8fafc',
+        background_color: '#0f172a',
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',
@@ -30,13 +30,25 @@ export default defineConfig({
         icons: [
           {
             src: 'icon.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml'
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
           },
           {
-            src: 'icon.svg',
+            src: 'icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'icon-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
+          },
+          {
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         screenshots: [
@@ -56,8 +68,16 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Precache the app shell (HTML, CSS, JS bundles)
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Exclude large content packs from precache (loaded on demand)
+        globIgnores: ['**/assets/packs/**', '**/assets/ink/**', '**/content.db'],
+        // Serve index.html for all navigation requests (SPA offline support)
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api/, /\.[^/]+$/],
         runtimeCaching: [
           {
+            // HuggingFace model downloads
             urlPattern: /^https:\/\/huggingface\.co\/.*\/resolve\/main\/.*$/,
             handler: 'CacheFirst',
             options: {
@@ -65,6 +85,21 @@ export default defineConfig({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // OSM map tiles
+            urlPattern: /^https:\/\/[a-c]\.tile\.openstreetmap\.org\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'osm-tiles',
+              expiration: {
+                maxEntries: 5000,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -105,6 +140,6 @@ export default defineConfig({
   },
   // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react']
+    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'idb', 'flexsearch']
   }
 })

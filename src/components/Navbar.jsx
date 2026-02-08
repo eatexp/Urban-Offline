@@ -32,46 +32,51 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="navbar">
+        <nav className="navbar" role="navigation" aria-label="Main navigation">
             <div className="navbar-container">
                 <NavLink
                     to="/"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     onClick={handleNavClick}
+                    aria-label="Home"
                 >
-                    <Home size={28} />
+                    <Home size={28} aria-hidden="true" />
                     <span className="nav-label">Home</span>
                 </NavLink>
                 <NavLink
                     to="/survival"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     onClick={handleNavClick}
+                    aria-label="Survival guides"
                 >
-                    <AlertTriangle size={28} />
+                    <AlertTriangle size={28} aria-hidden="true" />
                     <span className="nav-label">Survival</span>
                 </NavLink>
                 <NavLink
                     to="/map"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     onClick={handleNavClick}
+                    aria-label="Offline maps"
                 >
-                    <Map size={28} />
+                    <Map size={28} aria-hidden="true" />
                     <span className="nav-label">Map</span>
                 </NavLink>
                 <NavLink
                     to="/library"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     onClick={handleNavClick}
+                    aria-label="Content library"
                 >
-                    <Library size={28} />
+                    <Library size={28} aria-hidden="true" />
                     <span className="nav-label">Library</span>
                 </NavLink>
                 <NavLink
                     to="/ai-models"
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     onClick={handleNavClick}
+                    aria-label="AI models and chat"
                 >
-                    <Brain size={28} />
+                    <Brain size={28} aria-hidden="true" />
                     <span className="nav-label">AI</span>
                 </NavLink>
             </div>

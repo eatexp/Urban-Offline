@@ -149,7 +149,7 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
         await triggerHaptic('light');
         const next = inkService.choose(index);
         setStoryState(next);
-    }, [triggerHaptic]);
+    }, []);
 
     if (error) {
         return (

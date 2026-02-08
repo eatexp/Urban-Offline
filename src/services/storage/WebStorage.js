@@ -6,14 +6,43 @@ const DB_VERSION = 5; // Bumped for ink_stories store
 // Stores that use out-of-line keys (no keyPath)
 const OUT_OF_LINE_STORES = ['map_tiles', 'search_index', 'dataset_preferences', 'user_context', 'ink_stories'];
 
-// =============================================================================
-// VERIFIED: [Resilience] INDEXEDDB_CORRUPTION_RECOVERY
-// =============================================================================
-// Implementation: Wraps openDB in try/catch with corruption detection.
-// On DataError or UnknownError (indicating corruption), deletes the database
-// and recreates it once. Dispatches recovery event to UI for user notification.
-// This ensures the app remains usable even if IndexedDB becomes corrupted.
-// =============================================================================
+/**
+ * Complete schema definition - single source of truth for all object stores.
+ * Used by both the primary upgrade path and the corruption recovery path.
+ */
+const DB_SCHEMA = [
+    { name: 'datasets', options: { keyPath: 'id' } },
+    { name: 'data_content', options: { keyPath: 'id' } },
+    { name: 'guides', options: { keyPath: 'id' } },
+    { name: 'guide_content', options: { keyPath: 'id' } },
+    { name: 'map_tiles', options: undefined },
+    { name: 'health_content', options: { keyPath: 'id' } },
+    { name: 'survival_content', options: { keyPath: 'id' } },
+    { name: 'law_content', options: { keyPath: 'id' } },
+    { name: 'search_index', options: undefined },
+    { name: 'ai_models', options: { keyPath: 'id' } },
+    { name: 'content_packs', options: { keyPath: 'id' } },
+    { name: 'dataset_preferences', options: undefined },
+    { name: 'user_context', options: undefined },
+    { name: 'ink_stories', options: undefined },
+    { name: 'clawdBot_memory', options: undefined },
+];
+
+/**
+ * Apply the database schema - creates any missing object stores.
+ * @param {IDBDatabase} db - The database instance from the upgrade callback
+ */
+const applySchema = (db) => {
+    for (const store of DB_SCHEMA) {
+        if (!db.objectStoreNames.contains(store.name)) {
+            if (store.options) {
+                db.createObjectStore(store.name, store.options);
+            } else {
+                db.createObjectStore(store.name);
+            }
+        }
+    }
+};
 
 /**
  * Dispatch recovery event to UI
@@ -35,82 +64,8 @@ const dispatchRecoveryEvent = (recovered, error = null) => {
 export const initDB = async () => {
     try {
         return await openDB(DB_NAME, DB_VERSION, {
-            upgrade(db, _oldVersion) {
-                // Store for dataset metadata (id, name, description, size, installed)
-                if (!db.objectStoreNames.contains('datasets')) {
-                    db.createObjectStore('datasets', { keyPath: 'id' });
-                }
-                // Store for actual data content (id, geojson/json data)
-                if (!db.objectStoreNames.contains('data_content')) {
-                    db.createObjectStore('data_content', { keyPath: 'id' });
-                }
-
-                // Store for guide metadata
-                if (!db.objectStoreNames.contains('guides')) {
-                    db.createObjectStore('guides', { keyPath: 'id' });
-                }
-                // Store for guide content (markdown/html)
-                if (!db.objectStoreNames.contains('guide_content')) {
-                    db.createObjectStore('guide_content', { keyPath: 'id' });
-                }
-                // Store for map tiles (key: z-x-y, value: blob)
-                if (!db.objectStoreNames.contains('map_tiles')) {
-                    db.createObjectStore('map_tiles');
-                }
-
-                // *** STORES FOR HEALTH, SURVIVAL, LAW ***
-
-                // Health Content (Medical articles, ICD-11, etc.)
-                if (!db.objectStoreNames.contains('health_content')) {
-                    db.createObjectStore('health_content', { keyPath: 'id' });
-                }
-
-                // Survival Content (Flood zones, practical guides not covered by basic guides)
-                if (!db.objectStoreNames.contains('survival_content')) {
-                    db.createObjectStore('survival_content', { keyPath: 'id' });
-                }
-
-                // Law Content (PACE codes, Legislation)
-                if (!db.objectStoreNames.contains('law_content')) {
-                    db.createObjectStore('law_content', { keyPath: 'id' });
-                }
-
-                // Search Index Storage (Serialized FlexSearch index)
-                if (!db.objectStoreNames.contains('search_index')) {
-                    db.createObjectStore('search_index');
-                }
-
-                // *** NEW STORES FOR AI & CONTENT PACKS (v2) ***
-
-                // AI Models metadata
-                if (!db.objectStoreNames.contains('ai_models')) {
-                    db.createObjectStore('ai_models', { keyPath: 'id' });
-                }
-
-                // Content Packs metadata
-                if (!db.objectStoreNames.contains('content_packs')) {
-                    db.createObjectStore('content_packs', { keyPath: 'id' });
-                }
-
-                // Dataset Preferences (AI dataset toggle state)
-                if (!db.objectStoreNames.contains('dataset_preferences')) {
-                    db.createObjectStore('dataset_preferences');
-                }
-
-                // User Context (Personal context for protocol generation)
-                if (!db.objectStoreNames.contains('user_context')) {
-                    db.createObjectStore('user_context');
-                }
-
-                // Ink Stories (Triage flow JSON files cached for offline)
-                if (!db.objectStoreNames.contains('ink_stories')) {
-                    db.createObjectStore('ink_stories');
-                }
-
-                // clawdBot Memory (Session history and context)
-                if (!db.objectStoreNames.contains('clawdBot_memory')) {
-                    db.createObjectStore('clawdBot_memory');
-                }
+            upgrade(db) {
+                applySchema(db);
             },
         });
     } catch (error) {
@@ -124,55 +79,10 @@ export const initDB = async () => {
                 await deleteDB(DB_NAME);
                 console.info('Corrupted IndexedDB deleted, recreating...');
 
-                // Retry once
+                // Retry once with the same schema
                 const db = await openDB(DB_NAME, DB_VERSION, {
-                    upgrade(db, _oldVersion) {
-                        // Store for dataset metadata
-                        if (!db.objectStoreNames.contains('datasets')) {
-                            db.createObjectStore('datasets', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('data_content')) {
-                            db.createObjectStore('data_content', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('guides')) {
-                            db.createObjectStore('guides', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('guide_content')) {
-                            db.createObjectStore('guide_content', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('map_tiles')) {
-                            db.createObjectStore('map_tiles');
-                        }
-                        if (!db.objectStoreNames.contains('health_content')) {
-                            db.createObjectStore('health_content', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('survival_content')) {
-                            db.createObjectStore('survival_content', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('law_content')) {
-                            db.createObjectStore('law_content', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('search_index')) {
-                            db.createObjectStore('search_index');
-                        }
-                        if (!db.objectStoreNames.contains('ai_models')) {
-                            db.createObjectStore('ai_models', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('content_packs')) {
-                            db.createObjectStore('content_packs', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('dataset_preferences')) {
-                            db.createObjectStore('dataset_preferences');
-                        }
-                        if (!db.objectStoreNames.contains('user_context')) {
-                            db.createObjectStore('user_context');
-                        }
-                        if (!db.objectStoreNames.contains('ink_stories')) {
-                            db.createObjectStore('ink_stories');
-                        }
-                        if (!db.objectStoreNames.contains('clawdBot_memory')) {
-                            db.createObjectStore('clawdBot_memory');
-                        }
+                    upgrade(db) {
+                        applySchema(db);
                     },
                 });
 
@@ -190,6 +100,7 @@ export const initDB = async () => {
         throw error;
     }
 };
+
 // Batch operations for performance - use single transaction for multiple items
 const batchPut = async (storeName, items) => {
     const database = await initDB();
@@ -266,24 +177,6 @@ export const db = {
             }
             return await database.put(storeName, value);
         } catch (error) {
-            // =============================================================================
-            // NOTE: [Resilience][Implemented] QUOTA_ERROR_STANDARDIZATION
-            // =============================================================================
-            // This code correctly standardizes quota errors across browsers:
-            // - Chrome/Safari: 'QuotaExceededError'
-            // - Firefox: 'NS_ERROR_DOM_QUOTA_REACHED'
-            // - Fallback: message.includes('quota')
-            //
-            // Enhanced error includes: storeName, key for debugging
-            //
-            // OPTIONAL ENHANCEMENT:
-            // Dispatch UI notification for user awareness:
-            // window.dispatchEvent(new CustomEvent('storage-quota-warning', {
-            //     detail: { store: storeName, key, error: enhancedError }
-            // }));
-            //
-            // Effort: S | Impact: Low (UX improvement, not critical)
-            // =============================================================================
             // Standardize QuotaExceededError across browsers
             if (error.name === 'QuotaExceededError' ||
                 error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||

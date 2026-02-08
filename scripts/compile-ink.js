@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = join(__dirname, '..');
-const SOURCE_DIR = join(PROJECT_ROOT, 'public', 'assets', 'ink', 'source');
+const SOURCE_DIR = join(PROJECT_ROOT, 'ink-source');
 const OUTPUT_BASE = join(PROJECT_ROOT, 'public', 'assets', 'ink');
 
 function findInkFiles(dir) {

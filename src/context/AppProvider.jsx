@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initStorage } from '../services/db';
 import { SearchService } from '../services/SearchService';
 import { Capacitor } from '@capacitor/core';
 import { getDBConnection } from '../services/storage/NativeStorage';
@@ -39,11 +38,8 @@ export const AppProvider = ({ children }) => {
                 setStatus('initializing');
                 log.info('Starting app initialization...');
 
-                // 1. Storage Init
-                await initStorage();
-                log.info('Storage system ready');
-
-                // 2. Search Service Init (Non-critical, can run in background in theory, but we await for consistency)
+                // Storage is already initialized by main.jsx before React renders.
+                // Proceed directly to search service init.
                 await SearchService.init();
                 log.info('Search service ready');
 

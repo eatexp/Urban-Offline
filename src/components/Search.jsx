@@ -81,9 +81,8 @@ const Search = () => {
                     if (response.intent && response.intent.priority >= 7) {
                         setEmergencyAlert({
                             message: response.intent.message || '⚠️ Emergency Detected',
-                            cta: response.intent.suggestedAction === 'triage' ? 'Start Guide' : 'View Protocol', // Fallback CTA
-                            ...response.intent,
-                            ...response.intent // Spread intent properties (triageFlow, protocolId, etc.)
+                            cta: response.intent.suggestedAction === 'triage' ? 'Start Guide' : 'View Protocol',
+                            ...response.intent
                         });
                     } else {
                         setEmergencyAlert(null);

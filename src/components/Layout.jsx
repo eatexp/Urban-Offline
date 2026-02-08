@@ -45,13 +45,22 @@ const Layout = () => {
 
     return (
         <div className={`app-layout flex flex-col h-screen ${isMounted ? 'animate-fade-in' : 'opacity-0'}`}>
+            {/* Skip to main content - accessibility */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-orange-500 focus:text-white focus:font-bold focus:text-sm"
+            >
+                Skip to main content
+            </a>
+
             <header
                 className="bg-slate-900/95 backdrop-blur-lg p-3 shadow-lg z-50 border-b border-slate-800"
                 style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+                role="banner"
             >
                 <div className="container mx-auto flex items-center justify-between">
                     <div className="font-bold text-primary text-sm tracking-tighter flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-emergency-pulse"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-emergency-pulse" aria-hidden="true"></div>
                         URBAN OFFLINE
                     </div>
                     {/* Only show search when not in Triage mode */}
@@ -63,7 +72,7 @@ const Layout = () => {
             {/* Critical content warning banner - shows when emergency guides unavailable offline */}
             <CriticalContentBanner />
 
-            <main className="container mx-auto flex-1 overflow-y-auto p-4 safe-area-bottom">
+            <main id="main-content" className="container mx-auto flex-1 overflow-y-auto p-4 safe-area-bottom" role="main">
                 <div className="animate-slide-up">
                     <Outlet />
                 </div>

@@ -22,8 +22,10 @@ button, a, [role="button"], .interactive {
     touch-action: manipulation;
 }
 
-/* Active state feedback for immediate touch response */
-:active {
+/* Active state feedback for immediate touch response - scoped to interactive elements */
+button:active, a:active, [role="button"]:active, .interactive:active,
+.btn:active, .nav-item:active, .card:active, .card-link:active,
+.search-result-item:active, .choice-button:active {
     transform: scale(0.98);
     transition: transform 0.1s ease-out;
 }
@@ -243,8 +245,6 @@ button, a, [role="button"], .interactive {
 
 .card {
   background: var(--color-bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   padding: var(--card-padding-md);
@@ -1640,5 +1640,14 @@ body.emergency-mode .choice-button {
   font-size: 1.1rem;
   padding: var(--space-5);
   min-height: 60px;
+}
+
+/* =================================================================
+   AI CHAT SOURCE BUTTONS
+   ================================================================= */
+
+.source-button:hover {
+  background: rgba(249, 115, 22, 0.1) !important;
+  border-color: var(--color-primary-500) !important;
 }
 
