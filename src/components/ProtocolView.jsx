@@ -215,27 +215,28 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                     return (
                         <div
                             key={index}
-                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all ${
+                            onClick={() => toggleStep(index)}
+                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all cursor-pointer ${
                                 isChecked
                                     ? 'bg-green-50 border-green-300'
-                                    : 'bg-white border-slate-200 hover:border-slate-300'
+                                    : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                             }`}
                         >
                             {/* Checkbox */}
-                            <label className="flex-shrink-0 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => toggleStep(index)}
-                                className="sr-only peer"
-                                // =============================================================================
-                                // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
-                                // Implementation: Added aria-label with step number and content summary.
-                                //   Ensures screen readers can identify checkbox purpose for accessibility.
-                                //   Also using sr-only with aria-label pattern for proper assistive tech support.
-                                // =============================================================================
-                                aria-label={`Step ${index + 1}: ${step.text}`}
-                            />
+                            <div className="flex-shrink-0">
+                                <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => toggleStep(index)}
+                                    className="sr-only peer"
+                                    // =============================================================================
+                                    // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
+                                    // Implementation: Added aria-label with step number and content summary.
+                                    //   Ensures screen readers can identify checkbox purpose for accessibility.
+                                    //   Also using sr-only with aria-label pattern for proper assistive tech support.
+                                    // =============================================================================
+                                    aria-label={`Step ${index + 1}: ${step.text}`}
+                                />
                                 <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-3 flex items-center justify-center transition-all ${
                                     isChecked
                                         ? 'bg-green-600 border-green-600'
@@ -243,7 +244,7 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                                 }`}>
                                     {isChecked && <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-white" />}
                                 </div>
-                            </label>
+                            </div>
 
                             {/* Step Content */}
                             <div className="flex-1 min-w-0">
@@ -269,7 +270,10 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             {/* Voice Button */}
                             {voiceEnabled && (
                                 <button
-                                    onClick={() => speakStep(step.text, step.context)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakStep(step.text, step.context);
+                                    }}
                                     className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
                                     aria-label="Read step aloud"
                                 >
