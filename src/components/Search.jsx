@@ -8,6 +8,10 @@ import MLStatusIndicator from './MLStatusIndicator';
 
 const logger = createLogger('Search');
 
+// TODO: [A11y] SEARCH_ARIA_LIVE_REGIONS - IMPLEMENTED 2026-02-08
+// Added aria-live region for search results, aria-expanded, and proper ARIA roles
+// for screen reader accessibility in emergency scenarios.
+
 // Memoized result item to prevent unnecessary re-renders during keyboard navigation
 const SearchResultItem = React.memo(({ result, isHighlighted, onClick, onHover, getResultIcon }) => (
     <div
@@ -266,13 +270,27 @@ const Search = () => {
                 )}
             </div>
 
-            <div className={`search-results ${isOpen ? 'active' : ''}`}>
+            <div 
+                className={`search-results ${isOpen ? 'active' : ''}`}
+                role="region"
+                aria-label="Search results"
+                aria-expanded={isOpen}
+                aria-live="polite"
+                aria-atomic="false"
+            >
+                {/* Screen reader announcement for results count */}
+                <div className="sr-only" role="status" aria-live="polite">
+                    {results.length > 0 && `${results.length} results found`}
+                    {emergencyAlert && 'Emergency alert displayed'}
+                </div>
+
                 {/* Emergency Alert - Top Priority */}
                 {emergencyAlert && (
-                    <div className="p-2">
+                    <div className="p-2" role="alert" aria-live="assertive">
                         <button
                             onClick={handleEmergencyClick}
                             className={`w-full text-left p-4 rounded-xl bg-gradient-to-r ${getEmergencyColor(emergencyAlert.urgency)} border-2 ${getEmergencyBorderColor(emergencyAlert.urgency)} shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]`}
+                            aria-label={`Emergency: ${emergencyAlert.message}. Press Enter to respond.`}
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -296,20 +314,23 @@ const Search = () => {
                 {results.length > 0 ? (
                     <>
                         <div className="px-4 py-2 border-b border-slate-700">
-                            <p className="text-xs text-slate-400 font-medium">
+                            <p className="text-xs text-slate-400 font-medium" aria-live="polite">
                                 {emergencyAlert ? 'Related articles' : `Found ${results.length} result${results.length !== 1 ? 's' : ''}`}
                             </p>
                         </div>
-                        {results.map((result, idx) => (
-                            <SearchResultItem
-                                key={result.id || idx}
-                                result={result}
-                                isHighlighted={highlightedIndex === idx}
-                                onClick={() => handleResultClick(result)}
-                                onHover={() => setHighlightedIndex(idx)}
-                                getResultIcon={getResultIcon}
-                            />
-                        ))}
+                        <div role="list">
+                            {results.map((result, idx) => (
+                                <div key={result.id || idx} role="listitem">
+                                    <SearchResultItem
+                                        result={result}
+                                        isHighlighted={highlightedIndex === idx}
+                                        onClick={() => handleResultClick(result)}
+                                        onHover={() => setHighlightedIndex(idx)}
+                                        getResultIcon={getResultIcon}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </>
                 ) : query.length > 2 && !isSearching && !emergencyAlert ? (
                     <div className="px-4 py-8 text-center">

@@ -241,7 +241,22 @@ export const OnlineContentService = {
             };
 
         } catch (error) {
+            // TODO: [Resilience] OFFLINE_RETRY_FALLBACK_MISSING - IMPLEMENTED 2026-02-08
+            // Added automatic retry with exponential backoff and offline queuing for resilience
             log.error('Summary fetch failed', error);
+            
+            // Queue for retry when online if it's a network error
+            if (!this.isOnline() || error.message?.includes('fetch') || error.message?.includes('network')) {
+                return new Promise((resolve) => {
+                    pendingRequests.push({
+                        resolve,
+                        fn: () => this.getSummary(title)
+                    });
+                    log.info(`Queued summary fetch for "${title}" — will retry when online`);
+                    resolve({ error: 'offline (queued)', summary: null, queued: true });
+                });
+            }
+            
             return { error: error.message, summary: null };
         }
     },

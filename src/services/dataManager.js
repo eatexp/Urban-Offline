@@ -96,7 +96,15 @@ export const dataManager = {
         }
     },
 
-    async installRegion(regionId, onProgress, attempt = 1) {
+    async installRegion(regionId, onProgress, attempt = 1, signal = null) {
+        // TODO: [Resilience] REGION_INSTALL_CANCEL_SUPPORT - IMPLEMENTED 2026-02-08
+        // Added AbortController signal support for cancellation during region installation
+        
+        // Check for abort before starting
+        if (signal?.aborted) {
+            throw new Error('Installation cancelled by user');
+        }
+
         // Fetch region metadata FIRST for quota estimation
         const regions = await fetchRegionsManifest();
         const region = regions.find(r => r.id === regionId);
@@ -143,8 +151,15 @@ export const dataManager = {
             if (region.modules.includes('map-tiles')) {
                 try {
                     const { tileManager } = await import('./tileManager');
-                    await tileManager.downloadRegion(region, onProgress);
+                    await tileManager.downloadRegion(region, onProgress, signal);
                 } catch (tileError) {
+                    // Handle cancellation specifically
+                    if (tileError.message === 'Download aborted' || signal?.aborted) {
+                        log.info('Region installation cancelled by user');
+                        // Clean up partial installation
+                        await this.uninstallRegion(regionId);
+                        throw new Error('Installation cancelled');
+                    }
                     log.error('Tile download failed', tileError);
                     tileDownloadSuccess = false;
                     // Don't fail the whole installation if tiles fail

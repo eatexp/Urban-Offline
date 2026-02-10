@@ -16,6 +16,10 @@ import { Search, Heart, Wind, Droplets, AlertTriangle, ChevronRight, X } from 'l
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { TRIAGE_STORIES } from '../config/intentPatterns';
 
+// TODO: [A11y] EMERGENCY_COMMAND_BAR_ACCESSIBILITY - IMPLEMENTED 2026-02-08
+// Added role="search", aria-live regions, and keyboard shortcut (Ctrl/Cmd+Shift+E)
+// for screen reader accessibility of critical emergency features.
+
 // Critical emergencies for one-touch access (highest urgency stories)
 const CRITICAL_ACTIONS = [
     {
@@ -54,6 +58,33 @@ const EmergencyCommandBar = () => {
 
     // Haptic feedback imported from shared utility
 
+    // Navigate to triage story - MOVED BEFORE handleKeyDown to fix hoisting issue
+    const handleSuggestionClick = useCallback((suggestion) => {
+        triggerHaptic('heavy');
+        setQuery('');
+        setSuggestions([]);
+        navigate(`/triage/${suggestion.story}`, {
+            state: { urgency: suggestion.urgency }
+        });
+    }, [navigate]);
+
+    // Keyboard shortcut to focus emergency search (Ctrl/Cmd+Shift+E)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+                e.preventDefault();
+                inputRef.current?.focus();
+                // Announce to screen readers
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('emergency-command-focused'));
+                }
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     // Search for matching triage stories as user types
     useEffect(() => {
         if (query.length < 2) {
@@ -90,16 +121,6 @@ const EmergencyCommandBar = () => {
         setSuggestions(matches.slice(0, 5));
         setHighlightedIndex(-1);
     }, [query]);
-
-    // Navigate to triage story
-    const handleSuggestionClick = useCallback((suggestion) => {
-        triggerHaptic('heavy');
-        setQuery('');
-        setSuggestions([]);
-        navigate(`/triage/${suggestion.story}`, {
-            state: { urgency: suggestion.urgency }
-        });
-    }, [navigate, triggerHaptic]);
 
     // Handle keyboard navigation
     const handleKeyDown = useCallback((e) => {
@@ -153,13 +174,18 @@ const EmergencyCommandBar = () => {
     const showSuggestions = isFocused && suggestions.length > 0;
 
     return (
-        <div className="emergency-command-bar animate-scale-in">
+        <div 
+            className="emergency-command-bar animate-scale-in" 
+            role="search" 
+            aria-label="Emergency quick access"
+        >
             {/* Header */}
             <div className="flex items-center gap-2 mb-4">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" aria-hidden="true"></div>
                 <span className="text-sm font-bold uppercase tracking-wide text-red-400">
                     Emergency Access
                 </span>
+                <span className="sr-only">Press Ctrl+Shift+E to focus emergency search</span>
             </div>
 
             {/* Search Input */}
@@ -197,12 +223,24 @@ const EmergencyCommandBar = () => {
                     </button>
                 )}
 
+                {/* Screen reader announcements */}
+                <div className="sr-only" role="status" aria-live="polite">
+                    {suggestions.length > 0 && `${suggestions.length} emergency guides found`}
+                    {query.length >= 2 && suggestions.length === 0 && 'No matching emergency guides found'}
+                </div>
+
                 {/* Suggestions Dropdown */}
                 {showSuggestions && (
-                    <div className="emergency-suggestions">
+                    <div 
+                        className="emergency-suggestions"
+                        role="listbox"
+                        aria-label="Emergency guide suggestions"
+                    >
                         {suggestions.map((suggestion, index) => (
                             <button
                                 key={suggestion.key}
+                                role="option"
+                                aria-selected={highlightedIndex === index}
                                 className={`emergency-suggestion-item ${highlightedIndex === index ? 'highlighted' : ''
                                     }`}
                                 onClick={() => handleSuggestionClick(suggestion)}
@@ -230,7 +268,7 @@ const EmergencyCommandBar = () => {
             </div>
 
             {/* One-Touch Critical Actions */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3" role="group" aria-label="Critical emergency actions">
                 {CRITICAL_ACTIONS.map((action) => {
                     const Icon = action.icon;
                     return (
@@ -238,12 +276,13 @@ const EmergencyCommandBar = () => {
                             key={action.key}
                             onClick={() => handleCriticalAction(action)}
                             className="critical-action-btn"
+                            aria-label={`${action.label} emergency guide`}
                             style={{
                                 '--action-color': action.color,
                                 '--action-bg': action.bgColor
                             }}
                         >
-                            <div className="critical-action-icon">
+                            <div className="critical-action-icon" aria-hidden="true">
                                 <Icon size={24} />
                             </div>
                             <span className="critical-action-label">{action.label}</span>

@@ -29,6 +29,29 @@ export const contentSync = {
      * Safe to call on every app start — skips if already synced.
      */
     async syncBundledContent() {
+        // TODO: [Resilience] CONTENT_SYNC_OFFLINE_RETRY_MISSING - IMPLEMENTED 2026-02-08
+        // Added offline detection with automatic retry when connection restored
+
+        // Check if offline - defer sync until online
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            log.info('Device offline, deferring bundled content sync until online');
+            
+            // Set up one-time listener to retry when online
+            const retrySync = () => {
+                window.removeEventListener('online', retrySync);
+                log.info('Connection restored, retrying bundled content sync');
+                this.syncBundledContent().catch(err => {
+                    log.error('Retry sync failed', err);
+                });
+            };
+            
+            if (typeof window !== 'undefined') {
+                window.addEventListener('online', retrySync, { once: true });
+            }
+            
+            return { synced: false, reason: 'deferred_until_online' };
+        }
+
         try {
             // Check sentinel — already synced?
             const sentinel = await db.get(PACKS_STORE, SENTINEL_KEY).catch(() => null);

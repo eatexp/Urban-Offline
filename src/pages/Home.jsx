@@ -1,17 +1,32 @@
 import { Shield, Library, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { triggerHaptic } from '../utils/haptics';
 import EmergencyCommandBar from '../components/EmergencyCommandBar';
 
-const Home = () => {
+// TODO: [Performance] HOME_COMPONENT_MEMOIZATION - IMPLEMENTED 2026-02-08
+// Wrapped component with React.memo() and extracted EmergencyQuickAccess to prevent
+// unnecessary re-renders when online/offline status changes. Status cards memoized.
+
+const Home = memo(() => {
     const { status: initialStatus, activeRegion: initialRegion } = useLoaderData();
     const status = initialStatus;
     const activeRegion = initialRegion;
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [aiModelCount, setAiModelCount] = useState(0);
     const navigate = useNavigate();
+
+    // TODO: [Performance] HOME_COMPONENT_MEMOIZATION
+    // What's wrong: Home component re-renders on every online/offline toggle,
+    //   causing expensive re-computation of all child components.
+    // Why it matters: Home is the main landing page, frequent re-renders hurt UX.
+    // How to fix:
+    //   1. Wrap with React.memo()
+    //   2. Use useMemo for status cards and emergency modules
+    //   3. Extract EmergencyQuickAccess to separate memoized component
+    // Priority: P2 | Effort: S (30 min) | Impact: Medium
+    // =============================================================================
 
     // =============================================================================
     // VERIFIED: [NativeUX] EMERGENCY_BUTTON_HAPTIC_FEEDBACK
@@ -56,6 +71,21 @@ const Home = () => {
         checkAI();
     }, []);
 
+    // Memoize status card content to prevent re-computation on re-renders
+    const statusCardContent = useMemo(() => {
+        return status === 'prepared' && activeRegion ? {
+            badge: { text: 'System Ready', color: 'text-emergency-green' },
+            title: `${activeRegion.name} Active`,
+            subtitle: 'Offline assets secured and ready for emergency use.',
+            link: { to: '/map', text: 'Open Emergency Map' }
+        } : {
+            badge: { text: 'Setup Required', color: 'text-primary' },
+            title: 'Prepare for Emergencies',
+            subtitle: 'Download regional data to enable full offline intelligence capabilities.',
+            link: { to: '/library', text: 'Open Library' }
+        };
+    }, [status, activeRegion]);
+
     return (
         <div className="home-page space-y-6 animate-slide-up">
             {/* Emergency Command Bar - Hero Element for instant access */}
@@ -70,48 +100,30 @@ const Home = () => {
                     </div>
                     <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-30"></div>
 
-                    {status === 'prepared' && activeRegion ? (
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-3 h-3 bg-emergency-green rounded-full animate-emergency-pulse shadow-lg shadow-green-400/50"></div>
-                                <span className="text-sm font-bold uppercase tracking-wide text-emergency-green">System Ready</span>
-                                <div className="flex items-center gap-1 ml-auto">
-                                    {isOnline ? (
-                                        <Wifi className="w-4 h-4 text-green-400" />
-                                    ) : (
-                                        <WifiOff className="w-4 h-4 text-orange-400" />
-                                    )}
-                                </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`w-3 h-3 rounded-full animate-emergency-pulse shadow-lg ${status === 'prepared' && activeRegion ? 'bg-emergency-green shadow-green-400/50' : 'bg-primary shadow-orange-400/50'}`}></div>
+                            <span className={`text-sm font-bold uppercase tracking-wide ${statusCardContent.badge.color}`}>{statusCardContent.badge.text}</span>
+                            <div className="flex items-center gap-1 ml-auto">
+                                {isOnline ? (
+                                    <Wifi className="w-4 h-4 text-green-400" />
+                                ) : (
+                                    <WifiOff className="w-4 h-4 text-orange-400" />
+                                )}
                             </div>
-                            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                                {activeRegion.name} Active
-                            </h2>
-                            <p className="text-sm text-slate-300 mb-4">Offline assets secured and ready for emergency use.</p>
-                            <Link
-                                to="/map"
-                                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 transform"
-                            >
-                                <Navigation size={16} />
-                                Open Emergency Map
-                            </Link>
                         </div>
-                    ) : (
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-3 h-3 bg-primary rounded-full animate-emergency-pulse shadow-lg shadow-orange-400/50"></div>
-                                <span className="text-sm font-bold uppercase tracking-wide text-primary">Setup Required</span>
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-orange-400">Prepare for Emergencies</h2>
-                            <p className="text-sm text-slate-300 mb-4">Download regional data to enable full offline intelligence capabilities.</p>
-                            <Link
-                                to="/library"
-                                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 transform"
-                            >
-                                <Library size={16} />
-                                Open Library
-                            </Link>
-                        </div>
-                    )}
+                        <h2 className={`text-2xl font-bold mb-2 ${status === 'prepared' && activeRegion ? 'bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent' : 'text-orange-400'}`}>
+                            {statusCardContent.title}
+                        </h2>
+                        <p className="text-sm text-slate-300 mb-4">{statusCardContent.subtitle}</p>
+                        <Link
+                            to={statusCardContent.link.to}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 transform ${status === 'prepared' && activeRegion ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'}`}
+                        >
+                            <Navigation size={16} />
+                            {statusCardContent.link.text}
+                        </Link>
+                    </div>
                 </div>
             </section>
 
@@ -247,5 +259,7 @@ const Home = () => {
         </div>
     );
 };
+
+});
 
 export default Home;

@@ -105,12 +105,12 @@ const AskAIChip = ({
             }
 
             // Generate suggestions based on context
-            const newSuggestions = generateSuggestions({ title, category, content });
+            const newSuggestions = generateSuggestions({ title, category });
             setSuggestions(newSuggestions);
         };
 
         init();
-    }, [title, category, content]);
+    }, [title, category]);
 
     // Handle suggestion click - navigate to AI Chat with context
     const handleSuggestionClick = (question) => {

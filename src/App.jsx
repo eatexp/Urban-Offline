@@ -7,7 +7,6 @@ import { router } from './router';
 // Uses Capacitor App plugin if available, falls back gracefully on web
 const useAndroidBackButton = () => {
     const lastBackPress = useRef(0);
-    const exitToastShown = useRef(false);
 
     useEffect(() => {
         let cleanup = null;
@@ -52,7 +51,7 @@ const useAndroidBackButton = () => {
 
                 App.addListener('backButton', handleBackButton);
                 cleanup = () => App.removeAllListeners();
-            } catch (e) {
+            } catch (_e) {
                 // Capacitor not available - app is running in web browser
                 // No back button handling needed
                 console.debug('Capacitor App plugin not available, skipping back button handler');

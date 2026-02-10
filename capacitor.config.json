@@ -20,3 +20,15 @@
     "contentInset": "always"
   }
 }
+
+// TODO: [Config] CAPACITOR_ANDROID_12_SPLASH_SCREEN
+// What's wrong: No SplashScreen plugin configured for Android 12+ compatibility.
+//   Android 12+ requires specific windowSplashScreenAnimatedIcon theme attribute.
+// Why it matters: App may show system default splash instead of branded splash screen.
+// How to fix:
+//   1. Install @capacitor/splash-screen plugin v4+
+//   2. Add splash screen configuration to plugins section
+//   3. Create splash drawable resources for Android 12+
+// Reference: https://capacitorjs.com/docs/apis/splash-screen#android
+// Priority: P3 | Effort: M (1 hour) | Impact: Low-Medium
+// =============================================================================

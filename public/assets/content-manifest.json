@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-08T03:37:57.132Z",
+  "generatedAt": "2026-02-08T19:22:25.885Z",
   "bundled": true,
   "packs": [
     {
@@ -26,7 +26,7 @@
       },
       "version": "1.0.0",
       "articleCount": 75,
-      "size": 19775716,
+      "size": 19777289,
       "sizeDisplay": "18.9 MB",
       "dataUrl": "/assets/packs/medical-core.json",
       "bundled": true
@@ -89,5 +89,5 @@
     }
   ],
   "totalArticles": 89,
-  "totalSize": 21202405
+  "totalSize": 21203978
 }
