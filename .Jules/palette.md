@@ -1,0 +1,3 @@
+## 2025-02-12 - Custom Radiogroup Accessibility
+**Learning:** Custom UI components that mimic standard controls (like radio buttons for model selection) often lack semantic roles, making them invisible or confusing to screen reader users. The `SmartDownloadPrompt` component used `button` elements for radio options without `role="radio"`, creating a disconnect between visual intent and assistive technology.
+**Action:** When creating custom selection lists, always wrap them in `role="radiogroup"` with a clear `aria-label` or `aria-labelledby`, and apply `role="radio"` and `aria-checked` to the individual items to ensure proper keyboard navigation and state announcement.
