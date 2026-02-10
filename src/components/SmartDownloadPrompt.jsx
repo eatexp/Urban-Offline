@@ -9,7 +9,7 @@
  * Respects user preferences and doesn't show again if dismissed.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, Wifi, Battery, HardDrive, Sparkles } from 'lucide-react';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { TRANSFORMERS_MODELS } from '../services/ai/TransformersEngine';
@@ -113,6 +113,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
     const [selectedModel, setSelectedModel] = useState('tinyllama');
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const buttonRefs = useRef([]);
 
     // Check conditions and model status on mount
     useEffect(() => {
@@ -166,6 +167,25 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
         markDismissed();
         setIsVisible(false);
         onDismiss?.();
+    };
+
+    // Handle keyboard navigation for radio group
+    const handleKeyDown = (e, index) => {
+        const models = Object.values(TRANSFORMERS_MODELS);
+        let nextIndex = -1;
+
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            nextIndex = (index + 1) % models.length;
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            nextIndex = (index - 1 + models.length) % models.length;
+        }
+
+        if (nextIndex !== -1) {
+            e.preventDefault();
+            const nextModel = models[nextIndex];
+            setSelectedModel(nextModel.id);
+            buttonRefs.current[nextIndex]?.focus();
+        }
     };
 
     // Handle download
@@ -226,6 +246,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Close"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -252,6 +273,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.wifi ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.wifi ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.wifi ? 'WiFi connected' : 'No WiFi connection'}
                                     >
                                         <Wifi size={12} />
                                         {conditions.wifi ? 'WiFi' : 'No WiFi'}
@@ -262,6 +284,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.charging ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.charging ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.charging ? 'Device charging' : 'Running on battery'}
                                     >
                                         <Battery size={12} />
                                         {conditions.charging ? 'Charging' : 'On Battery'}
@@ -272,6 +295,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.storage ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.storage ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.storage ? 'Sufficient storage available' : 'Low storage space'}
                                     >
                                         <HardDrive size={12} />
                                         {conditions.storage ? 'Storage OK' : 'Low Storage'}
@@ -284,15 +308,26 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 <p
                                     className="text-xs mb-2"
                                     style={{ color: 'var(--color-text-muted)' }}
+                                    id="model-select-label"
                                 >
                                     Choose AI model:
                                 </p>
-                                <div className="space-y-2">
-                                    {Object.values(TRANSFORMERS_MODELS).map(model => (
+                                <div
+                                    className="space-y-2"
+                                    role="radiogroup"
+                                    aria-labelledby="model-select-label"
+                                    aria-label="Select AI model"
+                                >
+                                    {Object.values(TRANSFORMERS_MODELS).map((model, index) => (
                                         <button
                                             key={model.id}
+                                            ref={el => buttonRefs.current[index] = el}
+                                            role="radio"
+                                            aria-checked={selectedModel === model.id}
+                                            tabIndex={selectedModel === model.id ? 0 : -1}
                                             onClick={() => setSelectedModel(model.id)}
-                                            className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
+                                            onKeyDown={(e) => handleKeyDown(e, index)}
+                                            className="w-full flex items-center justify-between p-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                                             style={{
                                                 background: selectedModel === model.id
                                                     ? 'var(--color-primary-900)'
