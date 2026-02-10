@@ -113,7 +113,10 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
 
         const doLoad = async () => {
             try {
-                await inkService.loadStory(storyFile);
+                const loaded = await inkService.loadStory(storyFile);
+                if (!loaded) {
+                    throw new Error('Could not load story file');
+                }
                 if (isMounted) {
                     const initial = inkService.continue();
                     setStoryState(initial);
@@ -154,6 +157,7 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
     if (error) {
         return (
             <div
+                role="alert"
                 className="card card-emergency p-4 flex items-center gap-3 animate-fade-in"
             >
                 <div
@@ -173,16 +177,12 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
     if (!storyState) {
         return (
             <div
-                className="p-8 text-center animate-fade-in"
-                style={{ color: 'var(--color-text-muted)' }}
+                role="status"
+                aria-live="polite"
+                className="p-8 text-center animate-fade-in text-[var(--color-text-muted)]"
             >
                 <div
-                    className="animate-spin w-8 h-8 rounded-full mx-auto mb-4"
-                    style={{
-                        borderWidth: '3px',
-                        borderColor: 'var(--color-border-primary)',
-                        borderTopColor: 'var(--color-primary-500)'
-                    }}
+                    className="animate-spin w-8 h-8 rounded-full mx-auto mb-4 border-[3px] border-[var(--color-border-primary)] border-t-[var(--color-primary-500)]"
                 ></div>
                 Loading triage flow...
             </div>
@@ -209,10 +209,8 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg transition-colors"
-                        style={{ color: 'var(--color-text-muted)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        aria-label="Go back"
+                        className="p-2 rounded-lg transition-colors text-[var(--color-text-muted)] hover:bg-white/10"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -222,10 +220,8 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                 </div>
                 <button
                     onClick={handleReload}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ color: 'var(--color-text-muted)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                    aria-label="Restart triage"
+                    className="p-2 rounded-lg transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                 >
                     <RefreshCw size={18} />
                 </button>
