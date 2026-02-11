@@ -226,6 +226,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Close"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -252,8 +253,9 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.wifi ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.wifi ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.wifi ? 'WiFi connected' : 'No WiFi connection'}
                                     >
-                                        <Wifi size={12} />
+                                        <Wifi size={12} aria-hidden="true" />
                                         {conditions.wifi ? 'WiFi' : 'No WiFi'}
                                     </span>
                                     <span
@@ -262,8 +264,9 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.charging ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.charging ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.charging ? 'Device charging' : 'Running on battery'}
                                     >
-                                        <Battery size={12} />
+                                        <Battery size={12} aria-hidden="true" />
                                         {conditions.charging ? 'Charging' : 'On Battery'}
                                     </span>
                                     <span
@@ -272,8 +275,9 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             background: conditions.storage ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                                             color: conditions.storage ? 'var(--color-success)' : 'var(--color-danger)'
                                         }}
+                                        aria-label={conditions.storage ? 'Sufficient storage available' : 'Low storage space'}
                                     >
-                                        <HardDrive size={12} />
+                                        <HardDrive size={12} aria-hidden="true" />
                                         {conditions.storage ? 'Storage OK' : 'Low Storage'}
                                     </span>
                                 </div>
@@ -284,13 +288,20 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 <p
                                     className="text-xs mb-2"
                                     style={{ color: 'var(--color-text-muted)' }}
+                                    id="model-select-label"
                                 >
                                     Choose AI model:
                                 </p>
-                                <div className="space-y-2">
+                                <div
+                                    className="space-y-2"
+                                    role="radiogroup"
+                                    aria-labelledby="model-select-label"
+                                >
                                     {Object.values(TRANSFORMERS_MODELS).map(model => (
                                         <button
                                             key={model.id}
+                                            role="radio"
+                                            aria-checked={selectedModel === model.id}
                                             onClick={() => setSelectedModel(model.id)}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
