@@ -172,7 +172,14 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 bg-slate-100">
+                <div
+                    className="h-2 bg-slate-100"
+                    role="progressbar"
+                    aria-valuenow={completionPercent}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="Protocol completion"
+                >
                     <div
                         className="h-full bg-green-500 transition-all duration-300"
                         style={{ width: `${completionPercent}%` }}
@@ -215,7 +222,12 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                     return (
                         <div
                             key={index}
-                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all ${
+                            onClick={(e) => {
+                                // Prevent double toggle if clicking the checkbox/label directly
+                                if (e.target.closest('label') || e.target.closest('button')) return;
+                                toggleStep(index);
+                            }}
+                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all cursor-pointer ${
                                 isChecked
                                     ? 'bg-green-50 border-green-300'
                                     : 'bg-white border-slate-200 hover:border-slate-300'
@@ -269,9 +281,12 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             {/* Voice Button */}
                             {voiceEnabled && (
                                 <button
-                                    onClick={() => speakStep(step.text, step.context)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakStep(step.text, step.context);
+                                    }}
                                     className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
-                                    aria-label="Read step aloud"
+                                    aria-label={`Read step ${index + 1} aloud`}
                                 >
                                     <Volume2 className="w-5 h-5 md:w-6 md:h-6 text-blue-600 group-hover:text-blue-700" />
                                 </button>
