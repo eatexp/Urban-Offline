@@ -113,6 +113,38 @@ const Search = () => {
         return () => clearTimeout(timer);
     }, [query]);
 
+    // Memoized handlers for keyboard navigation performance
+    const handleEmergencyClick = useCallback(() => {
+        setIsOpen(false);
+        setQuery('');
+        setHighlightedIndex(-1);
+
+        const performNavigation = () => {
+            if (emergencyAlert?.triageStory) {
+                const storyId = emergencyAlert.triageStory.replace('.ink.json', '');
+                navigate(`/triage/${storyId}`);
+            } else if (emergencyAlert?.protocolId) {
+                navigate(`/protocol/${emergencyAlert.protocolId}`);
+            } else if (emergencyAlert?.category) {
+                navigate(`/${emergencyAlert.category}`);
+            }
+        };
+
+        // VERIFIED: useViewTransition has 2s timeout and fallback for unsupported browsers
+        transitionWithTimeout(performNavigation);
+    }, [emergencyAlert, navigate, transitionWithTimeout]);
+
+    const handleResultClick = useCallback((result) => {
+        setIsOpen(false);
+        setQuery('');
+        setHighlightedIndex(-1);
+        const target = result.slug ? `/article/${result.slug}` : '#';
+
+        transitionWithTimeout(() => {
+            navigate(target);
+        });
+    }, [navigate, transitionWithTimeout]);
+
     // Handle keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -161,40 +193,6 @@ const Search = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-
-
-    // Memoized handlers for keyboard navigation performance
-    const handleEmergencyClick = useCallback(() => {
-        setIsOpen(false);
-        setQuery('');
-        setHighlightedIndex(-1);
-
-        const performNavigation = () => {
-            if (emergencyAlert?.triageStory) {
-                const storyId = emergencyAlert.triageStory.replace('.ink.json', '');
-                navigate(`/triage/${storyId}`);
-            } else if (emergencyAlert?.protocolId) {
-                navigate(`/protocol/${emergencyAlert.protocolId}`);
-            } else if (emergencyAlert?.category) {
-                navigate(`/${emergencyAlert.category}`);
-            }
-        };
-
-        // VERIFIED: useViewTransition has 2s timeout and fallback for unsupported browsers
-        transitionWithTimeout(performNavigation);
-    }, [emergencyAlert, navigate, transitionWithTimeout]);
-
-    const handleResultClick = useCallback((result) => {
-        setIsOpen(false);
-        setQuery('');
-        setHighlightedIndex(-1);
-        const target = result.slug ? `/article/${result.slug}` : '#';
-
-        transitionWithTimeout(() => {
-            navigate(target);
-        });
-    }, [navigate, transitionWithTimeout]);
 
     // Memoized handler for clearing search
     const handleClearSearch = useCallback(() => {

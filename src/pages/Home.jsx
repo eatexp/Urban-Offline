@@ -258,8 +258,6 @@ const Home = memo(() => {
             </section>
         </div>
     );
-};
-
 });
 
 export default Home;
