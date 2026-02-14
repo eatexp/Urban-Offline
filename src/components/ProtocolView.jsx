@@ -221,56 +221,60 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                                     : 'bg-white border-slate-200 hover:border-slate-300'
                             }`}
                         >
-                            {/* Checkbox */}
-                            <label className="flex-shrink-0 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => toggleStep(index)}
-                                className="sr-only peer"
-                                // =============================================================================
-                                // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
-                                // Implementation: Added aria-label with step number and content summary.
-                                //   Ensures screen readers can identify checkbox purpose for accessibility.
-                                //   Also using sr-only with aria-label pattern for proper assistive tech support.
-                                // =============================================================================
-                                aria-label={`Step ${index + 1}: ${step.text}`}
-                            />
-                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-3 flex items-center justify-center transition-all ${
-                                    isChecked
-                                        ? 'bg-green-600 border-green-600'
-                                        : 'bg-white border-slate-300 peer-focus:ring-4 peer-focus:ring-blue-300'
-                                }`}>
-                                    {isChecked && <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-white" />}
-                                </div>
-                            </label>
-
-                            {/* Step Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start gap-2">
-                                    <span className="text-2xl md:text-3xl font-bold text-slate-900 flex-shrink-0">
-                                        {index + 1}.
-                                    </span>
-                                    <div className="flex-1">
-                                        <p className={`text-xl md:text-2xl leading-relaxed ${
-                                            isChecked ? 'text-green-900' : 'text-slate-900'
-                                        }`}>
-                                            {step.text}
-                                        </p>
-                                        {step.context && (
-                                            <p className="text-sm md:text-base text-slate-500 mt-2 italic">
-                                                {step.context}
-                                            </p>
-                                        )}
+                            {/* Checkbox & Content wrapped in label for larger click target */}
+                            <label className="flex items-start gap-4 flex-1 cursor-pointer">
+                                <div className="flex-shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => toggleStep(index)}
+                                        className="sr-only peer"
+                                        // =============================================================================
+                                        // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
+                                        // Implementation: Added aria-label with step number and content summary.
+                                        //   Ensures screen readers can identify checkbox purpose for accessibility.
+                                        //   Also using sr-only with aria-label pattern for proper assistive tech support.
+                                        // =============================================================================
+                                        aria-label={`Step ${index + 1}: ${step.text}`}
+                                    />
+                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-3 flex items-center justify-center transition-all ${
+                                        isChecked
+                                            ? 'bg-green-600 border-green-600'
+                                            : 'bg-white border-slate-300 peer-focus:ring-4 peer-focus:ring-blue-300'
+                                    }`}>
+                                        {isChecked && <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-white" />}
                                     </div>
                                 </div>
-                            </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-2xl md:text-3xl font-bold text-slate-900 flex-shrink-0">
+                                            {index + 1}.
+                                        </span>
+                                        <div className="flex-1">
+                                            <p className={`text-xl md:text-2xl leading-relaxed ${
+                                                isChecked ? 'text-green-900' : 'text-slate-900'
+                                            }`}>
+                                                {step.text}
+                                            </p>
+                                            {step.context && (
+                                                <p className="text-sm md:text-base text-slate-500 mt-2 italic">
+                                                    {step.context}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
 
                             {/* Voice Button */}
                             {voiceEnabled && (
                                 <button
-                                    onClick={() => speakStep(step.text, step.context)}
-                                    className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakStep(step.text, step.context);
+                                    }}
+                                    className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group z-10"
                                     aria-label="Read step aloud"
                                 >
                                     <Volume2 className="w-5 h-5 md:w-6 md:h-6 text-blue-600 group-hover:text-blue-700" />
