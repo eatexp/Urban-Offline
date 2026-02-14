@@ -30,17 +30,18 @@ import {
   AnimatedNumber,
   GlowFilters
 } from './VisualizationEffects';
+import { HapticsService, ImpactStyle } from '../../services/HapticsService';
 
-// Dataset configuration with icons and colors
+// Dataset configuration - Tactical Dark Theme
 const DATASET_CONFIG = {
   health: {
     id: 'health',
     name: 'Health & Medical',
     shortName: 'Health',
     icon: Heart,
-    color: '#ef4444',
-    glowColor: 'rgba(239, 68, 68, 0.4)',
-    bgColor: 'rgba(239, 68, 68, 0.15)',
+    color: '#9f1239', // Rose-800
+    glowColor: 'rgba(159, 18, 57, 0.2)',
+    bgColor: 'rgba(159, 18, 57, 0.05)',
     position: { x: 0.2, y: 0.28 },
     floatDelay: 0
   },
@@ -49,9 +50,9 @@ const DATASET_CONFIG = {
     name: 'Survival Skills',
     shortName: 'Survival',
     icon: Tent,
-    color: '#f97316',
-    glowColor: 'rgba(249, 115, 22, 0.4)',
-    bgColor: 'rgba(249, 115, 22, 0.15)',
+    color: '#92400e', // Amber-800
+    glowColor: 'rgba(146, 64, 14, 0.2)',
+    bgColor: 'rgba(146, 64, 14, 0.05)',
     position: { x: 0.8, y: 0.28 },
     floatDelay: 0.5
   },
@@ -60,9 +61,9 @@ const DATASET_CONFIG = {
     name: 'Legal Rights',
     shortName: 'Legal',
     icon: Scale,
-    color: '#3b82f6',
-    glowColor: 'rgba(59, 130, 246, 0.4)',
-    bgColor: 'rgba(59, 130, 246, 0.15)',
+    color: '#075985', // Sky-800
+    glowColor: 'rgba(7, 89, 133, 0.2)',
+    bgColor: 'rgba(7, 89, 133, 0.05)',
     position: { x: 0.2, y: 0.72 },
     floatDelay: 1
   },
@@ -71,9 +72,9 @@ const DATASET_CONFIG = {
     name: 'General Guides',
     shortName: 'Guides',
     icon: BookOpen,
-    color: '#64748b',
-    glowColor: 'rgba(100, 116, 139, 0.4)',
-    bgColor: 'rgba(100, 116, 139, 0.15)',
+    color: '#334155', // Slate-700
+    glowColor: 'rgba(51, 65, 85, 0.2)',
+    bgColor: 'rgba(51, 65, 85, 0.05)',
     position: { x: 0.8, y: 0.72 },
     floatDelay: 1.5
   }
@@ -109,43 +110,47 @@ const DatasetNetworkGraph = ({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Create pulse and particle animation when dataset is queried
-  useEffect(() => {
-    if (queryActivity.length === 0) return;
+    // Create pulse and particle animation when dataset is queried
+    useEffect(() => {
+        if (queryActivity.length === 0) return;
 
-    const latestActivity = queryActivity[queryActivity.length - 1];
-    const datasetId = latestActivity.datasetId;
+        const latestActivity = queryActivity[queryActivity.length - 1];
+        const datasetId = latestActivity.datasetId;
 
-    // Create pulse
-    const newPulse = {
-      id: Date.now(),
-      datasetId,
-      timestamp: Date.now()
-    };
-    setPulses(prev => [...prev, newPulse]);
-    setTimeout(() => {
-      setPulses(prev => prev.filter(p => p.id !== newPulse.id));
-    }, 2000);
+        // Create pulse (deferred to prevent cascading renders)
+        const newPulse = {
+            id: Date.now(),
+            datasetId,
+            timestamp: Date.now()
+        };
+        queueMicrotask(() => {
+            setPulses(prev => [...prev, newPulse]);
+        });
+        setTimeout(() => {
+            setPulses(prev => prev.filter(p => p.id !== newPulse.id));
+        }, 2000);
 
-    // Create particles along the connection
-    const config = DATASET_CONFIG[datasetId];
-    if (config) {
-      const numParticles = 5;
-      const newParticles = Array.from({ length: numParticles }, (_, i) => ({
-        id: `${Date.now()}-${i}`,
-        datasetId,
-        progress: 0,
-        delay: i * 0.15,
-        color: config.color
-      }));
-      setParticles(prev => [...prev, ...newParticles]);
+        // Create particles along the connection
+        const config = DATASET_CONFIG[datasetId];
+        if (config) {
+            const numParticles = 5;
+            const newParticles = Array.from({ length: numParticles }, (_, i) => ({
+                id: `${Date.now()}-${i}`,
+                datasetId,
+                progress: 0,
+                delay: i * 0.15,
+                color: config.color
+            }));
+            queueMicrotask(() => {
+                setParticles(prev => [...prev, ...newParticles]);
+            });
 
-      // Animate and remove particles
-      setTimeout(() => {
-        setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
-      }, 1500);
-    }
-  }, [queryActivity]);
+            // Animate and remove particles
+            setTimeout(() => {
+                setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+            }, 1500);
+        }
+    }, [queryActivity]);
 
   const getNodePosition = (datasetId) => {
     const config = DATASET_CONFIG[datasetId];
@@ -208,35 +213,32 @@ const DatasetNetworkGraph = ({
         }
         
         .center-node {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #f97316 0%, #8b5cf6 100%);
+          width: 40px; /* Smaller */
+          height: 40px;
+          border-radius: 8px; /* Sharper squircle */
+          background: rgba(9, 9, 11, 0.9); /* Zinc-950 */
           display: flex;
           align-items: center;
           justify-content: center;
+          border: 1px solid rgba(255,255,255,0.1);
           box-shadow: 
-            0 0 40px rgba(249, 115, 22, 0.5),
-            0 0 80px rgba(139, 92, 246, 0.3),
-            inset 0 2px 4px rgba(255,255,255,0.2);
+            0 0 15px rgba(99, 102, 241, 0.1),
+            inset 0 0 0 1px rgba(99, 102, 241, 0.2);
           animation: center-breathe 4s ease-in-out infinite;
-          border: 2px solid rgba(255,255,255,0.2);
         }
         
         @keyframes center-breathe {
           0%, 100% { 
             box-shadow: 
-              0 0 40px rgba(249, 115, 22, 0.5),
-              0 0 80px rgba(139, 92, 246, 0.3),
-              inset 0 2px 4px rgba(255,255,255,0.2);
+              0 0 10px rgba(99, 102, 241, 0.1),
+              inset 0 0 0 1px rgba(99, 102, 241, 0.2);
             transform: scale(1);
           }
           50% { 
             box-shadow: 
-              0 0 60px rgba(249, 115, 22, 0.6),
-              0 0 100px rgba(139, 92, 246, 0.4),
-              inset 0 2px 4px rgba(255,255,255,0.2);
-            transform: scale(1.08);
+              0 0 20px rgba(99, 102, 241, 0.15),
+              inset 0 0 0 1px rgba(99, 102, 241, 0.4);
+            transform: scale(1.02);
           }
         }
         
@@ -267,12 +269,12 @@ const DatasetNetworkGraph = ({
         }
         
         .dataset-node:hover .node-circle {
-          transform: scale(1.15) translateZ(20px);
+          transform: scale(1.1) translateZ(10px);
         }
         
         .dataset-node.disabled {
-          opacity: 0.35;
-          filter: grayscale(0.9);
+          opacity: 0.3;
+          filter: grayscale(1);
         }
         
         .dataset-node.disabled:hover .node-circle {
@@ -281,51 +283,53 @@ const DatasetNetworkGraph = ({
         
         /* Floating animation */
         .node-float {
-          animation: node-float 5s ease-in-out infinite;
+          animation: node-float 6s ease-in-out infinite; /* Slower float */
         }
         
         @keyframes node-float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          50% { transform: translateY(-6px); }
         }
         
         .node-circle {
-          width: 72px;
-          height: 72px;
+          width: 48px; /* Smaller */
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 3px solid;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.1);
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          background: rgba(9, 9, 11, 0.8) !important; /* Zinc-950 */
           transform-style: preserve-3d;
         }
         
         .node-circle.active {
-          animation: node-active-glow 2.5s ease-in-out infinite;
+          animation: node-active-pulse 3s ease-in-out infinite;
+          border-color: currentColor;
         }
         
-        @keyframes node-active-glow {
-          0%, 100% { filter: brightness(1); }
-          50% { filter: brightness(1.2); }
+        @keyframes node-active-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+          50% { box-shadow: 0 0 10px currentColor; }
         }
         
         /* Pulse rings */
         .pulse-ring {
           position: absolute;
-          inset: -8px;
+          inset: -6px;
           border-radius: 50%;
-          border: 2px solid;
+          border: 1px solid;
           opacity: 0;
           animation: pulse-ring-expand 2s ease-out forwards;
           pointer-events: none;
         }
         
         @keyframes pulse-ring-expand {
-          0% { transform: scale(0.9); opacity: 0.9; }
-          100% { transform: scale(2); opacity: 0; }
+          0% { transform: scale(0.9); opacity: 0.8; }
+          100% { transform: scale(1.8); opacity: 0; }
         }
         
         .node-label {
@@ -333,29 +337,30 @@ const DatasetNetworkGraph = ({
           top: calc(100% + 6px);
           left: 50%;
           transform: translateX(-50%);
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
           white-space: nowrap;
           text-align: center;
-          text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+          letter-spacing: 0.02em;
         }
         
         .node-badge {
           position: absolute;
-          top: -6px;
-          right: -6px;
-          min-width: 22px;
-          height: 22px;
-          border-radius: 11px;
-          background: linear-gradient(135deg, #22c55e, #16a34a);
+          top: -4px;
+          right: -4px;
+          min-width: 18px;
+          height: 18px;
+          border-radius: 6px; /* Squircle */
+          background: #22c55e;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 6px;
-          font-size: 10px;
+          padding: 0 4px;
+          font-size: 9px;
           font-weight: 700;
-          color: white;
-          border: 2px solid rgba(0,0,0,0.2);
+          color: black;
+          border: 1px solid rgba(255,255,255,0.2);
           box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
           animation: badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -368,41 +373,33 @@ const DatasetNetworkGraph = ({
         /* Stats panel */
         .network-stats {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: 12px 16px;
-          background: linear-gradient(to top, rgba(15, 23, 42, 0.9), transparent);
+          bottom: 12px;
+          left: 12px;
           display: flex;
-          gap: 12px;
-          overflow-x: auto;
-          scrollbar-width: none;
+          gap: 8px;
         }
-        
-        .network-stats::-webkit-scrollbar { display: none; }
         
         .stat-item {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 8px 12px;
-          background: rgba(255,255,255,0.05);
-          backdrop-filter: blur(8px);
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          min-width: fit-content;
+          padding: 6px 10px;
+          background: rgba(255,255,255,0.03); /* Stealth */
+          backdrop-filter: blur(4px);
+          border-radius: 6px;
+          border: 1px solid rgba(255,255,255,0.05);
           transition: all 0.2s ease;
         }
         
         .stat-item:hover {
           background: rgba(255,255,255,0.08);
-          border-color: rgba(255,255,255,0.12);
+          border-color: rgba(255,255,255,0.1);
         }
         
         .stat-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -411,22 +408,23 @@ const DatasetNetworkGraph = ({
         .stat-content {
           display: flex;
           flex-direction: column;
-          gap: 1px;
+          gap: 0;
         }
         
         .stat-label {
-          font-size: 9px;
+          font-size: 8px;
           color: var(--color-text-muted);
           text-transform: uppercase;
           letter-spacing: 0.08em;
-          font-weight: 500;
+          font-weight: 600;
         }
         
         .stat-value {
-          font-size: 14px;
+          font-size: 11px;
           font-weight: 700;
           color: var(--color-text-primary);
           font-family: var(--font-family-mono);
+          line-height: 1.2;
         }
         
         /* Reduced motion */
@@ -447,9 +445,8 @@ const DatasetNetworkGraph = ({
         <defs>
           {/* Connection gradient */}
           <linearGradient id="connection-gradient" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
-            <stop offset="50%" stopColor="#a855f7" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.1" />
           </linearGradient>
 
           {/* Animated dash pattern */}
@@ -470,18 +467,7 @@ const DatasetNetworkGraph = ({
 
           return (
             <g key={`conn-${datasetId}`}>
-              {/* Glow layer */}
-              <line
-                x1={centerPosition.x}
-                y1={centerPosition.y}
-                x2={end.x}
-                y2={end.y}
-                stroke={config.color}
-                strokeWidth={8}
-                strokeLinecap="round"
-                opacity={0.15}
-                filter="url(#glow-soft)"
-              />
+              {/* Glow layer - removed for stealth */}
 
               {/* Main line */}
               <line
@@ -490,16 +476,16 @@ const DatasetNetworkGraph = ({
                 x2={end.x}
                 y2={end.y}
                 stroke={config.color}
-                strokeWidth={2}
+                strokeWidth={1} /* Thinner line */
                 strokeLinecap="round"
-                strokeDasharray="8 6"
-                opacity={0.7}
+                strokeDasharray="4 4" /* Smaller dash */
+                opacity={0.15} /* Even lower opacity */
               >
                 <animate
                   attributeName="stroke-dashoffset"
                   from="0"
-                  to="-14"
-                  dur="1s"
+                  to="-8"
+                  dur="1.5s" /* Slower animation */
                   repeatCount="indefinite"
                 />
               </line>
@@ -508,7 +494,7 @@ const DatasetNetworkGraph = ({
               <circle
                 cx={end.x}
                 cy={end.y}
-                r="4"
+                r="3"
                 fill={config.color}
                 opacity={0.5}
               />
@@ -590,7 +576,10 @@ const DatasetNetworkGraph = ({
             key={dataset.id}
             className={`dataset-node ${isActive ? '' : 'disabled'}`}
             style={{ left: position.x, top: position.y }}
-            onClick={() => onDatasetClick?.(dataset.id)}
+            onClick={() => {
+              HapticsService.impact(ImpactStyle.Light);
+              onDatasetClick?.(dataset.id);
+            }}
 
           >
             {/* Floating wrapper */}
@@ -703,10 +692,10 @@ export const DatasetActivityIndicator = ({ activeDatasets = [], lastQuery }) => 
           align-items: center;
           gap: 8px;
           padding: 8px 12px;
-          background: rgba(15, 23, 42, 0.6);
+          background: rgba(2, 6, 23, 0.4);
           backdrop-filter: blur(12px);
           border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .activity-dot {

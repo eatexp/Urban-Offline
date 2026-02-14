@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { initStorage } from '../services/db';
 import { SearchService } from '../services/SearchService';
 import { Capacitor } from '@capacitor/core';
@@ -7,13 +7,11 @@ import { createLogger } from '../utils/logger';
 
 const log = createLogger('AppProvider');
 
-const AppContext = createContext({
+export const AppContext = createContext({
     status: 'idle', // 'idle' | 'initializing' | 'ready' | 'error'
     error: null,
     isOnline: navigator.onLine
 });
-
-export const useApp = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
     const [status, setStatus] = useState('idle');

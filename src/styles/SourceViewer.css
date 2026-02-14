@@ -1,0 +1,302 @@
+/* Source Viewer - Drawer Animation & Layout */
+.source-viewer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    justify-content: flex-end;
+    /* Slide from right on desktop, bottom on mobile */
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
+
+.source-viewer-drawer {
+    width: 100%;
+    max-width: 600px;
+    /* Readable column width */
+    height: 100%;
+    background-color: var(--bg-primary, #ffffff);
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-width: 768px) {
+    .source-viewer-drawer {
+        max-width: 100%;
+        height: 90vh;
+        /* Bottom sheet style */
+        margin-top: 10vh;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        transform: translateY(100%);
+        animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .source-viewer-overlay {
+        align-items: flex-end;
+        /* Align bottom for mobile */
+    }
+}
+
+/* Header */
+.source-viewer-header {
+    flex-shrink: 0;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border-color, #e5e5e5);
+    background-color: var(--bg-surface, #f8f9fa);
+}
+
+.source-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.source-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    color: var(--text-secondary, #666);
+}
+
+.source-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.source-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary, #999);
+    font-weight: 600;
+}
+
+.source-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.source-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn,
+.close-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-secondary, #666);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.action-btn:hover,
+.close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary, #1a1a1a);
+}
+
+/* Content Area */
+.source-viewer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    scroll-behavior: smooth;
+}
+
+/* "Living Reader" Typography */
+.living-reader-content {
+    font-family: 'Merriweather', 'Georgia', serif;
+    /* Robust serif stack */
+    line-height: 1.6;
+    color: var(--text-primary, #2d2d2d);
+    max-width: 100%;
+}
+
+/* Dark mode overrides (if applicable via CSS variables, simplistic fallback here) */
+@media (prefers-color-scheme: dark) {
+    .living-reader-content {
+        color: #e0e0e0;
+    }
+}
+
+.article-body p {
+    margin-bottom: 1.5em;
+}
+
+.article-body h1,
+.article-body h2,
+.article-body h3 {
+    font-family: 'Inter', system-ui, sans-serif;
+    /* Contrast headers */
+    font-weight: 700;
+    margin-top: 2em;
+    margin-bottom: 0.75em;
+    line-height: 1.3;
+}
+
+.article-body ul,
+.article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+}
+
+.article-body li {
+    margin-bottom: 0.5em;
+}
+
+.article-body blockquote {
+    border-left: 4px solid var(--accent-color, #3b82f6);
+    margin: 1.5em 0;
+    padding: 0.5em 0 0.5em 1.5em;
+    background-color: rgba(59, 130, 246, 0.05);
+    font-style: italic;
+}
+
+.article-body img {
+    display: none;
+    /* Text-Only Mode: Hide images as we don't have blobs yet */
+}
+
+/* Optional: If we replace img tags with spans */
+.article-image-placeholder {
+    display: block;
+    padding: 12px;
+    margin: 1.5em 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px dashed var(--border-color, #ccc);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--text-secondary, #666);
+    font-size: 0.9em;
+}
+
+.article-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9em;
+}
+
+.article-body th,
+.article-body td {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #e5e5e5);
+    text-align: left;
+}
+
+.article-body th {
+    background-color: rgba(0, 0, 0, 0.03);
+    font-weight: 600;
+}
+
+/* Loading & Error States */
+.source-loading,
+.source-error {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-secondary, #666);
+    padding: 40px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-color, #3b82f6);
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+.source-error .error-icon {
+    margin-bottom: 16px;
+    color: #ef4444;
+}
+
+.error-sub {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin-top: 8px;
+}
+
+.article-footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    font-size: 0.85rem;
+    color: var(--text-tertiary, #999);
+    font-family: sans-serif;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

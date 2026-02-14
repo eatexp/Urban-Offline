@@ -1,11 +1,12 @@
 import { Shield, Library, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { triggerHaptic } from '../utils/haptics';
 import EmergencyCommandBar from '../components/EmergencyCommandBar';
+import EmergencyQuickAccess from '../components/EmergencyQuickAccess';
 
-// TODO: [Performance] HOME_COMPONENT_MEMOIZATION - IMPLEMENTED 2026-02-08
+// TODO: [Performance] HOME_COMPONENT_MEMOIZATION - COMPLETED 2026-02-10
 // Wrapped component with React.memo() and extracted EmergencyQuickAccess to prevent
 // unnecessary re-renders when online/offline status changes. Status cards memoized.
 
@@ -17,17 +18,6 @@ const Home = memo(() => {
     const [aiModelCount, setAiModelCount] = useState(0);
     const navigate = useNavigate();
 
-    // TODO: [Performance] HOME_COMPONENT_MEMOIZATION
-    // What's wrong: Home component re-renders on every online/offline toggle,
-    //   causing expensive re-computation of all child components.
-    // Why it matters: Home is the main landing page, frequent re-renders hurt UX.
-    // How to fix:
-    //   1. Wrap with React.memo()
-    //   2. Use useMemo for status cards and emergency modules
-    //   3. Extract EmergencyQuickAccess to separate memoized component
-    // Priority: P2 | Effort: S (30 min) | Impact: Medium
-    // =============================================================================
-
     // =============================================================================
     // VERIFIED: [NativeUX] EMERGENCY_BUTTON_HAPTIC_FEEDBACK
     // =============================================================================
@@ -37,12 +27,13 @@ const Home = memo(() => {
 
     /**
      * Handle emergency button press with haptic feedback and navigation
+     * memoized with useCallback to prevent re-renders of child components
      * @param {string} route - The route to navigate to
      */
-    const handleEmergencyPress = (route) => {
+    const handleEmergencyPress = useCallback((route) => {
         triggerHaptic('heavy');
         navigate(route);
-    };
+    }, [navigate]);
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -230,36 +221,11 @@ const Home = memo(() => {
                 </div>
             </section>
 
-            {/* Emergency Quick Access */}
-            <section className="animate-slide-up" style={{ animationDelay: '300ms' }}>
-                <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 backdrop-blur-sm rounded-2xl p-5 border border-red-500/30">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                        <h3 className="font-bold text-red-400">Emergency Quick Access</h3>
-                    </div>
-                    <p className="text-sm text-slate-400 mb-4">Immediate access to critical emergency protocols</p>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            className="btn btn-emergency btn-sm"
-                            onClick={() => handleEmergencyPress('/protocol/evacuate-now')}
-                        >
-                            <Navigation size={16} />
-                            Evacuate Now
-                        </button>
-                        <button
-                            className="btn btn-emergency btn-sm"
-                            onClick={() => handleEmergencyPress('/triage/health/cpr.ink.json')}
-                        >
-                            <Heart size={16} />
-                            Medical Alert
-                        </button>
-                    </div>
-                </div>
-            </section>
+            {/* Emergency Quick Access (Memoized) */}
+            <EmergencyQuickAccess onEmergencyPress={handleEmergencyPress} />
         </div>
     );
-};
-
 });
 
 export default Home;
+

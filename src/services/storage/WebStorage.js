@@ -1,36 +1,21 @@
 import { openDB, deleteDB } from 'idb';
 
 const DB_NAME = 'urban-offline-db';
-const DB_VERSION = 5; // Bumped for ink_stories store
+const DB_VERSION = 6; // Bumped for session/message stores
 
 // Stores that use out-of-line keys (no keyPath)
 const OUT_OF_LINE_STORES = ['map_tiles', 'search_index', 'dataset_preferences', 'user_context', 'ink_stories'];
 
-// =============================================================================
-// VERIFIED: [Resilience] INDEXEDDB_CORRUPTION_RECOVERY
-// =============================================================================
-// Implementation: Wraps openDB in try/catch with corruption detection.
-// On DataError or UnknownError (indicating corruption), deletes the database
-// and recreates it once. Dispatches recovery event to UI for user notification.
-// This ensures the app remains usable even if IndexedDB becomes corrupted.
-// =============================================================================
-
-/**
- * Dispatch recovery event to UI
- * @param {boolean} recovered - Whether recovery was successful
- * @param {Error|null} error - Error if recovery failed
- */
-const dispatchRecoveryEvent = (recovered, error = null) => {
+// Helper to dispatch recovery events
+const dispatchRecoveryEvent = (success, error) => {
     if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('indexeddb-recovery', {
-            detail: {
-                recovered,
-                error: error?.message,
-                timestamp: new Date().toISOString()
-            }
+        window.dispatchEvent(new CustomEvent('db-recovery', {
+            detail: { success, error: error?.message }
         }));
     }
 };
+
+// ... (existing code)
 
 export const initDB = async () => {
     try {
@@ -44,6 +29,25 @@ export const initDB = async () => {
                 if (!db.objectStoreNames.contains('data_content')) {
                     db.createObjectStore('data_content', { keyPath: 'id' });
                 }
+
+                // ... (existing stores)
+
+                // *** NEW STORES FOR MISSION LOGS (v6) ***
+
+                // Sessions (Conversation Metadata)
+                if (!db.objectStoreNames.contains('sessions')) {
+                    const sessionStore = db.createObjectStore('sessions', { keyPath: 'id' });
+                    sessionStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+                }
+
+                // Messages (Linked to Sessions)
+                if (!db.objectStoreNames.contains('messages')) {
+                    const msgStore = db.createObjectStore('messages', { keyPath: 'id' });
+                    msgStore.createIndex('sessionId', 'sessionId', { unique: false });
+                    msgStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+
+                // ... (rest of existing stores)
 
                 // Store for guide metadata
                 if (!db.objectStoreNames.contains('guides')) {
@@ -317,4 +321,10 @@ export const db = {
     // Batch operations for bulk performance
     batchPut,
     batchDelete,
+
+    // Index querying
+    async getAllFromIndex(storeName, indexName, key) {
+        const database = await initDB();
+        return database.getAllFromIndex(storeName, indexName, key);
+    },
 };

@@ -6,12 +6,14 @@
  * - Download models with progress tracking
  * - Switch between installed models
  * - Delete/offload models to free storage
+ * - Resume interrupted downloads
+ * - View verification status
  */
 
 import React, { useState, useEffect } from 'react';
 import {
     Download, Trash2, Check, Loader2, Star, Zap, Brain,
-    HardDrive, X, ChevronRight, Sparkles, AlertCircle
+    HardDrive, X, ChevronRight, Sparkles, AlertCircle, PauseCircle, Play
 } from 'lucide-react';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { TRANSFORMERS_MODELS } from '../services/ai/TransformersEngine';
@@ -22,10 +24,10 @@ const log = createLogger('ModelPicker');
 /**
  * Star rating component
  */
-const StarRating = ({ rating, max = 5, icon: RatingIcon = Star, color = 'var(--color-warning)' }) => (
+const StarRating = ({ rating, max = 5, icon: _RatingIcon = Star, color = 'var(--color-warning)' }) => (
     <div className="flex gap-0.5">
         {[...Array(max)].map((_, i) => (
-            <RatingIcon
+            <_RatingIcon
                 key={i}
                 size={12}
                 style={{
@@ -80,8 +82,12 @@ const ModelCard = ({
     isInstalled,
     isActive,
     isDownloading,
+    isVerifying,
     downloadProgress,
+    downloadStatus,
+    resumeInfo,
     onDownload,
+    onResume,
     onSelect,
     onDelete,
     deviceRecommended
@@ -105,6 +111,44 @@ const ModelCard = ({
             default: return category;
         }
     };
+
+    // Format bytes to readable size
+    const formatBytes = (bytes) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    };
+
+    // Determine what status to show
+    const getStatusDisplay = () => {
+        if (isVerifying) {
+            return {
+                icon: <Loader2 size={16} className="animate-spin" />,
+                text: 'Verifying...',
+                subtext: 'Checking file integrity'
+            };
+        }
+        if (isDownloading) {
+            return {
+                icon: <ProgressRing progress={downloadProgress} size={36} />,
+                text: downloadStatus || 'Downloading...',
+                subtext: `${Math.round(downloadProgress)}%`
+            };
+        }
+        if (resumeInfo?.canResume) {
+            const receivedStr = formatBytes(resumeInfo.bytesReceived);
+            const totalStr = formatBytes(resumeInfo.totalBytes);
+            return {
+                icon: <PauseCircle size={36} style={{ color: 'var(--color-warning)' }} />,
+                text: 'Download Paused',
+                subtext: `${receivedStr} / ${totalStr} (${resumeInfo.progress}%)`
+            };
+        }
+        return null;
+    };
+
+    const statusDisplay = getStatusDisplay();
 
     return (
         <div
@@ -192,15 +236,15 @@ const ModelCard = ({
 
             {/* Actions */}
             <div className="flex gap-2">
-                {isDownloading ? (
+                {statusDisplay ? (
                     <div className="flex items-center gap-3 flex-1">
-                        <ProgressRing progress={downloadProgress} size={36} />
+                        {statusDisplay.icon}
                         <div className="flex-1">
                             <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                                Downloading...
+                                {statusDisplay.text}
                             </div>
                             <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                                {Math.round(downloadProgress)}%
+                                {statusDisplay.subtext}
                             </div>
                         </div>
                     </div>
@@ -270,7 +314,22 @@ const ModelCard = ({
                             </button>
                         )}
                     </>
+                ) : resumeInfo?.canResume ? (
+                    /* Resume Download button */
+                    <button
+                        onClick={() => onResume(model.id)}
+                        className="btn btn-md btn-primary flex-1"
+                        style={{
+                            background: 'rgba(249, 115, 22, 0.2)',
+                            border: '1px solid rgba(249, 115, 22, 0.5)',
+                            color: 'var(--color-primary-400)'
+                        }}
+                    >
+                        <Play size={16} />
+                        Resume Download
+                    </button>
                 ) : (
+                    /* Download button */
                     <button
                         onClick={() => onDownload(model.id)}
                         className="btn btn-md btn-primary flex-1"
@@ -289,10 +348,14 @@ const ModelCard = ({
  */
 const ModelPicker = ({ onClose, onModelChange }) => {
 
+    const [_models, setModels] = useState([]);
     const [installedModels, setInstalledModels] = useState(new Set());
     const [activeModel, setActiveModel] = useState(null);
     const [downloadingModel, setDownloadingModel] = useState(null);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [downloadStatus, setDownloadStatus] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [resumeInfoMap, setResumeInfoMap] = useState(new Map());
     const [storageUsed, setStorageUsed] = useState({ bytes: 0, display: '0 MB' });
     const [filter, setFilter] = useState('all');
     const [recommendedModel, setRecommendedModel] = useState(null);
@@ -327,6 +390,9 @@ const ModelPicker = ({ onClose, onModelChange }) => {
                 const usage = await AIModelManager.getStorageUsage();
                 setStorageUsed(usage);
 
+                // Check for resume info on all models
+                await checkResumeInfo(allModels);
+
             } catch (error) {
                 log.error('Failed to initialize model picker', error);
             } finally {
@@ -337,22 +403,76 @@ const ModelPicker = ({ onClose, onModelChange }) => {
         init();
     }, []);
 
+    // Check resume info for all models
+    const checkResumeInfo = async (models) => {
+        const resumeMap = new Map();
+        
+        for (const model of models) {
+            try {
+                const resumeInfo = await AIModelManager.getResumeInfo(model.id);
+                if (resumeInfo?.canResume) {
+                    resumeMap.set(model.id, resumeInfo);
+                }
+            } catch (error) {
+                log.debug('Failed to check resume info', { modelId: model.id, error: error.message });
+            }
+        }
+        
+        setResumeInfoMap(resumeMap);
+    };
+
     // Handle download
     const handleDownload = async (modelId) => {
         setDownloadingModel(modelId);
         setDownloadProgress(0);
+        setDownloadStatus('');
+        setIsVerifying(false);
 
-        const result = await AIModelManager.downloadModel(modelId, (progress, _message) => {
+        const result = await AIModelManager.downloadModel(modelId, (progress, message) => {
             setDownloadProgress(progress);
+            setDownloadStatus(message);
+            
+            // Check if we're in verification phase
+            if (message?.toLowerCase().includes('verifying') || progress >= 95 && progress < 100) {
+                setIsVerifying(true);
+            } else {
+                setIsVerifying(false);
+            }
         });
 
         if (result.success) {
             setInstalledModels(prev => new Set([...prev, modelId]));
+            // Remove from resume map if present
+            setResumeInfoMap(prev => {
+                const next = new Map(prev);
+                next.delete(modelId);
+                return next;
+            });
             const usage = await AIModelManager.getStorageUsage();
             setStorageUsed(usage);
+        } else if (result.canResume) {
+            // Download can be resumed - update resume info
+            const resumeInfo = await AIModelManager.getResumeInfo(modelId);
+            if (resumeInfo) {
+                setResumeInfoMap(prev => new Map(prev).set(modelId, resumeInfo));
+            }
+        } else {
+            // Permanent failure - clear resume info
+            setResumeInfoMap(prev => {
+                const next = new Map(prev);
+                next.delete(modelId);
+                return next;
+            });
         }
 
         setDownloadingModel(null);
+        setIsVerifying(false);
+    };
+
+    // Handle resume
+    const handleResume = async (modelId) => {
+        // Resume uses the same download method - checkpoint will be picked up automatically
+        await handleDownload(modelId);
     };
 
     // Handle select
@@ -521,8 +641,12 @@ const ModelPicker = ({ onClose, onModelChange }) => {
                             isInstalled={installedModels.has(model.id)}
                             isActive={activeModel === model.id}
                             isDownloading={downloadingModel === model.id}
+                            isVerifying={downloadingModel === model.id && isVerifying}
                             downloadProgress={downloadingModel === model.id ? downloadProgress : 0}
+                            downloadStatus={downloadingModel === model.id ? downloadStatus : ''}
+                            resumeInfo={resumeInfoMap.get(model.id)}
                             onDownload={handleDownload}
+                            onResume={handleResume}
                             onSelect={handleSelect}
                             onDelete={handleDelete}
                             deviceRecommended={recommendedModel === model.id}

@@ -3,16 +3,22 @@
  * 
  * Handles:
  * - Fetching available packs from server/local manifest
- * - Downloading packs with progress tracking
+ * - Downloading packs with progress tracking and resume capability
  * - Installing packs to IndexedDB/SQLite
  * - Managing installed pack state
  * - Updating packs when new versions available
+ * - SHA-256 checksum verification
+ *
+ * Compliance: .clinerules §1, §4 - Resume capability and checksum validation
  */
 
 import { db } from '../db';
 import { SearchService } from '../SearchService';
 import { PACK_STATUS, PACK_CATEGORIES, formatSize, validateManifest, BUNDLED_PACKS, RESOURCE_TYPES } from './ContentPackSchema';
 import { ZimReader } from '../zim/ZimReader';
+import { DownloadCheckpoint } from '../DownloadCheckpoint';
+import { createCheckpointedStream, getContentLength } from '../../utils/rangeFetcher';
+import { computeChecksumFromStream, verifyChecksum } from '../../utils/checksum';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('ContentPackManager');
@@ -22,6 +28,9 @@ const PACK_REGISTRY_URL = '/assets/pack-registry.json';
 
 // IndexedDB store for pack metadata
 const PACKS_STORE = 'content_packs';
+
+// Checkpoint save interval (bytes)
+const CHECKPOINT_INTERVAL = 1024 * 1024; // 1MB
 
 /**
  * ContentPackManager service
@@ -91,9 +100,24 @@ export const ContentPackManager = {
         const installed = await this.getInstalledPacks();
         const installedMap = new Map(installed.map(p => [p.id, p]));
 
+        // Get resume info for packs that can be resumed
+        const resumeInfoMap = new Map();
+        for (const pack of packs) {
+            try {
+                const resumeInfo = await this.getResumeInfo(pack.id);
+                if (resumeInfo?.canResume) {
+                    resumeInfoMap.set(pack.id, resumeInfo);
+                }
+            } catch (_e) {
+                // Ignore resume check errors
+            }
+        }
+
         // Merge install status
         return packs.map(pack => {
             const installedPack = installedMap.get(pack.id);
+            const resumeInfo = resumeInfoMap.get(pack.id);
+            
             if (installedPack) {
                 return {
                     ...pack,
@@ -101,6 +125,15 @@ export const ContentPackManager = {
                     articleCount: installedPack.articleCount || pack.articleCount || 0,
                     installedVersion: installedPack.version,
                     installedAt: installedPack.installedAt
+                };
+            }
+            if (resumeInfo) {
+                return {
+                    ...pack,
+                    status: PACK_STATUS.PAUSED,
+                    resumeProgress: resumeInfo.progress,
+                    bytesReceived: resumeInfo.bytesReceived,
+                    totalBytes: resumeInfo.totalBytes
                 };
             }
             return {
@@ -132,18 +165,47 @@ export const ContentPackManager = {
     },
 
     /**
-     * Download and install a content pack
+     * Get resume information for a pack download
+     * @param {string} packId - Pack ID to check
+     * @returns {Promise<Object|null>} - Resume info or null if no valid checkpoint
+     */
+    async getResumeInfo(packId) {
+        const pack = await this._getPackById(packId);
+        if (!pack || !pack.downloadUrl) return null;
+
+        return DownloadCheckpoint.getResumeInfo(pack.downloadUrl);
+    },
+
+    /**
+     * Check if a pack download can be resumed
+     * @param {string} packId - Pack ID to check
+     * @returns {Promise<boolean>} - True if resume is possible
+     */
+    async canResumeDownload(packId) {
+        const resumeInfo = await this.getResumeInfo(packId);
+        return resumeInfo?.canResume ?? false;
+    },
+
+    /**
+     * Internal: Get pack by ID from available sources
+     * @private
+     */
+    async _getPackById(packId) {
+        const packs = await this.getAvailablePacks();
+        return packs.find(p => p.id === packId);
+    },
+
+    /**
+     * Download and install a content pack with resume and checksum support
      * @param {string} packId - Pack ID to download
      * @param {Function} onProgress - Progress callback (0-100)
-     * @returns {Promise<{success: boolean, error?: string}>}
+     * @returns {Promise<{success: boolean, error?: string, canResume?: boolean}>}
      */
     async downloadPack(packId, onProgress) {
         this._attachOnlineListener();
 
         // Get pack info
-        const packs = await this.getAvailablePacks();
-        const pack = packs.find(p => p.id === packId);
-
+        const pack = await this._getPackById(packId);
         if (!pack) {
             return { success: false, error: 'Pack not found' };
         }
@@ -168,6 +230,7 @@ export const ContentPackManager = {
         this._downloadProgress.set(packId, 0);
 
         let tempFileHandle = null;
+        let writable = null;
 
         // Proactive storage quota check before downloading large packs
         try {
@@ -192,85 +255,208 @@ export const ContentPackManager = {
             // Update status to downloading
             if (onProgress) onProgress(0, 'Starting download...');
 
-            // Fetch the pack (with progress tracking)
-            const response = await fetch(pack.downloadUrl, {
-                signal: abortController.signal
-            });
-
-            if (!response.ok) {
-                throw new Error(`Download failed: ${response.status}`);
+            // Check for existing checkpoint
+            let checkpoint = await DownloadCheckpoint.getCheckpoint(pack.downloadUrl);
+            const canResume = checkpoint && DownloadCheckpoint.canResume(checkpoint);
+            
+            if (canResume) {
+                log.info('Resuming download from checkpoint', {
+                    packId,
+                    bytesReceived: checkpoint.bytesReceived,
+                    totalBytes: checkpoint.totalBytes
+                });
+                if (onProgress) onProgress(
+                    Math.round((checkpoint.bytesReceived / checkpoint.totalBytes) * 100),
+                    `Resuming download... (${formatSize(checkpoint.bytesReceived)} / ${formatSize(checkpoint.totalBytes)})`
+                );
+            } else {
+                // Create new checkpoint
+                const totalBytes = pack.size || await getContentLength(pack.downloadUrl);
+                checkpoint = {
+                    url: pack.downloadUrl,
+                    bytesReceived: 0,
+                    totalBytes: totalBytes,
+                    checksum: pack.checksum,
+                    modelId: packId,
+                    type: 'content_pack',
+                    retryCount: 0
+                };
+                await DownloadCheckpoint.saveCheckpoint(checkpoint);
             }
 
-            // Get total size for progress
-            const contentLength = response.headers.get('content-length');
-            const totalSize = contentLength ? parseInt(contentLength, 10) : pack.size;
-
-            // Prepare for download: check if OPFS (Origin Private File System) is available
-            let writable = null;
-            let useMemory = true;
-            let chunks = [];
+            // Prepare OPFS for download
+            let useOPFS = false;
+            let receivedLength = checkpoint?.bytesReceived || 0;
 
             try {
                 if (navigator.storage && navigator.storage.getDirectory) {
                     const root = await navigator.storage.getDirectory();
-                    tempFileHandle = await root.getFileHandle(`temp_${packId}_${Date.now()}`, { create: true });
-                    writable = await tempFileHandle.createWritable();
-                    useMemory = false;
-                    log.debug('Using OPFS for download streaming');
+                    const tempFileName = `temp_pack_${packId}`;
+                    
+                    // Check if temp file exists (for resume)
+                    try {
+                        tempFileHandle = await root.getFileHandle(tempFileName);
+                        log.debug('Found existing temp file for resume', { packId });
+                    } catch (_e) {
+                        // File doesn't exist, create new
+                        tempFileHandle = await root.getFileHandle(tempFileName, { create: true });
+                    }
+                    
+                    // Open writable - use keepExistingData for resume
+                    if (typeof tempFileHandle.createWritable === 'function') {
+                        writable = await tempFileHandle.createWritable({ keepExistingData: true });
+                    } else {
+                        // Fallback for browsers without keepExistingData support
+                        writable = await tempFileHandle.createWritable();
+                        if (receivedLength > 0) {
+                            // Seek to the end for resume
+                            await writable.seek(receivedLength);
+                        }
+                    }
+                    
+                    useOPFS = true;
+                    log.debug('Using OPFS for download streaming', { packId });
                 }
             } catch (err) {
                 log.warn('OPFS not available or failed, falling back to memory', err);
+                useOPFS = false;
             }
 
-            // Read response as stream with progress
+            // Create checkpointed stream with resume support
+            const response = await createCheckpointedStream(
+                pack.downloadUrl,
+                checkpoint,
+                {
+                    onProgress: (received, total) => {
+                        receivedLength = received;
+                        const progress = total 
+                            ? Math.round((received / total) * 80) // 0-80% for download
+                            : 0;
+                        this._downloadProgress.set(packId, progress);
+                        if (onProgress) {
+                            onProgress(progress, `Downloading... ${formatSize(received)} / ${formatSize(total || pack.size)}`);
+                        }
+                    },
+                    onCheckpoint: async (bytesReceived) => {
+                        try {
+                            await DownloadCheckpoint.updateProgress(pack.downloadUrl, bytesReceived);
+                        } catch (e) {
+                            log.warn('Failed to save checkpoint', e);
+                        }
+                    },
+                    checkpointInterval: CHECKPOINT_INTERVAL
+                }
+            );
+
+            // Read the stream and write to storage
             const reader = response.body.getReader();
-            let receivedLength = 0;
+            const chunks = [];
+
+            // Create checksum calculator if pack has checksum
+            const hasChecksum = pack.checksum && pack.checksum.length === 64;
+            
+            if (onProgress) onProgress(0, canResume ? 'Resuming download...' : 'Downloading...');
 
             while (true) {
                 const { done, value } = await reader.read();
 
                 if (done) break;
 
-                receivedLength += value.length;
-
-                if (useMemory) {
-                    chunks.push(value);
-                } else {
+                // Write to OPFS or collect in memory
+                if (useOPFS && writable) {
                     await writable.write(value);
+                } else {
+                    chunks.push(value);
                 }
 
-                const progress = Math.round((receivedLength / totalSize) * 80); // 0-80% for download
-                this._downloadProgress.set(packId, progress);
-                if (onProgress) {
-                    onProgress(progress, `Downloading... ${formatSize(receivedLength)} / ${formatSize(totalSize)}`);
-                }
+                // Note: Progress is handled by createCheckpointedStream via onProgress callback
             }
 
-            if (!useMemory) {
+            // Close writable if using OPFS
+            if (useOPFS && writable) {
                 await writable.close();
             }
 
-            if (onProgress) onProgress(85, 'Installing...');
+            if (onProgress) onProgress(80, 'Processing...');
 
             // Prepare install source
             let installSource;
-            if (useMemory) {
+            if (useOPFS && tempFileHandle) {
+                const tempFile = await tempFileHandle.getFile();
+                
+                // Verify checksum if available
+                if (hasChecksum) {
+                    if (onProgress) onProgress(85, 'Verifying download integrity...');
+                    
+                    const { hash } = await computeChecksumFromStream(
+                        new Response(tempFile),
+                        (received, total) => {
+                            if (onProgress && total) {
+                                const verifyProgress = 85 + Math.round((received / total) * 10);
+                                onProgress(verifyProgress, 'Verifying download integrity...');
+                            }
+                        }
+                    );
+                    
+                    // Use the hash for verification
+                    const isValid = await verifyChecksum(tempFile, pack.checksum);
+                    
+                    if (!isValid) {
+                        // Delete temp file
+                        try {
+                            const root = await navigator.storage.getDirectory();
+                            await root.removeEntry(`temp_pack_${packId}`);
+                        } catch (_e) {
+                            // Ignore cleanup errors
+                        }
+                        
+                        await DownloadCheckpoint.incrementRetry(pack.downloadUrl);
+                        
+                        return { 
+                            success: false, 
+                            error: 'Download verification failed. The file may be corrupted.',
+                            checksumFailed: true,
+                            canResume: true
+                        };
+                    }
+                    
+                    log.info('Checksum verification passed', { packId, hash: hash.slice(0, 16) + '...' });
+                }
+                
+                installSource = tempFile;
+            } else {
                 // Combine chunks
-                installSource = new Uint8Array(receivedLength);
+                const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                installSource = new Uint8Array(totalLength);
                 let position = 0;
                 for (const chunk of chunks) {
                     installSource.set(chunk, position);
                     position += chunk.length;
                 }
-                // Clear chunks to free some memory
-                chunks = null;
-            } else {
-                installSource = await tempFileHandle.getFile();
+
+                // Verify checksum for memory-based downloads
+                if (hasChecksum) {
+                    if (onProgress) onProgress(85, 'Verifying download integrity...');
+                    
+                    const isValid = await verifyChecksum(installSource, pack.checksum);
+                    if (!isValid) {
+                        await DownloadCheckpoint.incrementRetry(pack.downloadUrl);
+                        
+                        return { 
+                            success: false, 
+                            error: 'Download verification failed. The file may be corrupted.',
+                            checksumFailed: true,
+                            canResume: true
+                        };
+                    }
+                }
             }
+
+            if (onProgress) onProgress(90, 'Installing...');
 
             // Install the pack
             await this._installPack(pack, installSource, (installProgress) => {
-                const totalProgress = 85 + Math.round(installProgress * 0.15);
+                const totalProgress = 90 + Math.round(installProgress * 0.1);
                 this._downloadProgress.set(packId, totalProgress);
                 if (onProgress) onProgress(totalProgress, 'Installing content...');
             });
@@ -279,7 +465,7 @@ export const ContentPackManager = {
             if (tempFileHandle) {
                 try {
                     const root = await navigator.storage.getDirectory();
-                    await root.removeEntry(tempFileHandle.name);
+                    await root.removeEntry(`temp_pack_${packId}`);
                 } catch (cleanupErr) {
                     log.warn('Failed to cleanup temp file', cleanupErr);
                 }
@@ -294,13 +480,22 @@ export const ContentPackManager = {
                 size: pack.size,
                 sizeDisplay: pack.sizeDisplay,
                 installedAt: new Date().toISOString(),
-                metadata: pack.metadata
+                metadata: pack.metadata,
+                checksum: pack.checksum,
+                checksumVerified: hasChecksum
             });
 
+            // Delete checkpoint on success
+            await DownloadCheckpoint.deleteCheckpoint(pack.downloadUrl);
             this._downloadProgress.delete(packId);
             this._abortControllers.delete(packId);
 
             if (onProgress) onProgress(100, 'Complete!');
+
+            log.info('Pack downloaded and installed successfully', { 
+                packId, 
+                checksumVerified: hasChecksum 
+            });
 
             return { success: true };
 
@@ -309,20 +504,30 @@ export const ContentPackManager = {
             if (tempFileHandle) {
                 try {
                     const root = await navigator.storage.getDirectory();
-                    await root.removeEntry(tempFileHandle.name);
+                    await root.removeEntry(`temp_pack_${packId}`);
                 } catch (_cleanupErr) {
                     // Ignore
                 }
+            }
+
+            // Save progress for resume
+            const currentProgress = this._downloadProgress.get(packId) || 0;
+            const bytesReceived = Math.round((currentProgress / 100) * (pack.size || 0));
+            
+            try {
+                await DownloadCheckpoint.updateProgress(pack.downloadUrl, bytesReceived);
+            } catch (checkpointError) {
+                log.warn('Failed to save checkpoint on error', checkpointError);
             }
 
             this._downloadProgress.delete(packId);
             this._abortControllers.delete(packId);
 
             if (error.name === 'AbortError') {
-                return { success: false, error: 'Download cancelled' };
+                return { success: false, error: 'Download cancelled', canResume: true };
             }
 
-            log.error('Download failed', error);
+            log.error('Download failed', { packId, error: error.message });
 
             // Attempt to rollback any partially installed content
             try {
@@ -332,12 +537,18 @@ export const ContentPackManager = {
             }
 
             // Queue for retry when back online (network errors only)
-            if (!navigator.onLine || error.message.includes('fetch') || error.name === 'TypeError') {
+            if (!navigator.onLine || error.message?.includes('fetch') || error.name === 'TypeError') {
                 if (!this._retryQueue.includes(packId)) {
                     this._retryQueue.push(packId);
                     log.info(`Queued pack "${packId}" for retry when online`);
                 }
-                return { success: false, error: error.message, queued: true };
+                return { success: false, error: error.message, queued: true, canResume: true };
+            }
+
+            // Check if we can resume
+            const updatedCheckpoint = await DownloadCheckpoint.getCheckpoint(pack.downloadUrl);
+            if (updatedCheckpoint && DownloadCheckpoint.canResume(updatedCheckpoint)) {
+                return { success: false, error: error.message, canResume: true };
             }
 
             return { success: false, error: error.message };
@@ -907,4 +1118,3 @@ export const ContentPackManager = {
 };
 
 export default ContentPackManager;
-

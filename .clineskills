@@ -1,0 +1,238 @@
+# Urban-Offline Cline Skills
+# Offline-First Emergency Preparedness App
+# Vision: Locally AI × Kiwix Hybrid for iOS & Android
+
+## 1. Transformers.js AI Integration
+
+**Expertise Domain:** Browser-based machine learning inference using Hugging Face Transformers.js
+
+**Capabilities:**
+- Loading and running ONNX models in browser/WebView environments
+- WebGPU acceleration with WebGL fallback strategies
+- Text generation with streaming (token-by-token output)
+- Model quantization (INT8/INT4) for reduced memory footprint
+- Memory management for large language models (500MB-2GB)
+- Worker-based inference to avoid blocking UI thread
+- Custom ONNX model import and validation
+
+**Key APIs & Patterns:**
+```javascript
+// Model loading with progress
+const engine = await TransformersEngine.getInstance();
+await engine.initialize('onnx-community/TinyLlama-1.1B-Chat-v1.0', onProgress);
+
+// Streaming generation
+for await (const token of engine.generateStream(prompt, { max_tokens: 512 })) {
+  yield token;
+}
+
+// Device selection (WebGPU > WebGL > WASM)
+const device = await engine._getBestDevice(); // 'webgpu' | 'webgl' | 'cpu'
+```
+
+**Apply To:**
+- `src/services/ai/TransformersEngine.js` - Core inference engine
+- `src/services/ai/AIModelManager.js` - Model lifecycle management
+- `src/services/ai/ModelImporter.js` - Custom ONNX import
+- `src/services/ai/RAGPipeline.js` - Retrieval-augmented generation
+
+**Troubleshooting:**
+- WebGPU not available → Fall back to WebGL → Fall back to WASM
+- Out of memory → Unload current model before loading new one
+- Model corruption → Validate checksum, re-download if mismatch
+
+---
+
+## 2. Capacitor Native Bridge
+
+**Expertise Domain:** Cross-platform native mobile development with Capacitor
+
+**Capabilities:**
+- iOS/Android plugin architecture and native bridge communication
+- Native storage: SQLite + Filesystem hybrid approach
+- Status bar and navigation customization for immersive UX
+- Haptics and vibration patterns for tactile feedback
+- App lifecycle management (background/foreground/termination)
+- Hardware back button handling (Android)
+- Battery monitoring and power-aware features
+
+**Key APIs & Patterns:**
+```javascript
+// Platform detection
+import { isNativeMobile, isIOSNative, isAndroidNative } from './utils/platform';
+
+// Native storage
+const { Filesystem, Directory } = await import('@capacitor/filesystem');
+await Filesystem.writeFile({
+  path: 'models/tinyllama.onnx',
+  data: base64Data,
+  directory: Directory.Documents
+});
+
+// Haptics
+import { HapticsService } from './services/HapticsService';
+await HapticsService.impact('heavy'); // light | medium | heavy
+```
+
+**Apply To:**
+- `src/services/storage/NativeStorage.js` - SQLite + Filesystem implementation
+- `src/services/HapticsService.js` - Cross-platform haptics
+- `src/services/power/BatteryManager.js` - Power monitoring
+- `src/App.jsx` - Status bar, back button handling
+
+**Troubleshooting:**
+- Plugin not available → Check Capacitor version compatibility
+- Permission denied → Add to AndroidManifest.xml / Info.plist
+- Storage write fails → Check quota, use Directory.Documents
+
+---
+
+## 3. Offline Storage Architecture
+
+**Expertise Domain:** Client-side data persistence with IndexedDB and SQLite
+
+**Capabilities:**
+- IndexedDB schema design with object stores and indexes
+- SQLite FTS5 full-text search implementation
+- Storage quota management and LRU eviction
+- Data migration strategies between schema versions
+- Blob storage optimization for large files (models, maps, content)
+- Transaction safety and error recovery
+- Cross-platform storage abstraction layer
+
+**Key APIs & Patterns:**
+```javascript
+// Storage abstraction
+import { db, initStorage } from './services/db';
+await initStorage();
+await db.put('models', { id: 'tinyllama', data: modelBlob });
+
+// Web: IndexedDB via idb library
+// Native: SQLite + Filesystem hybrid
+
+// Quota handling
+try {
+  await db.put('content', largeData);
+} catch (error) {
+  if (error.name === 'QuotaExceededError') {
+    // Trigger LRU eviction or show user warning
+  }
+}
+```
+
+**Apply To:**
+- `src/services/storage/WebStorage.js` - IndexedDB implementation
+- `src/services/storage/NativeStorage.js` - SQLite implementation
+- `src/services/db.js` - Storage abstraction entry point
+- `src/services/dataManager.js` - Region/content management
+
+**Troubleshooting:**
+- Database corruption → Delete and recreate with version bump
+- Quota exceeded → Implement LRU eviction for old content
+- Slow queries → Add indexes, optimize FTS5 queries
+
+---
+
+## 4. ZIM/Kiwix Content Format
+
+**Expertise Domain:** Offline Wikipedia content distribution and retrieval
+
+**Capabilities:**
+- ZIM file structure (header, clusters, directories, URLs)
+- XZ compression decompression (WASM implementation)
+- Content addressing by URL namespace (A/, I/, M/, etc.)
+- Full-text indexing of article content
+- Delta update mechanisms for content synchronization
+- MIME type detection and content serving
+- Embedded image and media extraction
+
+**Key APIs & Patterns:**
+```javascript
+// ZIM file processing
+import { processZimFile } from './scripts/process-zim';
+const content = await processZimFile(fileBuffer);
+
+// Content addressing
+const article = await zimReader.getArticleByUrl('A/First_aid');
+const image = await zimReader.getImageByUrl('I/first_aid_kit.png');
+
+// Search index
+const results = await zimReader.search('CPR emergency');
+```
+
+**Apply To:**
+- `scripts/process-zim.js` - ZIM file processing
+- `src/services/contentSync.js` - Content synchronization
+- `src/services/DatasetRegistry.js` - Content pack management
+- `src/services/ai/RAGPipeline.js` - Content retrieval for AI
+
+**Troubleshooting:**
+- ZIM corruption → Validate checksum before import
+- Out of memory → Stream content instead of loading entire file
+- Search not working → Rebuild FTS index during installation
+
+---
+
+## 5. Emergency UX Design
+
+**Expertise Domain:** Critical-use interface design for high-stress scenarios
+
+**Capabilities:**
+- Triage decision tree patterns using Ink.js narrative engine
+- Progressive disclosure in time-critical flows
+- Accessibility compliance (WCAG 2.1 AA, VoiceOver/TalkBack)
+- High-contrast, high-visibility UI design
+- Offline-first information architecture
+- Cognitive load reduction techniques
+- Panic-proof interaction patterns
+
+**Key APIs & Patterns:**
+```javascript
+// Ink.js integration
+import { InkService } from './services/InkService';
+const story = await InkService.loadStory('health/cpr.ink.json');
+const currentStep = story.continue();
+const choices = story.currentChoices;
+
+// Critical content loading
+import { SuspenseWrapper } from './components/SuspenseWrapper';
+<SuspenseWrapper fallback={<SkeletonPage />}>
+  <TriageScreen />
+</SuspenseWrapper>
+
+// Error boundaries for resilience
+import { ErrorBoundary } from './components/ErrorBoundary';
+<ErrorBoundary fallback={<ErrorRecoveryUI />}>
+  <CriticalContent />
+</ErrorBoundary>
+```
+
+**Apply To:**
+- `src/components/TriageScreen.jsx` - Interactive decision trees
+- `src/components/ProtocolView.jsx` - Emergency protocol display
+- `src/services/InkService.js` - Ink.js integration
+- `src/components/CriticalContentBanner.jsx` - Missing content warnings
+
+**Design Principles:**
+- **Speed over beauty:** Critical content loads in <100ms
+- **Reliability over intelligence:** Triage uses deterministic Ink.js, not AI
+- **Clarity over density:** Large touch targets, simple language
+- **Resilience over features:** Graceful degradation at every level
+
+**Troubleshooting:**
+- Content not loading → Show CriticalContentBanner with actionable steps
+- AI unavailable → Fall back to keyword search and static content
+- User panic → Simplify UI, enlarge touch targets, reduce options
+
+---
+
+## Quick Reference: When to Apply Each Skill
+
+| Task | Primary Skill | Secondary Skills |
+|------|--------------|------------------|
+| Add new AI model | Transformers.js AI | Offline Storage |
+| Implement native feature | Capacitor Native | iOS/Android Feature Parity |
+| Add content pack support | ZIM/Kiwix Content | Offline Storage |
+| Design emergency flow | Emergency UX | Ink.js narrative |
+| Optimize performance | Offline Storage | Transformers.js AI |
+| Fix cross-platform bug | Capacitor Native | Platform Detection |

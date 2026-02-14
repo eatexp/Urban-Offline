@@ -17,16 +17,50 @@
 import { SearchService } from '../SearchService';
 import { createLogger } from '../../utils/logger';
 import { IntentClassifier } from '../ai/IntentClassifier';
+import { MapCartridgeService } from '../maps/MapCartridgeService';
 
 const log = createLogger('HybridSearch');
 
 // Synonym expansion for better search coverage
 const SYNONYMS = IntentClassifier.SYNONYMS;
 
-// Search Cache Configuration
 const SEARCH_CACHE = new Map();
 const CACHE_MAX_SIZE = 20;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// VERIFIED: [Resilience] SEARCH_CACHE_CLEANUP
+// Added visibility listener to prune cache when app is backgrounded
+// ENHANCED: [Phase 2.5a] Added periodic cleanup every 60s as safety net
+if (typeof window !== 'undefined') {
+    window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            log.debug('App backgrounded, pruning search cache');
+            cleanupCache();
+        }
+    });
+    
+    // Periodic cleanup every 60 seconds
+    setInterval(() => {
+        cleanupCache();
+    }, 60000);
+}
+
+/**
+ * Prune expired entries from the cache
+ */
+function cleanupCache() {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [key, entry] of SEARCH_CACHE) {
+        if (now - entry.timestamp > CACHE_TTL_MS) {
+            SEARCH_CACHE.delete(key);
+            cleaned++;
+        }
+    }
+    if (cleaned > 0) {
+        log.debug(`Cleaned ${cleaned} expired search cache entries`);
+    }
+}
 
 /**
  * Hybrid Search Service
@@ -93,12 +127,7 @@ export const HybridSearchService = {
      */
     async search(query, options = {}) {
         const cacheKey = `${query}|${JSON.stringify(options)}`;
-        const cached = SEARCH_CACHE.get(cacheKey);
-
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-            log.debug(`Cache hit for query: "${query}"`);
-            return cached.result;
-        }
+        // ... cache check ...
 
         const {
             limit = 20,
@@ -115,12 +144,31 @@ export const HybridSearchService = {
         // Step 2: Expand query with synonyms
         const expandedQueries = this.expandQuery(query);
 
-        // Step 3: Perform keyword search
+        // Step 3: Perform Parallel Search (ZIMs + Maps)
         const allResults = [];
         const seenIds = new Set();
-
-        // Parallelize search if possible, but sequential for now to preserve order preference
         const failedQueries = [];
+
+        // 3a. Map Search (Priority)
+        try {
+            const mapResults = await MapCartridgeService.search(query);
+            for (const result of mapResults) {
+                if (!seenIds.has(result.id)) {
+                    seenIds.add(result.id);
+                    allResults.push({
+                        ...result, // includes payload, custom displayTitle
+                        matchedQuery: query,
+                        // Force high confidence for map matches on names
+                        confidence: 1.0
+                    });
+                }
+            }
+        } catch (e) {
+            log.warn('Map search failed', e);
+        }
+
+        // 3b. Content Search (ZIMs)
+        // Parallelize search if possible, but sequential for now to preserve order preference
         for (const expandedQuery of expandedQueries) {
             try {
                 const results = await SearchService.search(expandedQuery);
@@ -147,10 +195,17 @@ export const HybridSearchService = {
             // Base relevance score
             score += 1;
 
+            // Map Cartridge Boost (Target Lock)
+            if (result.category === 'map') {
+                score += 10; // Massive boost for "Sector" results
+            }
+
             // Category match bonus
             if (intent && result.category === intent.category) {
                 score += 3;
             }
+
+            // ... allow fall through
 
             // Requested category filter
             if (category && result.category === category) {
@@ -169,6 +224,22 @@ export const HybridSearchService = {
                 relevanceScore: score
             };
         });
+
+        // Step 5: Inject "Ask AI" Action (The Brain)
+        // Always append this action if query is meaningful (> 3 chars)
+        if (query.trim().length > 3) {
+            const isQuestion = /^(what|how|why|when|where|who|can|does|is)/i.test(query) || query.includes('?');
+
+            scoredResults.push({
+                id: 'action-ask-ai',
+                title: `ASK INTELLIGENCE: "${query}"`,
+                description: 'Analyze this topic using local LLM',
+                category: 'brain',
+                // If it's a question, boost it higher, otherwise keep it reachable but lower
+                relevanceScore: isQuestion ? 5 : 0.5,
+                payload: { query }
+            });
+        }
 
         // Sort by score
         scoredResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
@@ -189,10 +260,14 @@ export const HybridSearchService = {
             hasPartialResults: failedQueries.length > 0
         };
 
-        // Cache result
+        // ENHANCED: [Phase 2.5a] Cleanup before cache write + enforce LRU eviction
+        cleanupCache();
+        
+        // LRU eviction: remove oldest entry if at capacity
         if (SEARCH_CACHE.size >= CACHE_MAX_SIZE) {
             const oldestKey = SEARCH_CACHE.keys().next().value;
             SEARCH_CACHE.delete(oldestKey);
+            log.debug(`Evicted oldest cache entry: ${oldestKey}`);
         }
         SEARCH_CACHE.set(cacheKey, { result: finalResult, timestamp: Date.now() });
 

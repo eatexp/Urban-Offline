@@ -221,15 +221,15 @@ export default function BookshelfGrid({ sources = [], stage = 'idle', hitIndices
 
   const spines = useMemo(() => {
     if (sources.length === 0) {
-      // Show placeholder spines
+      // Show placeholder spines with deterministic heights
       return Array.from({ length: 8 }, (_, i) => ({
         title: ['Medical', 'Survival', 'Legal', 'First Aid', 'Shelter', 'Water', 'Navigation', 'Signals'][i],
         color: SPINE_COLORS[i % SPINE_COLORS.length],
-        height: 40 + Math.random() * 20,
+        height: 40 + ((i * 7) % 20), // Deterministic pseudo-random instead of Math.random()
         category: ['health', 'survival', 'law', 'health', 'survival', 'survival', 'survival', 'survival'][i]
       }));
     }
-    return sources.map((s, i) => {
+    return sources.map((s) => {
       const cat = (s.category || '').toLowerCase();
       const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.default;
       return {
@@ -244,8 +244,10 @@ export default function BookshelfGrid({ sources = [], stage = 'idle', hitIndices
   // Trigger spotlight scan animation
   useEffect(() => {
     if (stage === 'retrieval') {
-      setSpotlightActive(true);
-      setScannedIndex(-1);
+      queueMicrotask(() => {
+        setSpotlightActive(true);
+        setScannedIndex(-1);
+      });
 
       // Scan through spines sequentially
       const interval = 1200 / spines.length;
@@ -256,8 +258,10 @@ export default function BookshelfGrid({ sources = [], stage = 'idle', hitIndices
       // Mark scan complete
       const totalTime = 1200;
       const timer = setTimeout(() => {
-        setScannedIndex(spines.length);
-        setSpotlightActive(false);
+        queueMicrotask(() => {
+          setScannedIndex(spines.length);
+          setSpotlightActive(false);
+        });
       }, totalTime);
 
       return () => clearTimeout(timer);

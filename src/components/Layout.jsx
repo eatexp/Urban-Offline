@@ -1,6 +1,9 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import OfflineIndicator from './OfflineIndicator';
+import AmbientStatusBar from './AmbientStatusBar';
+import AmbientStatusBarBoundary from './AmbientStatusBarBoundary';
+import SurvivalModeOverlay from './SurvivalModeOverlay';
 import Search from './Search';
 import SmartDownloadPrompt from './SmartDownloadPrompt';
 import ClawdBotFAB from './clawdBot/ClawdBotFAB';
@@ -8,6 +11,7 @@ import CriticalContentBanner from './CriticalContentBanner';
 import { useEffect, useState } from 'react';
 import { inkService } from '../services/InkService';
 import { createLogger } from '../utils/logger';
+import ContextManager from '../services/context/ContextManager';
 
 const log = createLogger('Layout');
 
@@ -44,40 +48,91 @@ const Layout = () => {
     // Main content uses pt-safe class for consistent spacing across iOS/Android.
     // =============================================================================
 
+    // Sync body attribute with survival mode state
+    useEffect(() => {
+        const contextManager = ContextManager.getInstance();
+        
+        // Initial sync
+        const state = contextManager.getState();
+        if (state.survivalMode?.active) {
+            document.body.setAttribute('data-survival-mode', 'true');
+        } else {
+            document.body.removeAttribute('data-survival-mode');
+        }
+
+        // Subscribe to changes
+        const unsubscribe = contextManager.subscribe((newState) => {
+            if (newState.survivalMode?.active) {
+                document.body.setAttribute('data-survival-mode', 'true');
+            } else {
+                document.body.removeAttribute('data-survival-mode');
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     return (
-        <div className={`app-layout flex flex-col h-screen ${isMounted ? 'animate-fade-in' : 'opacity-0'}`}>
-            <header
-                className="bg-slate-900/95 backdrop-blur-lg p-3 shadow-lg z-50 border-b border-slate-800"
-                style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
-            >
-                <div className="container mx-auto flex items-center justify-between">
-                    <div className="font-bold text-primary text-sm tracking-tighter flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-emergency-pulse"></div>
-                        URBAN OFFLINE
+        <>
+            {/* Survival Mode Overlay - renders conditionally when active */}
+            <SurvivalModeOverlay />
+
+            <div className={`app-layout flex flex-col h-screen ${isMounted ? 'animate-fade-in' : 'opacity-0'}`}>
+                <header
+                    className="bg-slate-900/95 backdrop-blur-lg p-3 shadow-lg z-50 border-b border-slate-800"
+                    style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+                >
+                    <div className="container mx-auto flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="font-bold text-primary text-sm tracking-tighter flex items-center gap-2">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-emergency-pulse"></div>
+                                URBAN OFFLINE
+                            </div>
+                            {/* Ambient Intelligence Status Bar - Desktop */}
+                            <div className="hidden md:block">
+                                <AmbientStatusBarBoundary>
+                                    <AmbientStatusBar />
+                                </AmbientStatusBarBoundary>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                            {/* Ambient Intelligence Status Bar - Mobile */}
+                            <div className="md:hidden">
+                                <AmbientStatusBarBoundary>
+                                    <AmbientStatusBar />
+                                </AmbientStatusBarBoundary>
+                            </div>
+                            {/* Only show search when not in Triage mode */}
+                            {!isTriageMode && <Search />}
+                        </div>
                     </div>
-                    {/* Only show search when not in Triage mode */}
-                    {!isTriageMode && <Search />}
-                </div>
-                <OfflineIndicator />
-            </header>
+                    {/* OfflineIndicator kept as fallback for critical alerts if needed, or removed if redundant. 
+                        User said "Scrap SystemMonitor... Build AmbientStatusBar instead". 
+                        I'll keep OfflineIndicator for now as it might handle global toast/banner logic not covered by the pill. 
+                        If it's just a visual indicator, AmbientStatusBar replaces it. 
+                        Let's comment it out to be safe as per "The Clean Interface" directive. */}
+                    {/* <OfflineIndicator /> */}
+                </header>
 
-            {/* Critical content warning banner - shows when emergency guides unavailable offline */}
-            <CriticalContentBanner />
+                {/* Critical content warning banner - shows when emergency guides unavailable offline */}
+                <CriticalContentBanner />
 
-            <main className="container mx-auto flex-1 overflow-y-auto p-4 safe-area-bottom">
-                <div className="animate-slide-up">
-                    <Outlet />
-                </div>
-            </main>
+                <main className="container mx-auto flex-1 overflow-y-auto p-4 safe-area-bottom">
+                    <div className="animate-slide-up">
+                        <Outlet />
+                    </div>
+                </main>
 
-            {/* Smart AI Download Prompt - shows when conditions are favorable */}
-            <SmartDownloadPrompt />
+                {/* Smart AI Download Prompt - shows when conditions are favorable */}
+                <SmartDownloadPrompt />
 
-            <Navbar />
+                <Navbar />
 
-            {/* clawdBot Floating Action Button */}
-            <ClawdBotFAB />
-        </div>
+                {/* clawdBot Floating Action Button */}
+                <ClawdBotFAB />
+            </div>
+        </>
     );
 };
 

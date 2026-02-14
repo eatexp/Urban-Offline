@@ -1,0 +1,90 @@
+# Urban-Offline Cline Rules
+# Offline-First Emergency Preparedness App
+# Vision: Locally AI × Kiwix Hybrid for iOS & Android
+
+## 1. AI Model Marketplace Management
+
+When working with AI models:
+- Use `AIModelManager.js` as the SINGLE source of truth for all model operations
+- Follow the tier system strictly: essential → standard → advanced → pro
+- Support both pre-configured models AND custom ONNX imports via `ModelImporter.js`
+- Implement progressive download with resume capability using background fetch patterns
+- Always validate model checksums before activation (SHA-256 verification)
+- Cache model metadata separately from weights for instant marketplace browsing
+- Store downloaded models in platform-appropriate storage with quota checks
+
+## 2. Offline-First Architecture
+
+When building any feature:
+- Assume NO network connectivity - everything must work offline
+- All critical content must function without AI models loaded (fallback templates)
+- Implement graceful degradation at every architectural layer
+- Use `SuspenseWrapper` for progressive UI loading with skeleton states
+- Test in airplane mode before marking any feature complete
+- Handle `QuotaExceededError` with user-friendly recovery options
+- Ensure triage flows use Ink.js (NOT AI) for life-safety reliability
+
+## 3. iOS/Android Feature Parity
+
+When implementing native features:
+- Use Capacitor plugins that support BOTH platforms equally
+- Storage: Use `Directory.Documents` for both iOS & Android (consistent via `platform.js`)
+- AI: Full Transformers.js support on both platforms (WebGL/WebGPU with fallback)
+- Haptics: Use `HapticsService.js` for consistent tactile feedback across platforms
+- NEVER implement platform-only features without providing equivalent functionality on the other
+- Test on physical devices for both platforms before completion
+- Use `isNativeMobile()`, `isIOSNative()`, `isAndroidNative()` from `platform.js` for detection
+
+## 4. Content Pack (ZIM/Kiwix) Integration
+
+When handling offline content packs:
+- Treat ZIM files as immutable, versioned content packs (Kiwix-style)
+- Validate SHA-256 checksums before importing any content
+- Generate embeddings for RAG during installation, not at runtime
+- Maintain `content-manifest.json` with semantic versioning
+- Support delta updates for efficient content updates (only changed chunks)
+- Use `DatasetRegistry.js` for enabling/disabling content packs
+- Ensure content works even when AI models are unavailable
+
+## 5. Emergency UX Standards
+
+When designing UI flows:
+- Critical content must load in <100ms (use aggressive code splitting)
+- Triage flows ALWAYS use Ink.js decision trees (never AI for life-safety)
+- AI responses must stream progressively with real-time citations
+- Error states must provide actionable next steps (never dead ends)
+- Battery-aware: Disable AI inference when battery <20% (via `BatteryManager`)
+- Use `ErrorBoundary` components at page level for graceful degradation
+- Implement `CriticalContentBanner` for missing essential content warnings
+
+## 6. Code Quality Standards
+
+When writing code:
+- Use functional React components with hooks (no class components except ErrorBoundary)
+- Async/await ONLY - no callback-based patterns
+- ALWAYS use structured logging via `createLogger()` from `logger.js`
+- Platform detection via `platform.js` utilities, never raw navigator checks
+- Storage operations through `db.js` abstraction layer only
+- AI operations through `AIModelManager.js` only
+- Import order: React → External libs → Internal services → Components → Styles
+
+## 7. Performance & Bundle Optimization
+
+When adding dependencies or features:
+- Lazy load all AI modules (`ai-module` chunk in vite.config.js)
+- Lazy load map functionality (`map-module` chunk)
+- Keep initial bundle <200KB (check `size-budget.json`)
+- Use `React.lazy()` and `SuspenseWrapper` for route-level code splitting
+- Monitor bundle size with `scripts/analyze-bundle-size.js`
+- Prefer native Capacitor plugins over heavy JS libraries
+
+## 8. Testing Requirements
+
+Before marking complete:
+- Test on iOS device/simulator with offline mode
+- Test on Android device/emulator with offline mode
+- Verify AI model download resume after network interruption
+- Verify content pack install/uninstall flows
+- Test with low storage (quota exceeded scenarios)
+- Test with low battery (AI disable behavior)
+- Run `npm run lint` with zero errors

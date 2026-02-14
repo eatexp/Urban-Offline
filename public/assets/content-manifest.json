@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-08T19:22:25.885Z",
+  "generatedAt": "2026-02-14T07:26:19.995Z",
   "bundled": true,
   "packs": [
     {
@@ -22,12 +22,12 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors, licensed under CC-BY-SA 4.0",
-        "lastVerified": "2026-02-08"
+        "lastVerified": "2026-02-14"
       },
       "version": "1.0.0",
       "articleCount": 75,
-      "size": 19777289,
-      "sizeDisplay": "18.9 MB",
+      "size": 19743500,
+      "sizeDisplay": "18.8 MB",
       "dataUrl": "/assets/packs/medical-core.json",
       "bundled": true
     },
@@ -50,7 +50,7 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-08"
+        "lastVerified": "2026-02-14"
       },
       "version": "1.0.0",
       "articleCount": 8,
@@ -78,16 +78,16 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-08"
+        "lastVerified": "2026-02-14"
       },
       "version": "1.0.0",
       "articleCount": 6,
-      "size": 562517,
-      "sizeDisplay": "549 KB",
+      "size": 563798,
+      "sizeDisplay": "551 KB",
       "dataUrl": "/assets/packs/survival-core.json",
       "bundled": true
     }
   ],
   "totalArticles": 89,
-  "totalSize": 21203978
+  "totalSize": 21171470
 }

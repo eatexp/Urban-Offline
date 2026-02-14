@@ -1,0 +1,194 @@
+# Urban-Offline Cline Workflows
+# Offline-First Emergency Preparedness App
+# Vision: Locally AI × Kiwix Hybrid for iOS & Android
+
+## 1. AI Model Discovery & Acquisition
+
+**Trigger:** User opens ModelPicker.jsx or requests to download a new AI model
+
+**Steps:**
+1. **Browse** - Query `AIModelManager.getAvailableModels()` to list all models
+2. **Filter** - Allow filtering by tier (essential/standard/advanced/pro), language, specialty tags (medical/legal/survival)
+3. **Preview** - Display ModelCard with benchmarks, size, speed score, quality rating, and use case descriptions
+4. **Download** - Initiate progressive download with resume capability using background fetch patterns
+   - Track progress with `onProgress` callback
+   - Support pause/resume functionality
+   - Handle network interruptions gracefully
+5. **Validate** - Verify SHA-256 checksum after download completes
+6. **Activate** - Load model into memory via `AIModelManager.loadModel()`, update DatasetRegistry
+7. **Fallback** - If download fails, suggest alternative model from same or lower tier
+
+**Key Files:**
+- `src/components/ModelPicker.jsx`
+- `src/components/ModelCard.jsx`
+- `src/services/ai/AIModelManager.js`
+
+**Success Criteria:**
+- Download resumes after network interruption
+- Checksum validation passes before activation
+- Model appears in "Installed Models" list
+
+---
+
+## 2. Content Pack Lifecycle (ZIM/Kiwix Style)
+
+**Trigger:** User opens ContentBrowser or requests to download region content
+
+**Steps:**
+1. **Browse** - List available packs from `public/assets/content-manifest.json`
+2. **Preview** - Show pack metadata: size, content count, region coverage, version, last updated
+3. **Download** - Chunked download with progress indicator (reuse `tileManager.js` patterns)
+   - Display progress bar with MB downloaded / total MB
+   - Support background download on native platforms
+   - Handle storage quota checks before starting
+4. **Verify** - Validate SHA-256 checksum and content integrity
+5. **Index** - Generate embeddings for RAG search via `EmbeddingEngine.precomputeEmbeddings()`
+6. **Activate** - Register pack in `DatasetRegistry`, enable for search
+7. **Update** - Periodically check for delta updates (only download changed chunks)
+
+**Key Files:**
+- `src/components/ContentBrowser.jsx`
+- `src/services/DatasetRegistry.js`
+- `src/services/ai/EmbeddingEngine.js`
+- `scripts/fetch-content.js`
+
+**Success Criteria:**
+- Content searchable immediately after installation
+- Delta updates reduce bandwidth for subsequent versions
+- Uninstall removes all associated data and embeddings
+
+---
+
+## 3. Cross-Platform Feature Implementation
+
+**Trigger:** Adding new native functionality requiring iOS/Android support
+
+**Steps:**
+1. **Check** - Verify Capacitor plugin supports both iOS and Android platforms equally
+2. **Abstract** - Create service layer (e.g., `HapticsService.js`, `BatteryManager.js`)
+   - Wrap native plugin calls
+   - Provide consistent API across platforms
+   - Add fallback for web/PWA context
+3. **Implement** - Add platform-specific logic in service layer using `platform.js` utilities
+   - Use `isIOSNative()`, `isAndroidNative()` for platform-specific branching
+   - Keep platform detection centralized, never use raw navigator checks
+4. **Test iOS** - Verify on physical device or Xcode simulator
+   - Test native functionality works as expected
+   - Verify graceful degradation when permission denied
+5. **Test Android** - Verify on physical device or Android Studio emulator
+   - Test across multiple API levels (minimum API 24)
+   - Verify behavior matches iOS implementation
+6. **Document** - Add implementation notes to `CLAUDE.md`
+   - Platform-specific considerations
+   - Permission requirements
+   - Known limitations
+7. **Sign-off** - Both platforms working identically with feature parity checklist
+
+**Key Files:**
+- `src/utils/platform.js`
+- `src/services/HapticsService.js`
+- `CLAUDE.md`
+
+**Success Criteria:**
+- Feature works identically on iOS and Android
+- No platform-specific UI differences
+- Both platforms tested and signed off
+
+---
+
+## 4. Quality Assurance Loop (AI Response Quality)
+
+**Trigger:** After AI generates a response OR scheduled quality audit
+
+**Steps:**
+1. **Capture** - Log response data:
+   - Query text and classified intent
+   - Model used and generation time
+   - Response text and citations
+   - User feedback (thumbs up/down if provided)
+2. **Evaluate** - Check response quality:
+   - Citation accuracy (do sources support claims?)
+   - Response relevance to query intent
+   - Latency metrics (time to first token, total generation)
+3. **Compare** - A/B test different models on same query type:
+   - Run identical queries through different model tiers
+   - Compare accuracy, speed, and relevance scores
+   - Document findings for model selection optimization
+4. **Learn** - Update `IntentClassifier.js` heuristics:
+   - Adjust model selection based on query patterns
+   - Improve keyword matching for intent detection
+   - Refine routing logic between AI and fallback systems
+5. **Report** - Send telemetry to performance dashboard:
+   - Aggregate metrics by model and query type
+   - Track error rates and failure modes
+   - Monitor storage and memory usage
+6. **Refine** - Continuously improve:
+   - Retrain intent classifier with new labeled data
+   - Adjust RAG retrieval parameters (chunk size, overlap)
+   - Update system prompts based on user feedback
+
+**Key Files:**
+- `src/services/ai/IntentClassifier.js`
+- `src/services/ai/RAGPipeline.js`
+- `src/services/ai/AIModelManager.js`
+
+**Success Criteria:**
+- Response quality improves over time
+- Model selection optimizes for query type
+- Latency stays within acceptable bounds (<5s for medical queries)
+
+---
+
+## 5. Mobile Release Preparation
+
+**Trigger:** Pre-release validation before app store submission
+
+**Steps:**
+1. **Build iOS** - Create archive via Xcode:
+   - `npm run build` to generate web assets
+   - `npx cap sync ios` to copy to native project
+   - Open Xcode, archive for distribution
+   - Verify no build warnings or errors
+2. **Build Android** - Generate APK/AAB via Android Studio:
+   - `npm run build` to generate web assets
+   - `npx cap sync android` to copy to native project
+   - Build signed release bundle
+   - Verify ProGuard/R8 minification works
+3. **Test AI Pipeline** - Full end-to-end AI testing:
+   - Download and activate each model tier
+   - Test RAG pipeline with all content packs
+   - Verify streaming responses work correctly
+   - Confirm citations link to source content
+4. **Test Offline Mode** - Airplane mode testing:
+   - Enable airplane mode on both devices
+   - Verify all critical content accessible
+   - Test AI inference without network
+   - Confirm map tiles display from cache
+5. **Test Content Packs** - Install/uninstall flows:
+   - Install region pack on clean device
+   - Verify search works immediately
+   - Uninstall and confirm storage freed
+   - Re-install and verify no corruption
+6. **Test Edge Cases** - Resilience testing:
+   - Low storage: Quota exceeded handling
+   - Low battery: AI disable at <20%
+   - Interrupted download: Resume functionality
+   - Corrupted data: Recovery mechanisms
+7. **Sign-off** - Feature parity checklist:
+   - [ ] iOS: All features working
+   - [ ] Android: All features working
+   - [ ] UI identical on both platforms
+   - [ ] Performance acceptable on mid-range devices
+   - [ ] No console errors or warnings
+   - [ ] `npm run lint` passes with zero errors
+
+**Key Files:**
+- `capacitor.config.json`
+- `ios/App/App.xcodeproj`
+- `android/app/build.gradle`
+
+**Success Criteria:**
+- Both platforms build without errors
+- All tests pass on physical devices
+- Feature parity between iOS and Android
+- Ready for app store submission

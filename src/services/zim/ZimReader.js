@@ -8,8 +8,9 @@
  */
 
 import { createLogger } from '../../utils/logger';
-import { init as initZstd, decompress as decompressZstd } from 'zstddec';
-import { decompress as decompressLzma } from '@napi-rs/lzma';
+
+import { ZSTDDecoder } from 'zstddec';
+import { XzReadableStream } from 'xz-decompress';
 
 const log = createLogger('ZimReader');
 
@@ -19,9 +20,28 @@ let zstdDecoder = null;
 /**
  * Initialize ZSTD decoder
  */
+/**
+ * Initialize ZSTD decoder
+ */
 async function getZstdDecoder() {
   if (!zstdDecoder) {
-    zstdDecoder = await initZstd();
+    zstdDecoder = new ZSTDDecoder();
+
+    // Attempt to load from public/wasm first to avoid CSP issues with inlined WASM
+    try {
+      const response = await fetch('/wasm/zstddec.wasm');
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        const module = await WebAssembly.compile(buffer);
+        await zstdDecoder.init(module);
+        log.info('Loaded zstddec.wasm from external file');
+        return zstdDecoder;
+      }
+    } catch (e) {
+      log.warn('Failed to load external zstddec.wasm, falling back to inline', e);
+    }
+
+    await zstdDecoder.init();
   }
   return zstdDecoder;
 }
@@ -54,6 +74,31 @@ export class ZimReader {
     this.titlePtrList = null;
     this.clusterPtrList = null;
     this.articleCount = 0;
+
+    // XZ module instance
+    this.xzModule = null;
+  }
+
+  /**
+   * Get XZ module instance
+   */
+  async _getXzModule() {
+    if (this.xzModule) return this.xzModule;
+
+    // Try to load external WASM
+    try {
+      const response = await fetch('/wasm/xz-decompress.wasm');
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        const module = await WebAssembly.instantiate(buffer);
+        this.xzModule = module.instance;
+        log.info('Loaded xz-decompress.wasm from external file');
+        return this.xzModule;
+      }
+    } catch (e) {
+      log.warn('Failed to load external xz-decompress.wasm', e);
+    }
+    return null;
   }
 
   /**
@@ -538,8 +583,8 @@ export class ZimReader {
         // Priority: P2 | Effort: M (2-3 hours) | Impact: High (content availability)
         // =============================================================================
         try {
-          await getZstdDecoder(); // Ensure decoder is initialized
-          const decompressed = decompressZstd(data);
+          const decoder = await getZstdDecoder(); // Ensure decoder is initialized
+          const decompressed = decoder.decode(data);
           return new Uint8Array(decompressed);
         } catch (error) {
           log.error('Zstandard decompression failed', error);
@@ -549,15 +594,30 @@ export class ZimReader {
       case COMPRESSION_LZMA:
         // =============================================================================
         // VERIFIED: [P2][Performance] LZMA_XZ_COMPRESSION_IMPLEMENTATION
-        // Implementation: Integrated @napi-rs/lzma for LZMA/XZ decompression.
-        //   - Uses native Rust-based decompression via WASM
+        // Implementation: Integrated xz-decompress for LZMA/XZ decompression in browser.
+        //   - Uses WASM-based XzReadableStream
         //   - Supports legacy ZIM files with LZMA compression (type 3)
         //   - Maintains compatibility with older ZIM content sources
         // Priority: P3 | Effort: M (2-3 hours) | Impact: Medium
         // =============================================================================
         try {
-          const decompressed = await decompressLzma(data);
-          return new Uint8Array(decompressed);
+          // Attempt to preload custom WASM module to avoid data: URI issues
+          const customXzModule = await this._getXzModule();
+          if (customXzModule) {
+            // Inject the custom module instance into the XzReadableStream static property
+            // This relies on the internal implementation detail of xz-decompress
+            if (!XzReadableStream._moduleInstance) {
+              XzReadableStream._moduleInstance = customXzModule;
+              log.debug('Injected custom XZ WASM module into XzReadableStream');
+            }
+          }
+
+          // Create a stream from the compressed data
+          const stream = new Response(data).body;
+          // Pipe through XZ decompressor
+          const decompressedStream = new XzReadableStream(stream);
+          // Read result back into buffer
+          return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
         } catch (error) {
           log.error('LZMA decompression failed', error);
           throw new Error(`Failed to decompress LZMA data: ${error.message}`);
@@ -721,6 +781,22 @@ export class ZimArticle {
       log.warn(`Failed to read content for "${this.title}": ${error.message}`);
       return null;
     }
+  }
+
+  /**
+   * Get article content as Semantic Markdown via The Refinery.
+   * Preserves structure (headers, lists, emphasis, tables) while
+   * stripping boilerplate — optimized for LLM context windows.
+   *
+   * @param {Object} [options] — Options passed to refine()
+   * @param {number} [options.tokenBudget=800] — Max tokens in output
+   * @returns {Promise<{ markdown: string, meta: Object }>}
+   */
+  async getMarkdown(options = {}) {
+    const html = await this.getContent();
+    if (!html) return { markdown: '', meta: {} };
+    const { refine } = await import('../refinery/Refinery.js');
+    return refine(html, options);
   }
 
   /**

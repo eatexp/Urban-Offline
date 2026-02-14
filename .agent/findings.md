@@ -1,169 +1,268 @@
+# Urban-Offline Codebase Investigation Findings
+
+**Investigation Date:** 2026-02-14  
+**Investigator:** Cline AI  
+**Scope:** Full codebase review for bugs, performance issues, code quality, and resilience gaps
+
+---
+
 # Execution Plan (for Prompt 2 AI)
-Updated: 2026-02-05
+Updated: 2026-02-14 06:45 UTC
 
 ## Batch 1 (do first — blocks other work or fixes crashes)
-- Finding 1: HybridSearch Dynamic Import Conflict — Blocks proper code splitting, causes bundle bloat
-- Finding 4: ZIM Zstandard/LZMA Compression Not Implemented — Critical content availability issue
-- Finding 5: Content Sync Offline Detection Gap — Can cause infinite retry loops when offline
+- Finding 3: [Test Files Missing Vitest Import] — Tests won't run without proper imports
+- Finding 6: [RAGPipeline Semantic Search Missing Retry] — Silent failures affect AI reliability
 
 ## Batch 2 (do next — high value improvements)
-- Finding 2: AI Module Chunk Size (967KB) — Performance concern for mobile/low-bandwidth
-- Finding 6: Missing Embeddings Store in WebStorage — Semantic search persistence broken
-- Finding 7: NativeSearch Category Hardcoded — Search results inaccurate on native platforms
+- Finding 1: [React Hook Exhaustive Deps Warnings] — Fix dependency arrays to prevent stale closures
+- Finding 2: [Unused Import Cleanup] — Remove dead code for cleaner bundles
+- Finding 4: [Fast Refresh Context Export Issues] — Split context exports for better HMR
 
 ## Batch 3 (do when time allows)
-- Finding 3: TransformersEngine eval() Security Warning — Security hardening
-- Finding 8: TriageScreen Desktop Layout — UX improvement
-- Finding 9: ProtocolView Accessibility Gaps — ARIA labels missing
+- Finding 5: [Native Storage Quota Event Inconsistency] — Minor UX improvement for error handling
+- Finding 7: [TransformersEngine Checksum TODO] — Implement actual checksum verification
+- Finding 8: [Logger Production Check Issue] — Fix environment detection logic
+
+---
 
 ## Context the Executor needs
 - Build command: `npm run build`
 - Dev server: `npm run dev`
-- Key patterns: 
-  - Logger pattern: `const log = createLogger('ComponentName')`
-  - Error handling: Dispatch CustomEvent for UI notifications
-  - Platform detection: `Capacitor.isNativePlatform()`
-  - Storage abstraction: db.get/store with quota error normalization
+- Key patterns:
+  - Logger: Use `createLogger('ComponentName')` from `src/utils/logger.js`
+  - Platform detection: Use utilities from `src/utils/platform.js`, never raw navigator checks
+  - Storage: Use `db.js` abstraction layer only
+  - AI operations: Route through `AIModelManager.js`
+  - Import order: React → External libs → Internal services → Components → Styles
 - Files that are fragile / heavily depended on:
-  - `src/services/db.js` — Platform abstraction layer
-  - `src/services/ai/RAGPipeline.js` — Core AI functionality
-  - `src/services/clawdBot/ToolRegistry.js` — All tool definitions
-  - `src/services/zim/ZimReader.js` — Content import critical path
+  - `src/services/db.js` - Central storage abstraction
+  - `src/services/ai/AIModelManager.js` - AI model lifecycle
+  - `src/services/ai/RAGPipeline.js` - Core AI query processing
+  - `src/services/ai/TransformersEngine.js` - LLM inference engine
 
 ---
 
-## Finding 1: HybridSearch Dynamic Import Conflict
+## Finding 1: React Hook Exhaustive Deps Warnings
 - **File(s):** 
-  - `src/services/clawdBot/DevToolRegistry.js:1` (3 dynamic imports)
-  - `src/services/clawdBot/ToolRegistry.js:1` (1 dynamic import)
-  - `src/components/Search.jsx:1` (static import)
-- **Severity:** HIGH
-- **Category:** performance
-- **Current behavior:** Vite build warns: "HybridSearch.js is dynamically imported by DevToolRegistry.js but also statically imported by Search.jsx, dynamic import will not move module into another chunk." This means the code splitting optimization is defeated.
-- **Expected/better behavior:** Module should be consistently imported (either all dynamic or all static) to allow proper chunking and reduce initial bundle size.
-- **Evidence:** Build output shows warning repeated 3 times. The ai-module chunk is 967KB (nearly 1MB), partially due to this issue.
-- **Suggested fix:** 
-  1. Remove dynamic imports from DevToolRegistry.js and ToolRegistry.js for HybridSearch
-  2. Import HybridSearch statically at top of files
-  3. OR make Search.jsx also use dynamic import (less ideal for search UX)
-- **Dependencies:** None
-
-## Finding 2: AI Module Chunk Size Exceeds 500KB Warning Threshold
-- **File(s):** `vite.config.js:30-40`, `src/services/ai/AIArchitecture.js:1`
+  - `src/components/AmbientStatusBar.jsx:36`
+  - `src/components/SurvivalModeOverlay.jsx:76`
+  - `src/components/ZimImportManager.jsx:27`
+  - `src/hooks/useChatSession.js:53`
+  - `src/pages/AIModels.jsx:83`
 - **Severity:** MEDIUM
-- **Category:** performance
-- **Current behavior:** Build warns: "Some chunks are larger than 500 kB after minification." The ai-module chunk is 967KB (242KB gzipped). This includes TransformersEngine, AIModelManager, RAGPipeline.
-- **Expected/better behavior:** Split ai-module into smaller chunks: embeddings (23MB model), LLM inference, RAG pipeline separately. Target <500KB per chunk.
-- **Evidence:** Build output: `assets/ai-module-C086Mk10.js 966.95 kB │ gzip: 242.41 kB`. The vite.config.js manualChunks already attempts to split but includes too much in 'ai-module'.
-- **Suggested fix:** 
-  1. Create separate chunks: 'ai-embeddings', 'ai-inference', 'ai-rag'
-  2. Move EmbeddingEngine to 'ai-embeddings' chunk (smaller, loads first)
-  3. Keep TransformersEngine in 'ai-inference' (larger, loads on demand)
-- **Dependencies:** None
-
-## Finding 3: TransformersEngine Uses eval() - Security Risk
-- **File(s):** `node_modules/onnxruntime-web/dist/ort-web.min.js:6:62546` (via `src/services/ai/TransformersEngine.js:15`)
-- **Severity:** MEDIUM
-- **Category:** security
-- **Current behavior:** Build warns: "Use of eval in ort-web.min.js is strongly discouraged as it poses security risks and may cause issues with minification." This comes from the @xenova/transformers dependency.
-- **Expected/better behavior:** Either configure CSP to allow eval for this specific case, or document the security implications. The FIXME comment in TransformersEngine.js acknowledges Windows incompatibility but not the eval issue.
-- **Evidence:** Build output shows warning twice. TransformersEngine.js has FIXME comment about Windows native incompatibility.
-- **Suggested fix:** 
-  1. Add CSP headers in index.html allowing 'unsafe-eval' for script-src (documented security trade-off)
-  2. OR add vite.config.js option to suppress this specific warning if accepted
-  3. Document in SECURITY.md that eval is required for ONNX runtime
-- **Dependencies:** None
-
-## Finding 4: ZIM Reader Missing Zstandard and LZMA Compression Support
-- **File(s):** `src/services/zim/ZimReader.js:280-320`
-- **Severity:** HIGH
-- **Category:** feature-gap
-- **Current behavior:** When encountering Zstd (type 5) or LZMA (type 3) compressed ZIM files, throws error: "Zstandard compression not yet implemented" or "LZMA/XZ compression not yet implemented". Many modern ZIM files use zstd for better compression.
-- **Expected/better behavior:** Should decompress zstd and lzma compressed content. This is critical for accessing modern Wikipedia ZIM dumps.
-- **Evidence:** Code explicitly throws errors for COMPRESSION_ZSTD (5) and COMPRESSION_LZMA (3). Only COMPRESSION_NONE (0) and COMPRESSION_ZLIB (1) are implemented.
-- **Suggested fix:** 
-  1. `npm install zstddec-wasm` for zstd support (priority)
-  2. `npm install xzdec-wasm` or `lzma-js` for lzma support
-  3. Implement `_decompressZstd()` and `_decompressLzma()` methods following pattern of existing `_decompressZlib()`
-  4. Test with actual ZIM files from https://download.kiwix.org/zim/
-- **Dependencies:** Requires npm package installation, so should be done after build verification
-
-## Finding 5: Content Sync Missing Offline Status Check Before Retry
-- **File(s):** `src/services/contentSync.js` (referenced in TODO comment)
-- **Severity:** HIGH
-- **Category:** resilience
-- **Current behavior:** TODO comment states: "Retry mechanism doesn't check navigator.onLine before scheduling" - can cause infinite retry loops when offline, wasting battery and creating noise in logs.
-- **Expected/better behavior:** Before scheduling any retry, check `navigator.onLine`. If offline, wait for 'online' event before attempting retry.
-- **Evidence:** Found TODO comment: `// TODO: [P1][Resilience] CONTENT_SYNC_OFFLINE_DETECTION`. The contentSync.js file handles background content synchronization.
-- **Suggested fix:** 
-  1. Add `if (!navigator.onLine) { queueForOnlineRetry(); return; }` at start of retry function
-  2. Listen for window 'online' event to trigger queued retries
-  3. Add exponential backoff with max retry limit (e.g., 5 attempts)
-- **Dependencies:** None
-
-## Finding 6: EmbeddingEngine Uses Non-existent 'embeddings_cache' Store
-- **File(s):** `src/services/ai/EmbeddingEngine.js:30`, `src/services/storage/WebStorage.js:1`
-- **Severity:** HIGH
-- **Category:** bug
-- **Current behavior:** EmbeddingEngine defines `const EMBEDDINGS_STORE = 'embeddings_cache'` and tries to use `db.get(EMBEDDINGS_STORE, key)`, but WebStorage.js doesn't define this store in `initDB()`. The `_getFromCache()` and `_saveToCache()` methods silently fail.
-- **Expected/better behavior:** Should store computed embeddings in IndexedDB to avoid recomputing on every session. Currently embeddings are only cached in-memory (lost on refresh).
+- **Category:** code-quality
+- **Current behavior:** ESLint warns about missing dependencies in useEffect hooks. These can cause stale closure bugs where the effect uses outdated values.
+- **Expected/better behavior:** All dependencies should be properly declared in dependency arrays, or use `useCallback`/`useMemo` to stabilize callbacks.
 - **Evidence:** 
-  - EmbeddingEngine.js line 30: `const EMBEDDINGS_STORE = 'embeddings_cache'`
-  - WebStorage.js creates stores: datasets, data_content, guides, guide_content, map_tiles, health_content, survival_content, law_content, search_index, ai_models, content_packs, dataset_preferences, user_context, ink_stories, clawdBot_memory — NO 'embeddings_cache'
+  ```
+  src/components/AmbientStatusBar.jsx:36 - missing dependency: 'context'
+  src/components/SurvivalModeOverlay.jsx:76 - missing: 'batteryLevel', 'currentModel', 'isActive', 'isCharging'
+  src/hooks/useChatSession.js:53 - missing dependency: 'loadHistory'
+  src/pages/AIModels.jsx:83 - missing dependency: 'refreshModels'
+  ```
 - **Suggested fix:** 
-  1. Add to WebStorage.js initDB(): `if (!db.objectStoreNames.contains('embeddings_cache')) { db.createObjectStore('embeddings_cache', { keyPath: 'id' }); }`
-  2. Bump DB_VERSION from 5 to 6
+  - For `AmbientStatusBar.jsx:36`: Either add `context` to deps or refactor to use individual state values
+  - For `SurvivalModeOverlay.jsx:76`: The `useEffect` at line 76 uses `queueMicrotask` pattern but ESLint doesn't recognize it - add explicit deps
+  - For `useChatSession.js:53`: Wrap `loadHistory` in `useCallback` or move function definition inside useEffect
+  - For `AIModels.jsx:83`: Wrap `refreshModels` in `useCallback`
 - **Dependencies:** None
 
-## Finding 7: NativeSearch Returns Hardcoded 'general' Category
-- **File(s):** `src/services/search/NativeSearch.js` (referenced in TODO)
-- **Severity:** MEDIUM
-- **Category:** bug
-- **Current behavior:** TODO comment: "Search results use hardcoded 'general' fallback for category" — NativeSearch doesn't properly categorize results from SQLite, breaking category filtering.
-- **Expected/better behavior:** Should extract actual category from the database (health_content, survival_content, law_content tables) and return it in search results.
-- **Evidence:** Found TODO: `// TODO: [P4][Quality] NATIVE_SEARCH_CATEGORY_COLUMN`. The WebSearch.js properly categorizes by store name, but NativeSearch likely doesn't.
-- **Suggested fix:** 
-  1. Read NativeSearch.js implementation
-  2. Modify SQLite query to include category column
-  3. Map table name to category in results
-- **Dependencies:** Requires reading NativeSearch.js to understand current implementation
+---
 
-## Finding 8: TriageScreen Desktop Layout Suboptimal
-- **File(s):** `src/components/TriageScreen.jsx:20-35`
+## Finding 2: Unused Imports in Production Code
+- **File(s):**
+  - `src/services/ai/AIModelManager.js:20` - `verifyChecksum`, `computeChecksumFromStream`
+  - `src/services/DownloadCheckpoint.js:12` - `isValidChecksumFormat`
 - **Severity:** LOW
 - **Category:** code-quality
-- **Current behavior:** TODO comment notes: "60vh may be too small on large screens", "Choice buttons could use horizontal layout on desktop", "Font sizes may be too large for desktop viewing"
-- **Expected/better behavior:** Responsive design that uses more space on desktop while maintaining mobile usability.
-- **Evidence:** TODO comment with detailed gap analysis. Current height classes: `h-[70vh] sm:h-[75vh] md:h-[80vh] lg:max-h-[600px]` — the max-h constraint wastes space on large screens.
+- **Current behavior:** Functions are imported but never called. The TODO comment in AIModelManager.js at line 352 admits checksum verification is not implemented.
+- **Expected/better behavior:** Either implement the functionality or remove unused imports to reduce bundle size and confusion.
+- **Evidence:** ESLint warnings:
+  ```
+  'verifyChecksum' is defined but never used
+  'computeChecksumFromStream' is defined but never used
+  'isValidChecksumFormat' is defined but never used
+  ```
 - **Suggested fix:** 
-  1. Remove `lg:max-h-[600px]` constraint
-  2. Add `lg:flex-row` for side-by-side content/choices layout on wide screens
-  3. Add media query for font size scaling
+  - Option A: Implement checksum verification in `AIModelManager._downloadWithValidation()` (lines ~350-360)
+  - Option B: Remove imports and the TODO comment if checksum verification is deferred
 - **Dependencies:** None
 
-## Finding 9: ProtocolView Missing ARIA Labels and Speech Synthesis Error Handling
-- **File(s):** `src/components/ProtocolView.jsx` (referenced in TODOs)
+---
+
+## Finding 3: Test Files Missing Vitest Import
+- **File(s):**
+  - `src/services/DownloadCheckpoint.test.js` (14 instances of 'vi' not defined)
+  - `src/services/contentPacks/ContentPackManager.test.js` (42 instances)
+  - `src/utils/checksum.test.js` (9 instances)
+- **Severity:** HIGH
+- **Category:** bug
+- **Current behavior:** Test files use `vi.fn()`, `vi.mock()`, `vi.clearAllMocks()` without importing `vi` from vitest. Tests will fail to run.
+- **Expected/better behavior:** All test files should import: `import { vi, describe, it, expect } from 'vitest';`
+- **Evidence:** ESLint errors:
+  ```
+  'vi' is not defined  no-undef
+  ```
+  Count: 65 total violations across 3 test files.
+- **Suggested fix:** Add `import { vi } from 'vitest';` to the top of each test file.
+- **Dependencies:** None
+
+---
+
+## Finding 4: Fast Refresh Context Export Issues
+- **File(s):**
+  - `src/context/AppProvider.jsx:10`
+  - `src/contexts/AIGeneratingContext.jsx:19`
 - **Severity:** MEDIUM
 - **Category:** code-quality
-- **Current behavior:** Two TODOs: (1) "Checkboxes lack aria-labels and are visually hidden" - accessibility issue, (2) "onerror callback only resets speaking state but doesn't inform user" - UX gap
-- **Expected/better behavior:** Checkboxes should have proper ARIA labels for screen readers. Speech synthesis errors should show user-facing error message.
-- **Evidence:** TODO comments found in search. ProtocolView.jsx handles text-to-speech for emergency protocols.
-- **Suggested fix:** 
-  1. Add `aria-label` attributes to checkboxes describing the step
-  2. Add error state UI when speech synthesis fails (e.g., "Speech unavailable, please read instructions")
+- **Current behavior:** Files export both React components AND non-component values (contexts, hooks). This breaks React Fast Refresh (HMR) during development.
+- **Expected/better behavior:** Move context creation and hook exports to separate files, keeping component files as pure component exports.
+- **Evidence:** ESLint warnings:
+  ```
+  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file
+  ```
+- **Suggested fix:**
+  - Split `AppProvider.jsx` into:
+    - `AppContext.jsx` - exports `AppContext`
+    - `useApp.js` - exports `useApp` hook  
+    - `AppProvider.jsx` - exports only `AppProvider` component
+  - Similarly split `AIGeneratingContext.jsx`
 - **Dependencies:** None
 
-## Finding 10: DataManager and articleService Dynamic Import Conflicts
-- **File(s):** 
-  - `src/services/clawdBot/DevToolRegistry.js` (dynamic import)
-  - `src/services/dataManager.js` (static import in MapComponent.jsx, Home.jsx, Resources.jsx, router.jsx)
-  - `src/services/articleService.js` (static import in router.jsx)
-- **Severity:** MEDIUM
-- **Category:** performance
-- **Current behavior:** Same issue as Finding 1 — dataManager.js and articleService.js are dynamically imported by DevToolRegistry but statically imported elsewhere. Vite warns this defeats code splitting.
-- **Expected/better behavior:** Consistent import pattern to allow proper tree shaking and chunk optimization.
-- **Evidence:** Build output: "dataManager.js is dynamically imported by DevToolRegistry.js but also statically imported..." and "articleService.js is dynamically imported..."
-- **Suggested fix:** 
-  1. Remove dynamic imports from DevToolRegistry.js for dataManager and articleService
-  2. Import statically at top of file
+---
+
+## Finding 5: Native Storage Quota Event Inconsistency
+- **File(s):** `src/services/db.js:60-75`
+- **Severity:** LOW
+- **Category:** resilience
+- **Current behavior:** In the native platform wrapper, when `QuotaExceededError` occurs, the error is enhanced but NOT dispatched to the window like the web platform does. Web platform dispatches `storage-quota-warning` event but native doesn't.
+- **Expected/better behavior:** Both platforms should dispatch the same event for consistent UI handling of quota errors.
+- **Evidence:** Code comparison:
+  ```javascript
+  // Web platform (lines ~35-45 in db.js) - dispatches event:
+  if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('storage-quota-warning', {...}));
+  }
+  
+  // Native platform (lines ~60-75 in db.js) - no event dispatch:
+  const enhancedError = new Error(`Storage quota exceeded...`);
+  throw enhancedError;
+  ```
+- **Suggested fix:** Add event dispatch to native platform's quota error handling in `db.js` put() method.
 - **Dependencies:** None
+
+---
+
+## Finding 6: RAGPipeline Semantic Search Missing Retry/Notification
+- **File(s):** `src/services/ai/RAGPipeline.js:66-72`
+- **Severity:** HIGH
+- **Category:** resilience
+- **Current behavior:** When semantic search initialization fails, it silently falls back to keyword search with only a console warning. Users don't know they're getting lower-quality search results.
+- **Expected/better behavior:** 
+  - Show a toast/notification when semantic search fails
+  - Provide a retry mechanism in settings
+  - Log the failure for debugging
+- **Evidence:** Code comment at line 66:
+  ```javascript
+  // TODO: [Resilience] SEMANTIC_SEARCH_FAILURE_SILENT - LOW 2026-02-12
+  // When semantic search fails to initialize, we silently fall back to keyword search.
+  // However, there's no retry mechanism or user notification.
+  ```
+- **Suggested fix:** 
+  1. Add a user-facing notification when semantic search fails
+  2. Store failure state in ContextManager for settings page to show retry button
+  3. Add `RAGPipeline.retrySemanticSearch()` method
+- **Dependencies:** None
+
+---
+
+## Finding 7: TransformersEngine Checksum Verification Not Implemented
+- **File(s):** `src/services/ai/TransformersEngine.js` (cache checking), `src/services/ai/AIModelManager.js:352-360`
+- **Severity:** MEDIUM
+- **Category:** feature-gap
+- **Current behavior:** Models have SHA-256 checksums defined in `TRANSFORMERS_MODELS`, but verification is never performed. The `isModelCached()` method only checks if files exist, not if they're valid.
+- **Expected/better behavior:** After model download, compute checksum of cached files and compare against expected value in model config.
+- **Evidence:** 
+  - Checksums defined for all models (e.g., `checksum: '454394e1f92c1479bf71926b2cc845a3e29040c0844ba0d97ce693a390bca40c'`)
+  - Comment in AIModelManager.js: `// TODO: Implement direct cache file access for checksum verification`
+  - `verifyChecksum` and `computeChecksumFromStream` imported but unused
+- **Suggested fix:** 
+  1. After model download completes, compute checksum of cached model files
+  2. Compare against `TRANSFORMERS_MODELS[modelId].checksum`
+  3. On mismatch, clear cache and retry download
+  4. Mark `checksumVerified: true` in metadata on success
+- **Dependencies:** Finding 2 (remove unused imports OR implement the functionality)
+
+---
+
+## Finding 8: Logger Environment Detection Logic Issue
+- **File(s):** `src/utils/logger.js:18-19`
+- **Severity:** LOW
+- **Category:** code-quality
+- **Current behavior:** Production detection uses `globalThis.process?.env?.NODE_ENV` which may not work correctly in all environments (browser vs node).
+- **Expected/better behavior:** More robust environment detection that works consistently in Vite builds.
+- **Evidence:** Code:
+  ```javascript
+  const isProduction = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) ||
+      (typeof globalThis !== 'undefined' && globalThis.process?.env?.NODE_ENV === 'production');
+  ```
+- **Suggested fix:** For Vite projects, rely primarily on `import.meta.env.PROD`. The `globalThis.process` check is for Node.js compatibility but may cause issues in browser environments.
+- **Dependencies:** None
+
+---
+
+## Finding 9: DownloadCheckpoint Unused Function
+- **File(s):** `src/services/DownloadCheckpoint.js:12`
+- **Severity:** LOW
+- **Category:** code-quality
+- **Current behavior:** `isValidChecksumFormat` function is defined but never used.
+- **Expected/better behavior:** Either use it to validate checksums before storage, or remove it.
+- **Evidence:** ESLint warning: `'isValidChecksumFormat' is defined but never used`
+- **Suggested fix:** Remove the function or integrate it into checksum validation flow.
+- **Dependencies:** None
+
+---
+
+## Finding 10: useChatSession Hook Missing Cleanup in switchSession
+- **File(s):** `src/hooks/useChatSession.js:99-115`
+- **Severity:** MEDIUM
+- **Category:** bug
+- **Current behavior:** `switchSession` doesn't set `abortControllerRef.current = null` after aborting, unlike `createNewSession` which does. This could lead to inconsistent state.
+- **Expected/better behavior:** Consistent cleanup pattern across all session-switching functions.
+- **Evidence:** Compare lines 82-86 (createNewSession) vs 107-112 (switchSession):
+  ```javascript
+  // createNewSession - clears ref
+  if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;  // <-- This is present
+  }
+  
+  // switchSession - missing null assignment
+  if (abortControllerRef.current) {
+      log.info('Switching Session: Aborting active generation');
+      abortControllerRef.current.abort();
+      // <-- Missing: abortControllerRef.current = null;
+  }
+  ```
+- **Suggested fix:** Add `abortControllerRef.current = null;` after the abort() call in switchSession.
+- **Dependencies:** None
+
+---
+
+## Summary Statistics
+- Total Findings: 10
+- CRITICAL: 0
+- HIGH: 2 (Test imports, RAGPipeline silent failures)
+- MEDIUM: 5 (Hook deps, Fast Refresh, useChatSession cleanup)
+- LOW: 3 (Unused imports, quota events, logger detection)
+
+## Build Status
+- Current build: Running (content fetch in progress)
+- Lint: 88 warnings, 0 errors
+- Test status: Unknown (tests won't run due to missing vitest imports)
+
+## Recommendations
+1. **Immediate:** Fix Finding 3 (test imports) so tests can run
+2. **High Priority:** Address Finding 6 (RAGPipeline resilience) for production AI reliability
+3. **Medium Priority:** Fix React hook dependency warnings (Finding 1) to prevent runtime bugs
+4. **Cleanup:** Remove unused imports (Finding 2, 9) when convenient

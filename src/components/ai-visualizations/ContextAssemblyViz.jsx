@@ -102,11 +102,15 @@ export default function ContextAssemblyViz({ chunks = [], active = false }) {
 
     useEffect(() => {
         if (!active || chunks.length === 0) {
-            setVisibleCount(0);
+            queueMicrotask(() => {
+                setVisibleCount(0);
+            });
             return;
         }
 
-        setVisibleCount(0);
+        queueMicrotask(() => {
+            setVisibleCount(0);
+        });
         const timers = chunks.map((_, i) =>
             setTimeout(() => setVisibleCount(i + 1), 150 * (i + 1))
         );

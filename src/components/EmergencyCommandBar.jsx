@@ -10,9 +10,9 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { triggerHaptic } from '../utils/haptics';
 import { useNavigate } from 'react-router-dom';
 import { Search, Heart, Wind, Droplets, AlertTriangle, ChevronRight, X } from 'lucide-react';
+import { HapticsService, ImpactStyle } from '../services/HapticsService';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { TRIAGE_STORIES } from '../config/intentPatterns';
 
@@ -60,7 +60,7 @@ const EmergencyCommandBar = () => {
 
     // Navigate to triage story - MOVED BEFORE handleKeyDown to fix hoisting issue
     const handleSuggestionClick = useCallback((suggestion) => {
-        triggerHaptic('heavy');
+        HapticsService.impact(ImpactStyle.Medium);
         setQuery('');
         setSuggestions([]);
         navigate(`/triage/${suggestion.story}`, {
@@ -80,7 +80,7 @@ const EmergencyCommandBar = () => {
                 }
             }
         };
-        
+
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
@@ -88,7 +88,9 @@ const EmergencyCommandBar = () => {
     // Search for matching triage stories as user types
     useEffect(() => {
         if (query.length < 2) {
-            setSuggestions([]);
+            queueMicrotask(() => {
+                setSuggestions([]);
+            });
             return;
         }
 
@@ -118,8 +120,10 @@ const EmergencyCommandBar = () => {
 
         // Sort by score (urgency * keyword matches) descending
         matches.sort((a, b) => b.score - a.score);
-        setSuggestions(matches.slice(0, 5));
-        setHighlightedIndex(-1);
+        queueMicrotask(() => {
+            setSuggestions(matches.slice(0, 5));
+            setHighlightedIndex(-1);
+        });
     }, [query]);
 
     // Handle keyboard navigation
@@ -152,18 +156,18 @@ const EmergencyCommandBar = () => {
                 inputRef.current?.blur();
                 break;
         }
-    }, [suggestions, highlightedIndex]);
+    }, [suggestions, highlightedIndex, handleSuggestionClick]);
 
     // Navigate to triage story
 
 
     // Handle critical action button click
     const handleCriticalAction = useCallback((action) => {
-        triggerHaptic('heavy');
+        HapticsService.impact(ImpactStyle.Heavy);
         navigate(action.route, {
             state: { urgency: TRIAGE_STORIES[action.key]?.urgency || 10 }
         });
-    }, [navigate, triggerHaptic]);
+    }, [navigate]);
 
     const getUrgencyColor = (urgency) => {
         if (urgency >= 9) return 'from-red-600 to-red-700';
@@ -174,9 +178,9 @@ const EmergencyCommandBar = () => {
     const showSuggestions = isFocused && suggestions.length > 0;
 
     return (
-        <div 
-            className="emergency-command-bar animate-scale-in" 
-            role="search" 
+        <div
+            className="emergency-command-bar animate-scale-in"
+            role="search"
             aria-label="Emergency quick access"
         >
             {/* Header */}
@@ -231,7 +235,7 @@ const EmergencyCommandBar = () => {
 
                 {/* Suggestions Dropdown */}
                 {showSuggestions && (
-                    <div 
+                    <div
                         className="emergency-suggestions"
                         role="listbox"
                         aria-label="Emergency guide suggestions"

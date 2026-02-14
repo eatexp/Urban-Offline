@@ -122,7 +122,7 @@ export default function GenerationStreamViz({
     fullText = '',
     citations = [],
     generating = false,
-    usedFallback = false
+    _usedFallback = false
 }) {
     const [displayedWords, setDisplayedWords] = useState(0);
     const containerRef = useRef(null);
@@ -144,7 +144,9 @@ export default function GenerationStreamViz({
             const newWords = words.length;
             const startFrom = Math.min(prevWordCount, newWords);
 
-            setDisplayedWords(startFrom);
+            queueMicrotask(() => {
+                setDisplayedWords(startFrom);
+            });
 
             // Reveal words progressively
             if (startFrom < newWords) {

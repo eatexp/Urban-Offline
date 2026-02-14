@@ -2,7 +2,7 @@
 // Compiles all .ink source files to .ink.json
 
 import { execSync } from 'child_process';
-import { readdirSync, existsSync, mkdirSync, chmodSync, readFileSync, writeFileSync } from 'fs';
+import { readdirSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname, basename, relative } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -57,10 +57,10 @@ function compileInkFile(sourceFile, compilerPath) {
         }
 
         return { success: true, file: sourceFile };
-    } catch (e) {
-        console.error(`  ❌ Error: ${e.message}`);
-        if (e.stderr) console.error(`  Stderr: ${e.stderr}`);
-        return { success: false, file: sourceFile, error: e.message };
+    } catch (_e) {
+        console.error(`  ❌ Error: ${_e.message}`);
+        if (_e.stderr) console.error(`  Stderr: ${_e.stderr}`);
+        return { success: false, file: sourceFile, error: _e.message };
     }
 }
 
@@ -80,7 +80,7 @@ async function main() {
             const { createRequire } = await import('module');
             const require = createRequire(import.meta.url);
             compilerPath = join(dirname(require.resolve('inkjs/package.json')), 'bin', 'inkjs-compiler.js');
-        } catch (e) {
+        } catch (_e) {
             console.error('❌ inkjs compiler not found.');
             process.exit(1);
         }

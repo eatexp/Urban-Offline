@@ -8,6 +8,7 @@
 import { classifyIntent } from '../ai/IntentClassifier';
 import { toolRegistry } from './ToolRegistry';
 import { createLogger } from '../../utils/logger';
+import { cartridgePOIQueryEngine } from '../maps/CartridgePOIQueryEngine';
 
 const log = createLogger('clawdBot:ActionRouter');
 
@@ -116,11 +117,43 @@ const ACTION_PATTERNS = [
     }
   },
 
-  // Map patterns
+  // Map patterns - POI-aware
   {
     patterns: ['map', 'show map', 'where is', 'find nearest', 'locate', 'directions to'],
     tool: 'show_map_location',
     extractParams: (query) => {
+      // Extract location keywords by removing trigger words
+      const keywords = query
+        .replace(/where is|find|locate|show me|directions to|find nearest|show map|map/gi, '')
+        .trim();
+      
+      // Try POI search first (if keywords extracted)
+      if (keywords && keywords.length > 2) {
+        try {
+          const poiResult = cartridgePOIQueryEngine.queryPOI(keywords);
+          
+          if (poiResult && poiResult.confidence > 0.5) {
+            // High-confidence POI match - return enriched params
+            log.info('POI match found in ActionRouter', { 
+              poi: poiResult.poi.name, 
+              confidence: poiResult.confidence 
+            });
+            
+            return {
+              location: poiResult.poi.name,
+              coords: poiResult.poi.coords,
+              zoom: 16,
+              isPOI: true,
+              poiType: poiResult.poi.type
+            };
+          }
+        } catch (e) {
+          log.warn('POI query failed in ActionRouter', e);
+          // Fall through to pattern matching
+        }
+      }
+      
+      // Fallback: Current pattern matching behavior
       const locations = {
         'hospitals': /hospital|medical|emergency room|er/i,
         'shelters': /shelter|safe place|evacuation/i,

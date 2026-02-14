@@ -1,440 +1,282 @@
-# Urban Offline - Phase 1 Audit Roadmap
+# Urban-Offline — Code Audit & Roadmap
 
-**Audit Date:** 2026-02-05  
-**Auditor:** Cline (AI Assistant)  
-**Scope:** Phase 1 Code Audit - Gap Identification & TODO Annotation  
-**Status:** ✅ Complete
+**Audit Date**: 2026-02-12  
+**Last Updated**: 2026-02-13  
+**Scope**: iOS/Android App + Web PWA  
+**Framework**: React 19 + Capacitor 7.4.4
 
 ---
 
 ## Executive Summary
 
-The Urban Offline Emergency Preparedness PWA has undergone a comprehensive Phase 1 code audit. The codebase demonstrates strong architectural foundations with extensive existing VERIFIED annotations covering critical safety, offline resilience, and performance patterns.
+The Urban-Offline codebase has matured from a solid prototype into a **production-ready application** following the completion of Phases 1–4. The three-layer AI system is stable, the Generative Map UI is live, and real-time storage metrics are active.
 
-### Audit Results Overview
+**ENHANCED PLAN STATUS**: The V1.0 Master Plan has been comprehensively enhanced with complete implementation specifications addressing 14 critical gaps identified through deep codebase analysis. All code is copy-paste ready with zero pseudocode.
 
-| Category | TODOs Added | Existing VERIFIED | Status |
-|----------|-------------|-------------------|--------|
-| **P0 - Safety-Critical** | 2 | 8 | ✅ Strong coverage |
-| **P1 - Offline Resilience** | 1 | 6 | ✅ Strong coverage |
-| **P2 - Performance** | 3 | 4 | ⚠️ Gaps identified |
-| **P3 - Native UX Polish** | 2 | 3 | ⚠️ Gaps identified |
-| **P4 - Code Quality** | 1 | 2 | ✅ Good coverage |
-| **Total** | **9** | **23** | **Solid foundation** |
+### Overall Assessment: **A- (Production-ready with enhanced specifications)**
 
-### Key Findings
-
-**Strengths:**
-- Intent classification timeout handling with race condition protection
-- Comprehensive quota handling with auto-eviction strategies
-- Web Worker-based ML with offline fallback
-- Critical story preloading for life-safety content
-- Touch feedback system with haptic integration
-- Safe area insets for mobile devices
-
-**Gaps Requiring Attention:**
-- P0: Speech synthesis error handling lacks user notification
-- P0: Protocol checkboxes need accessibility improvements
-- P2: ZIM file compression support incomplete (zstd/lzma missing)
-- P2: Large ZIM file memory pressure handling
-- P3: iOS status bar theming not configured
-- P3: Touch target size verification needed
+| Category | Score | Notes |
+|----------|-------|-------|
+| Architecture | A | Well-designed three-layer AI system, generative UI pipeline |
+| Offline Resilience | A- | Cache cleanup, DB recovery, AbortController fixes all shipped |
+| Performance | A- | Memoized critical components, optimized re-renders |
+| Consistency | A | IntentClassifier unified, intent patterns centralized |
+| Security | B+ | No hardcoded secrets, input validation in progress |
+| Native Feel | B | Haptics exist but need deeper integration |
+| AI Intelligence | B+ | Cartridge awareness live, POI queries planned |
 
 ---
 
-## Prioritized Fix List
+## ✅ Completed Phases (Resolved)
 
-### 🔴 P0 - Safety-Critical (Fix Immediately)
+### Phase 1: Critical Resilience ✅ COMPLETE
+**Completed**: 2026-02-12
 
-#### 1. SPEECH_SYNTHESIS_ERROR_HANDLING
-**File:** `src/components/ProtocolView.jsx`  
-**Effort:** XS (15 min)  
-**Impact:** Safety-critical
+| Issue | File | Resolution |
+|-------|------|------------|
+| SEARCH_CACHE_NEVER_CLEARED 🔴 | `HybridSearch.js` | Cache cleanup on `visibilitychange` + TTL enforcement |
+| ABORT_CONTROLLER_LEAK 🔴 | `AIChat.jsx` | Proper cleanup on component unmount via `useEffect` return |
+| DB_NO_REOPEN_STRATEGY | `db.js` | Recovery strategy for corrupted IndexedDB instances |
 
-**Problem:** Web Speech API error handling only resets speaking state without informing the user of failures.
+### Phase 2: Performance ✅ COMPLETE
+**Completed**: 2026-02-12
 
-**Fix:**
-```javascript
-utterance.onerror = (e) => {
-  setIsSpeaking(false);
-  if (e.error !== 'canceled') {
-    window.dispatchEvent(new CustomEvent('voice-guidance-error', {
-      detail: { error: e.error, message: 'Voice guidance unavailable' }
-    }));
-  }
-};
+| Issue | File | Resolution |
+|-------|------|------------|
+| OFFLINE_TILELAYER_NO_MEMO | `OfflineTileLayer.jsx` | `L.TileLayer.extend()` moved outside component |
+| MESSAGETHREAD_NO_MEMO | `MessageThread.jsx` | Component memoized with `React.memo` |
+| COMPOSER_NO_MEMO | `Composer.jsx` | Memoized to prevent re-renders on every keystroke |
+
+### Phase 2.5: Bug Fixes & Stability ✅ COMPLETE
+**Completed**: 2026-02-12
+
+- Critical bug fixes for edge cases discovered during Phase 2
+- Stability patches for long-running sessions
+- ContextManager state access patterns corrected
+
+### Phase 3: UX & Storage Metrics ✅ COMPLETE
+**Completed**: 2026-02-12
+
+| Feature | File | Description |
+|---------|------|-------------|
+| Tile error notifications | `OfflineTileLayer.jsx` | Users notified when map data is incomplete |
+| Semantic search failure UI | `RAGPipeline.js` | User notification on degraded search quality |
+| Real-time storage metrics | `StorageMetricsService.js` | Live quota monitoring in AmbientStatusBar |
+| Improved offline error messages | Various | Context-aware error messaging |
+
+### Phase 4: Generative Map UI ✅ COMPLETE
+**Completed**: 2026-02-13
+
+| Feature | File | Description |
+|---------|------|-------------|
+| `<<MAP:>>` tag system | `MessageBubble.jsx` | AI emits machine-readable map tags |
+| MiniMapCard | `MiniMapCard.jsx` | Inline tactical map cards in chat stream |
+| "Initiate Jump" | `MiniMapCard.jsx` | Tap to fly to location on full map |
+| Cartridge Awareness | `MapCartridgeService.js` | AI resolves location names to map cartridges |
+| AmbientStatusBar | `AmbientStatusBar.jsx` | Real-time system context display |
+
+---
+
+## 🚀 V1.0 Release Track (Phases 5–8)
+
+> Full specifications in **[MASTER_PLAN_V1.md](./MASTER_PLAN_V1.md)**
+
+### Phase 8: Production Hardening — *"Armor Plating"* 🔴 NEXT
+**Priority**: CRITICAL | **Effort**: 1 week | **Dependencies**: None
+
+Execute first — hardening is the foundation.
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Cartridge schema validation | Validate all cartridge objects on startup | ⬚ TODO |
+| MiniMapCard Error Boundary | Fallback UI showing coords as plain text | ⬚ TODO |
+| AmbientStatusBar Error Boundary | Minimal fallback for status bar crashes | ⬚ TODO |
+| Input sanitization | Sanitize search queries in MapCartridgeService | ⬚ TODO |
+| Model switch guard | Prevent concurrent `switchModel()` calls | ⬚ TODO |
+| Render guards | Validate props in MiniMapCard before render | ⬚ TODO |
+
+**New Files**:
+- `src/components/chat/MiniMapCardBoundary.jsx`
+- `src/components/AmbientStatusBarBoundary.jsx`
+
+---
+
+### Phase 5: Native Polish & Haptics — *"The Feel"*
+**Priority**: HIGH | **Effort**: 1 week | **Dependencies**: Phase 8
+
+| Task | Description | Status |
+|------|-------------|--------|
+| TactileSignatureEngine | 8 named haptic patterns for app events | ⬚ TODO |
+| TacticalAudioService | Web Audio synthesized UI sounds (zero files) | ⬚ TODO |
+| Integration: MiniMapCard | `map:jump` haptic on "Initiate Jump" | ⬚ TODO |
+| Integration: TransformersEngine | `ai:thinking` / `ai:complete` haptics | ⬚ TODO |
+| Integration: AmbientStatusBar | `alert:emergency` on critical states | ⬚ TODO |
+
+**New Files**:
+- `src/services/haptics/TactileSignatureEngine.js`
+- `src/services/haptics/index.js`
+- `src/services/audio/TacticalAudioService.js`
+- `src/services/audio/index.js`
+
+---
+
+### Phase 6: AI-Enhanced Cartridges — *"Smart Maps"*
+**Priority**: HIGH | **Effort**: 1.5 weeks | **Dependencies**: Phase 8
+
+| Task | Description | Status |
+|------|-------------|--------|
+| POI database schema | Extend cartridges with `pois[]` array | ⬚ TODO |
+| CartridgePOIQueryEngine | Search within cartridge POI databases | ⬚ TODO |
+| Enhanced `<<MAP:>>` tags | Include POI coords, zoom, type in tags | ⬚ TODO |
+| ActionRouter integration | POI query before cartridge fallback | ⬚ TODO |
+| MiniMapCard POI display | Type icons, higher zoom for POI results | ⬚ TODO |
+
+**New Files**:
+- `src/services/maps/CartridgePOIQueryEngine.js`
+
+---
+
+### Phase 7: Offline Survival Mode — *"Blackout Protocol"*
+**Priority**: MEDIUM-HIGH | **Effort**: 1.5 weeks | **Dependencies**: Phase 5 + 6
+
+| Task | Description | Status |
+|------|-------------|--------|
+| BatteryManager | Monitor battery level, emit to ContextManager | ⬚ TODO |
+| SurvivalModeService | Orchestrate full mode switch | ⬚ TODO |
+| SurvivalModeOverlay | Minimal dark UI skin | ⬚ TODO |
+| Auto-trigger at ≤10% | Battery threshold with user confirmation | ⬚ TODO |
+| Force SmolLM-360M | Switch to lowest-power AI model | ⬚ TODO |
+| Screen brightness control | Dim to 20% via Capacitor plugin | ⬚ TODO |
+| Disable haptics/audio | Kill non-essential feedback systems | ⬚ TODO |
+
+**New Files**:
+- `src/services/power/BatteryManager.js`
+- `src/services/power/SurvivalModeService.js`
+- `src/services/power/index.js`
+- `src/components/SurvivalModeOverlay.jsx`
+
+**New Capacitor Plugins**:
+- `@capacitor-community/battery-status`
+- `@capacitor/screen-brightness`
+
+---
+
+## 📊 Execution Timeline
+
+| Order | Phase | Depends On | Est. Duration |
+|-------|-------|------------|---------------|
+| 1 | **Phase 8** — Production Hardening | Nothing | 1 week |
+| 2 | **Phase 5** — Native Polish & Haptics | Phase 8 | 1 week |
+| 3 | **Phase 6** — AI-Enhanced Cartridges | Phase 8 | 1.5 weeks |
+| 4 | **Phase 7** — Survival Mode | Phase 5 + 6 | 1.5 weeks |
+
+```
+Week 1:  ████████████████████████  Phase 8 (Hardening)
+Week 2:  ████████████████████████  Phase 5 (Haptics/Audio)
+Week 3:  ████████████████████████  Phase 6 (AI Cartridges) — starts
+Week 4:  ████████████████████████  Phase 6 completes + Phase 7 starts
+Week 5:  ████████████████████████  Phase 7 (Survival Mode) — completes
+         ─────────────────────────
+         🚀 V1.0 RELEASE CANDIDATE
 ```
 
 ---
 
-#### 2. PROTOCOL_CHECKBOX_ARIA_LABELS
-**File:** `src/components/ProtocolView.jsx`  
-**Effort:** XS (10 min)  
-**Impact:** Accessibility violation
+## 🏁 V1.0 Release Criteria
 
-**Problem:** Binary checkboxes lack aria-labels and use `sr-only` class, making them invisible to screen readers.
-
-**Fix:**
-```jsx
-<input
-  type="checkbox"
-  checked={isChecked}
-  onChange={() => toggleStep(index)}
-  className="sr-only peer"
-  aria-label={`Step ${index + 1}: ${step.text}`}
-/>
-```
+| # | Criterion | Phase |
+|---|-----------|-------|
+| 1 | All cartridges pass schema validation on startup | 8 |
+| 2 | Error boundaries wrap all generative UI components | 8 |
+| 3 | Haptic signatures fire on iOS and Android | 5 |
+| 4 | Tactical audio plays with <10ms latency | 5 |
+| 5 | "Where is the hospital?" returns precise POI coords | 6 |
+| 6 | Survival Mode activates/deactivates cleanly | 7 |
+| 7 | Battery monitoring works on native platforms | 7 |
+| 8 | No unhandled promise rejections in production build | 8 |
+| 9 | Bundle size remains under budget (`size-budget.json`) | All |
+| 10 | App runs fully offline for 24+ hours without memory leaks | All |
 
 ---
 
-### 🟡 P1 - Offline Resilience (Fix This Sprint)
+## Positive Findings (Carried Forward)
 
-#### 3. CONTENT_SYNC_OFFLINE_DETECTION
-**File:** `src/services/contentSync.js`  
-**Effort:** XS (20 min)  
-**Impact:** Medium (battery/UX)
+### ✅ Three-Layer Helper System Properly Unified
+- `HybridSearch.js` correctly uses `IntentClassifier.classifyIntent()`
+- `TriageRouter.js` shares `EMERGENCY_PATTERNS` from `config/intentPatterns.js`
+- Consistent emergency routing across search, chat, and triage
 
-**Problem:** Retry mechanism doesn't check `navigator.onLine` before scheduling retries, causing unnecessary CPU/battery drain while offline.
+### ✅ Good Quota Handling
+- Proactive storage quota checks before downloads
+- LRU eviction strategy for regions
+- User notifications for quota warnings
 
-**Fix:**
-```javascript
-_scheduleRetry() {
-  if (!navigator.onLine) {
-    this._waitForOnline();
-    return;
-  }
-  // ... existing retry logic
-}
-```
+### ✅ Proper Error Boundaries
+- `MapComponent.jsx` has `MapErrorBoundary`
+- `ErrorBoundary.jsx` with compact fallback
+- Graceful degradation on component failures
 
----
+### ✅ No Hardcoded Secrets
+- No API keys or secrets found in codebase
+- Proper environment variable patterns
 
-### 🟢 P2 - Performance (Fix Next Sprint)
+### ✅ iOS Zoom Prevention
+- Search input uses `fontSize: 16px` to prevent auto-zoom
+- Proper `touchAction: 'manipulation'` for immediate response
 
-#### 4. ZSTANDARD_COMPRESSION_IMPLEMENTATION
-**File:** `src/services/zim/ZimReader.js`  
-**Effort:** M (2-3 hours)  
-**Impact:** High (content availability)
-
-**Problem:** Zstandard compression (type 5) not implemented, blocking access to modern ZIM files.
-
-**Fix:**
-```bash
-npm install zstddec-wasm
-```
-
-Implement streaming decompression using zstddec-wasm library.
+### ✅ Generative Map UI Pipeline
+- AI emits `<<MAP:>>` tags parsed by MessageBubble
+- MiniMapCard renders inline tactical maps
+- "Initiate Jump" navigates to full map view
+- Cartridge awareness resolves location names
 
 ---
 
-#### 5. LZMA_XZ_COMPRESSION_IMPLEMENTATION
-**File:** `src/services/zim/ZimReader.js`  
-**Effort:** M (2-3 hours)  
-**Impact:** Medium
+## Files Modified During Audit (Phase 1–4)
 
-**Problem:** LZMA/XZ compression (type 3) not implemented, limiting compatibility with legacy ZIM files.
-
-**Fix:**
-```bash
-npm install xzdec-wasm
-```
-
----
-
-#### 6. ZIM_MEMORY_PRESSURE_HANDLING
-**File:** `src/services/zim/ZimReader.js`  
-**Effort:** L (4-6 hours)  
-**Impact:** High (device compatibility)
-
-**Problem:** Entire ZIM file loaded into memory without size checks, causing OOM on mobile devices with large files (>1GB).
-
-**Fix:**
-1. Check `navigator.deviceMemory` before loading
-2. Implement `File.slice()` based chunked reading
-3. Add configurable max file size limits
+| File | Phase | Changes |
+|------|-------|---------|
+| `src/services/search/HybridSearch.js` | 1 | Cache cleanup + TTL enforcement |
+| `src/pages/AIChat.jsx` | 1 | AbortController cleanup on unmount |
+| `src/services/db.js` | 1 | DB recovery strategy |
+| `src/components/OfflineTileLayer.jsx` | 2, 3 | Memoized + tile error notifications |
+| `src/components/MessageThread.jsx` | 2 | Memoized with React.memo |
+| `src/components/Composer.jsx` | 2 | Memoized to reduce re-renders |
+| `src/services/ai/RAGPipeline.js` | 3 | Semantic search failure UI |
+| `src/components/chat/MiniMapCard.jsx` | 4 | Inline tactical map cards |
+| `src/components/MessageBubble.jsx` | 4 | `<<MAP:>>` tag parsing |
+| `src/services/maps/MapCartridgeService.js` | 4 | Cartridge registry + search |
+| `src/components/AmbientStatusBar.jsx` | 3, 4 | Real-time system context |
 
 ---
 
-### 🔵 P3 - Native UX Polish (Fix Before Release)
+## Testing Recommendations
 
-#### 7. IOS_STATUS_BAR_THEMING
-**File:** `capacitor.config.json`  
-**Effort:** XS (15 min)  
-**Impact:** Medium (polish)
+### Critical Path Tests
+1. **Offline search** with expired cache entries ✅ (Phase 1)
+2. **Rapid navigation** with AbortController ✅ (Phase 1)
+3. **Low storage** scenarios on both platforms ✅ (Phase 3)
+4. **Map tile loading** failures ✅ (Phase 3)
+5. **MiniMapCard rendering** with invalid coordinates (Phase 8)
+6. **Survival Mode** activation/deactivation cycle (Phase 7)
+7. **POI query** accuracy for emergency locations (Phase 6)
 
-**Problem:** iOS status bar style not configured, may result in poor contrast.
-
-**Fix:**
-```bash
-npm install @capacitor/status-bar
-npx cap sync
-```
-
-Add to capacitor.config.json:
-```json
-"plugins": {
-  "StatusBar": {
-    "style": "DARK",
-    "backgroundColor": "#0f172a"
-  }
-}
-```
+### Performance Tests
+1. Memory usage after 1 hour of continuous use ✅ (Phase 1)
+2. Scroll performance during AI streaming ✅ (Phase 2)
+3. Time to first paint on low-end devices
+4. Battery drain comparison: Normal vs Survival Mode (Phase 7)
 
 ---
 
-#### 8. TOUCH_TARGET_SIZE_VERIFICATION
-**File:** `src/styles/design-system.css`  
-**Effort:** S (1 hour audit + fixes)  
-**Impact:** Medium (safety)
+## Conclusion
 
-**Problem:** `--button-height-sm` (32px) may be below iOS 44px minimum for critical touch targets.
+Urban-Offline has completed its foundational phases and is ready for the V1.0 release track. The app demonstrates strong architecture, reliable offline operation, and an innovative generative UI pipeline. The remaining four phases focus on **feel** (haptics/audio), **intelligence** (POI queries), **resilience** (survival mode), and **reliability** (hardening).
 
-**Fix:**
-1. Audit all interactive elements for 44px minimum
-2. Replace `--button-height-sm` in emergency contexts with `--button-height-md` or larger
-3. Ensure 8px spacing between adjacent touch targets
+**Recommendation**: Begin Phase 8 (Production Hardening) immediately, then proceed through Phases 5–7 in order.
+
+**Target**: V1.0 Release Candidate in 5 weeks.
 
 ---
 
-### ⚪ P4 - Code Quality (Fix When Convenient)
-
-#### 9. NATIVE_SEARCH_CATEGORY_COLUMN
-**File:** `src/services/search/NativeSearch.js`, `src/services/storage/schema.js`  
-**Effort:** M (1-2 hours + testing)  
-**Impact:** Low-Medium
-
-**Problem:** Articles table lacks category column, causing inconsistent UX between web and native platforms.
-
-**Fix:**
-1. Add ALTER TABLE migration to add category TEXT column
-2. Update `addDocument()` to include category in INSERT
-3. Update query to SELECT category from articles table
-4. Test on both iOS and Android native builds
-
----
-
-## Implementation Timeline
-
-### Week 1 (Immediate) - ✅ COMPLETED 2026-02-05
-- [x] Fix P0 items (Speech synthesis error handling, Checkbox accessibility)
-- [x] Run accessibility audit with screen reader
-- [x] Test voice guidance failure scenarios
-- [x] **P0.1** ProtocolView.jsx - Speech Synthesis Error Handling (VERIFIED)
-- [x] **P0.2** ProtocolView.jsx - Checkbox Accessibility (VERIFIED)
-
-### Week 2 (This Sprint) - ✅ COMPLETED 2026-02-05
-- [x] Fix P1 item (Content sync offline detection)
-- [x] Add online/offline event listeners
-- [x] Test retry behavior in airplane mode
-- [x] **P1.1** contentSync.js - Offline Detection (VERIFIED)
-
-### Week 3-4 (Next Sprint) - ✅ COMPLETED 2026-02-05
-- [x] Add memory pressure handling for ZIM files
-- [x] Test with large ZIM files on low-memory devices
-- [x] **P2.1** ZimReader.js - Memory Pressure Handling (VERIFIED)
-- [ ] ~~Implement zstd compression support~~ (Requires npm packages: zstddec-wasm)
-- [ ] ~~Implement lzma/xz compression support~~ (Requires npm packages: xzdec-wasm)
-
-### Week 5 (Pre-Release) - ✅ COMPLETED 2026-02-05
-- [x] Configure iOS status bar theming
-- [x] Audit and fix touch target sizes
-- [x] Verify 44px minimum on all emergency buttons
-- [x] **P3.1** capacitor.config.json - iOS Status Bar (VERIFIED)
-- [x] **P3.2** design-system.css - Touch Target Sizes (VERIFIED)
-
-### P4 - Code Quality - ✅ COMPLETED 2026-02-05
-- [x] **P4.1** schema.js + NativeSearch.js - Category Column (VERIFIED)
-
-### Backlog
-- [ ] ~~Add category column to native search schema~~ (COMPLETED)
-- [ ] Add zstd/lzma compression when npm packages available
-
----
-
-## Files Modified During Audit
-
-1. `src/components/ProtocolView.jsx` - Added 2 TODO annotations (P0)
-2. `src/services/zim/ZimReader.js` - Added 3 TODO annotations (P2)
-3. `src/services/contentSync.js` - Added 1 TODO annotation (P1)
-4. `capacitor.config.json` - Added 1 TODO annotation (P3)
-5. `src/services/search/NativeSearch.js` - Updated NOTE to TODO (P4)
-6. `src/styles/design-system.css` - Added 1 TODO annotation (P3)
-
-**Total:** 6 files modified, 9 TODO annotations added
-
----
-
-## Verification Checklist
-
-Before closing Phase 1:
-- [ ] All TODO annotations follow consistent format
-- [ ] No syntax errors introduced
-- [ ] Build passes: `npm run build`
-- [ ] All P0 items have clear fix instructions
-- [ ] Effort estimates are realistic
-- [ ] Risk assessments are accurate
-
----
-
-## Next Steps
-
-1. **Review this roadmap** with the development team
-2. **Prioritize P0 fixes** for immediate implementation
-3. **Assign owners** to each TODO item
-4. **Schedule Phase 2** implementation sprint
-5. **Update project tracking** with these TODOs as tickets
-
----
-
-*This roadmap was generated during Phase 1 Code Audit. For questions or clarifications, refer to the TODO annotations in the source files.*
-
----
-
-## Phase 2 Audit Summary (2026-02-05)
-
-**Auditor:** Cline (AI Assistant)  
-**Scope:** Comprehensive codebase review - Gap identification, security audit, TODO annotation  
-**Status:** ✅ Complete
-
-### Additional Findings from Phase 2
-
-#### 🔍 Security Audit Results
-| Check | Status | Notes |
-|-------|--------|-------|
-| Hardcoded Secrets | ✅ Clean | No API keys or credentials found in source |
-| `dangerouslySetInnerHTML` | ✅ Secured | ArticleView.jsx uses DOMPurify sanitization |
-| innerHTML in services | ⚠️ Safe Usage | OnlineContentService uses DOMParser for text extraction only |
-| LocalStorage/IndexedDB | ✅ Safe | No sensitive data storage detected |
-
-#### 🏗️ Architecture Consistency Verified
-
-| Component | Integration Status |
-|-----------|-------------------|
-| **IntentClassifier → HybridSearch** | ✅ VERIFIED - Uses `classifyIntent()` with shared EMERGENCY_PATTERNS |
-| **IntentClassifier → TriageRouter** | ✅ VERIFIED - Both use shared config/intentPatterns.js |
-| **HybridSearch → Search.jsx** | ✅ VERIFIED - Returns full intent object with triageFlow routing |
-| **View Transitions** | ✅ VERIFIED - 2s timeout, platform detection, accessibility respects |
-| **Offline Tile Layer** | ✅ VERIFIED - Placeholder/error SVGs for missing tiles |
-
-#### 📊 Component Performance Analysis
-
-| Component | Memoization | Status |
-|-----------|-------------|--------|
-| Search.jsx | SearchResultItem memoized | ✅ Good |
-| MapComponent.jsx | Full component memoized | ✅ Good |
-| AIChat.jsx | MessageBubble custom comparison | ✅ Good |
-| **ArticleView.jsx** | **React.memo + useMemo** | ✅ VERIFIED 2026-02-08 |
-| ProtocolView.jsx | Not needed (full-screen) | ✅ N/A |
-
-#### ✅ VERIFIED: ArticleView Memoization (2026-02-08)
-
-**File:** `src/pages/ArticleView.jsx`
-
-**Implementation:**
-- Component wrapped with `React.memo()` export
-- `triageStory` computation memoized with `useMemo()`
-- DOMPurify sanitization applied to HTML content
-
-**Status:** ✅ Complete - No further action needed
-
----
-
-## Phase 3: TODO Implementation Review (2026-02-08)
-
-**Auditor:** Cline (AI Assistant)  
-**Scope:** Review and verify all TODO annotations can be implemented  
-**Build Status:** ✅ PASS (`npm run build` successful)
-
-### Files Reviewed
-
-| File | TODO | Status | Notes |
-|------|------|--------|-------|
-| `AIChat.jsx` | Desktop optimization | ✅ **ALREADY IMPLEMENTED** | Split-pane layout, keyboard shortcuts (Ctrl+Enter, Escape), responsive breakpoints |
-| `ArticleView.jsx` | Memoization | ✅ **ALREADY IMPLEMENTED** | Uses `memo()` and `useMemo()` for triageStory |
-| `TriageScreen.jsx` | Desktop layout | ✅ **ALREADY IMPLEMENTED** | Responsive heights, horizontal choice layout on lg screens |
-| `ZimReader.js` | Zstd/LZMA compression | ⏸️ **PENDING** | Requires npm packages: `zstddec-wasm`, `xzdec-wasm` |
-| `PurchaseManager.js` | In-app purchases | ⏸️ **PENDING** | Requires Capacitor plugin: `@capacitor-community/in-app-purchases` |
-
-### Build Verification
-
-```
-✅ Vite build completed successfully
-✅ No new lint errors
-✅ No breaking changes
-✅ Bundle size within expected range
-```
-
-### Summary
-
-**All implementable TODOs have been completed.** The remaining TODOs are for features requiring external npm packages that are not yet installed:
-
-1. **Zstandard/LZMA Compression** - Documented in ZimReader.js with detailed implementation guidance
-2. **In-App Purchases** - Documented in PurchaseManager.js with plugin integration notes
-
-### Recommendation
-
-The codebase is **production-ready**. The remaining TODOs are:
-- Well-documented with clear implementation paths
-- Non-blocking (zlib compression works for current ZIM files)
-- Feature enhancements rather than bug fixes
-
----
-
-## Implementation History
-
-### Phase 1 (2026-02-05) - ✅ COMPLETE
-- P0: Speech synthesis error handling
-- P0: Protocol checkbox accessibility
-- P1: Content sync offline detection
-- P2: ZIM memory pressure handling
-- P3: iOS status bar theming
-- P3: Touch target sizes
-- P4: Native search category column
-
-### Phase 2 (2026-02-05) - ✅ COMPLETE
-- Security audit (no issues found)
-- Architecture consistency verification
-- Performance analysis
-- ArticleView memoization TODO added
-
-### Phase 3 (2026-02-08) - ✅ COMPLETE
-- Reviewed all TODO annotations
-- Verified build passes
-- Confirmed implementable TODOs already done
-- Documented pending npm package requirements
-
----
-## Phase 4: TODO Annotations Added (2026-02-08)
-
-**Auditor:** Cline (AI Assistant)  
-**Scope:** Added descriptive TODO annotations to mark potential improvements  
-**Status:** ✅ Complete
-
-### New TODOs Added
-
-| File | Category | TODO | Priority | Effort |
-|------|----------|------|----------|--------|
-| `src/pages/Home.jsx` | Performance | HOME_COMPONENT_MEMOIZATION | P2 | S (30 min) |
-| `src/services/OnlineContentService.js` | Resilience | OFFLINE_RETRY_FALLBACK_MISSING | P2 | S (20 min) |
-| `src/services/contentSync.js` | Resilience | CONTENT_SYNC_OFFLINE_RETRY_MISSING | P2 | S (15 min) |
-| `src/services/dataManager.js` | Resilience | REGION_INSTALL_CANCEL_SUPPORT | P2 | M (1 hour) |
-| `src/components/Search.jsx` | Accessibility | SEARCH_ARIA_LIVE_REGIONS | P2 | S (20 min) |
-| `src/services/SearchService.js` | Consistency | SEARCH_SERVICE_UNIFICATION | P3 | S (30 min) |
-| `src/components/EmergencyCommandBar.jsx` | Accessibility | EMERGENCY_COMMAND_BAR_ACCESSIBILITY | P2 | S (20 min) |
-| `capacitor.config.json` | Config | CAPACITOR_ANDROID_12_SPLASH_SCREEN | P3 | M (1 hour) |
-
-### Summary by Category
-
-- **Resilience (3)**: Offline retry, cancellation support, error handling
-- **Accessibility (2)**: Screen reader support, keyboard navigation
-- **Performance (1)**: Component memoization
-- **Consistency (1)**: Service unification
-- **Config (1)**: Platform compatibility
-
-### Total Impact
-- **P2 Priority**: 6 items (should be addressed in next sprint)
-- **P3 Priority**: 2 items (can be deferred)
-- **Total Effort**: ~4 hours of work
-
----
-**End of Audit Report**
+*See [MASTER_PLAN_V1.md](./MASTER_PLAN_V1.md) for full technical specifications.*

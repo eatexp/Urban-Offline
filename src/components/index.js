@@ -15,6 +15,7 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as ProtocolView } from './ProtocolView';
 export { default as ProtocolButton } from './ProtocolButton';
 export { default as DatasetManager } from './DatasetManager';
+export { default as Cartridge } from './Cartridge';
 export { default as ZimImportManager } from './ZimImportManager';
 
 // Map components

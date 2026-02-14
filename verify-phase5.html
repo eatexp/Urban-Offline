@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 5 Verification - Audio & Haptics</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #ff6b35; }
+        h2 { color: #00d9ff; margin-top: 30px; }
+        button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 8px 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        button:hover { background: #ff8555; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        .log {
+            background: #1a1a1a;
+            border-left: 3px solid #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-size: 13px;
+        }
+        .error { border-left-color: #ff0000; color: #ff0000; }
+        .success { border-left-color: #00ff00; color: #00ff00; }
+        .info { border-left-color: #00d9ff; color: #00d9ff; }
+        .section {
+            background: #111;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        #results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0d1b1e;
+            border: 2px solid #00d9ff;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Phase 5 Verification - Native Polish & Haptics</h1>
+    <p>This page will test the TacticalAudioService and TactileSignatureEngine implementations.</p>
+    
+    <div class="section">
+        <h2>Test 1: Audio Service</h2>
+        <p>Test all 5 procedural audio sounds</p>
+        <button onclick="testAudioService()">▶ Run Audio Test</button>
+        <div id="audio-log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Test 2: Signature Engine</h2>
+        <p>Test haptic signatures (audio on web, haptics on native)</p>
+        <button onclick="testSignatureEngine()">▶ Run Signature Test</button>
+        <div id="signature-log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Test 3: Toggle Switch</h2>
+        <p>Test enable/disable functionality</p>
+        <button onclick="testToggle()">▶ Run Toggle Test</button>
+        <div id="toggle-log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Test 4: Loop Control</h2>
+        <p>Test audio loop start/stop (scan-sweep)</p>
+        <button onclick="testLoop()">▶ Run Loop Test (3s)</button>
+        <div id="loop-log"></div>
+    </div>
+    
+    <div id="results" style="display:none;">
+        <h2>✅ Verification Results</h2>
+        <div id="results-content"></div>
+    </div>
+
+    <script type="module">
+        let testResults = [];
+        
+        function log(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(div);
+        }
+        
+        window.testAudioService = async function() {
+            const logId = 'audio-log';
+            document.getElementById(logId).innerHTML = '';
+            log(logId, 'Starting Audio Service Test...', 'info');
+            
+            try {
+                const TacticalAudioService = (await import('./src/services/audio/TacticalAudioService.js')).default;
+                const audio = TacticalAudioService.getInstance();
+                
+                log(logId, '✓ TacticalAudioService loaded', 'success');
+                
+                const sounds = ['confirm-tone', 'alert-ping', 'error-buzz', 'lock-on'];
+                
+                for (const sound of sounds) {
+                    log(logId, `Playing: ${sound}...`, 'info');
+                    await audio.play(sound);
+                    await new Promise(r => setTimeout(r, 800));
+                }
+                
+                log(logId, '✅ Audio Test Complete - All sounds played!', 'success');
+                testResults.push({ test: 'Audio Service', status: 'PASS' });
+                updateResults();
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, 'error');
+                testResults.push({ test: 'Audio Service', status: 'FAIL', error: error.message });
+                updateResults();
+            }
+        };
+        
+        window.testSignatureEngine = async function() {
+            const logId = 'signature-log';
+            document.getElementById(logId).innerHTML = '';
+            log(logId, 'Starting Signature Engine Test...', 'info');
+            
+            try {
+                const TactileSignatureEngine = (await import('./src/services/haptics/TactileSignatureEngine.js')).default;
+                const engine = TactileSignatureEngine.getInstance();
+                
+                log(logId, '✓ TactileSignatureEngine loaded', 'success');
+                
+                log(logId, 'Firing: ai:complete...', 'info');
+                await engine.fire('ai:complete');
+                await new Promise(r => setTimeout(r, 1000));
+                
+                log(logId, 'Firing: alert:emergency...', 'info');
+                await engine.fire('alert:emergency');
+                await new Promise(r => setTimeout(r, 2000));
+                
+                log(logId, 'Firing: cartridge:load...', 'info');
+                await engine.fire('cartridge:load');
+                
+                log(logId, '✅ Signature Test Complete - All signatures fired!', 'success');
+                testResults.push({ test: 'Signature Engine', status: 'PASS' });
+                updateResults();
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, 'error');
+                testResults.push({ test: 'Signature Engine', status: 'FAIL', error: error.message });
+                updateResults();
+            }
+        };
+        
+        window.testToggle = async function() {
+            const logId = 'toggle-log';
+            document.getElementById(logId).innerHTML = '';
+            log(logId, 'Starting Toggle Test...', 'info');
+            
+            try {
+                const TactileSignatureEngine = (await import('./src/services/haptics/TactileSignatureEngine.js')).default;
+                const engine = TactileSignatureEngine.getInstance();
+                
+                log(logId, '✓ TactileSignatureEngine loaded', 'success');
+                
+                log(logId, 'Disabling engine...', 'info');
+                engine.setEnabled(false);
+                await engine.fire('ai:complete');
+                log(logId, '  → Should be silent (disabled)', 'info');
+                await new Promise(r => setTimeout(r, 500));
+                
+                log(logId, 'Enabling engine...', 'info');
+                engine.setEnabled(true);
+                await engine.fire('ai:complete');
+                log(logId, '  → Should play audio (enabled)', 'info');
+                
+                log(logId, '✅ Toggle Test Complete!', 'success');
+                testResults.push({ test: 'Toggle Switch', status: 'PASS' });
+                updateResults();
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, 'error');
+                testResults.push({ test: 'Toggle Switch', status: 'FAIL', error: error.message });
+                updateResults();
+            }
+        };
+        
+        window.testLoop = async function() {
+            const logId = 'loop-log';
+            document.getElementById(logId).innerHTML = '';
+            log(logId, 'Starting Loop Test...', 'info');
+            
+            try {
+                const TacticalAudioService = (await import('./src/services/audio/TacticalAudioService.js')).default;
+                const audio = TacticalAudioService.getInstance();
+                
+                log(logId, '✓ TacticalAudioService loaded', 'success');
+                
+                log(logId, 'Starting scan-sweep loop (3 seconds)...', 'info');
+                await audio.startLoop('scan-sweep');
+                
+                await new Promise(r => setTimeout(r, 3000));
+                
+                log(logId, 'Stopping scan-sweep loop...', 'info');
+                await audio.stopLoop('scan-sweep');
+                
+                log(logId, '✅ Loop Test Complete!', 'success');
+                testResults.push({ test: 'Loop Control', status: 'PASS' });
+                updateResults();
+            } catch (error) {
+                log(logId, `❌ Error: ${error.message}`, 'error');
+                testResults.push({ test: 'Loop Control', status: 'FAIL', error: error.message });
+                updateResults();
+            }
+        };
+        
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+            
+            if (testResults.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            resultsDiv.style.display = 'block';
+            
+            const passed = testResults.filter(r => r.status === 'PASS').length;
+            const failed = testResults.filter(r => r.status === 'FAIL').length;
+            
+            let html = `<div class="log success">Tests Passed: ${passed}/4</div>`;
+            if (failed > 0) {
+                html += `<div class="log error">Tests Failed: ${failed}/4</div>`;
+            }
+            
+            html += '<div style="margin-top:20px;"><strong>Test Summary:</strong></div>';
+            testResults.forEach(result => {
+                const status = result.status === 'PASS' ? '✅' : '❌';
+                html += `<div class="log ${result.status === 'PASS' ? 'success' : 'error'}">${status} ${result.test}: ${result.status}</div>`;
+                if (result.error) {
+                    html += `<div class="log error">   Error: ${result.error}</div>`;
+                }
+            });
+            
+            if (passed === 4) {
+                html += '<div class="log success" style="margin-top:20px; font-size:16px;">🎉 ALL TESTS PASSED! Ready for Phase 6!</div>';
+            }
+            
+            resultsContent.innerHTML = html;
+        }
+        
+        // Auto-run info on page load
+        window.addEventListener('load', () => {
+            console.log('%c🎯 Phase 5 Verification Page Loaded', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+            console.log('%cClick the buttons to run each test.', 'color: #00d9ff;');
+        });
+    </script>
+</body>
+</html>

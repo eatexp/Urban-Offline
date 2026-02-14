@@ -21,8 +21,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 export const GlowFilters = () => (
     <defs>
         {/* Standard glow */}
+        {/* Standard glow - Tighter/Sharper */}
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
             <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
@@ -31,7 +32,7 @@ export const GlowFilters = () => (
 
         {/* Intense glow for active elements */}
         <filter id="glow-intense" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="coloredBlur" />
@@ -41,9 +42,9 @@ export const GlowFilters = () => (
 
         {/* Soft ambient glow */}
         <filter id="glow-soft" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feGaussianBlur stdDeviation="6" result="blur" />
             <feColorMatrix in="blur" type="matrix"
-                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0" />
+                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.4 0" />
             <feMerge>
                 <feMergeNode />
                 <feMergeNode in="SourceGraphic" />
@@ -71,43 +72,40 @@ export const GlowFilters = () => (
 
 const glassStyles = `
   .glass-card {
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-xl);
+    background: rgba(9, 9, 11, 0.95); /* Zinc-950, almost opaque */
+    backdrop-filter: blur(8px); /* Moderate blur */
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Dark subtle border */
+    border-radius: var(--radius-lg);
     box-shadow: 
-      0 4px 24px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
+      0 4px 6px -1px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03); /* Fainter inner highlight */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .glass-card:hover {
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 10px 15px -3px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   
   .glass-card.glow-primary {
     box-shadow: 
-      0 4px 24px rgba(0, 0, 0, 0.2),
-      0 0 40px rgba(249, 115, 22, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 0 0 1px rgba(249, 115, 22, 0.15), /* Precision border glow */
+      0 4px 12px -2px rgba(0, 0, 0, 0.5);
   }
   
   .glass-card.glow-purple {
     box-shadow: 
-      0 4px 24px rgba(0, 0, 0, 0.2),
-      0 0 40px rgba(139, 92, 246, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 0 0 1px rgba(139, 92, 246, 0.15),
+      0 4px 12px -2px rgba(0, 0, 0, 0.5);
   }
   
   .glass-card.glow-success {
     box-shadow: 
-      0 4px 24px rgba(0, 0, 0, 0.2),
-      0 0 40px rgba(34, 197, 94, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 0 0 1px rgba(34, 197, 94, 0.15),
+      0 4px 12px -2px rgba(0, 0, 0, 0.5);
   }
 `;
 
@@ -326,14 +324,15 @@ export const ParticleSystem = ({
     direction = 'up', // 'up', 'horizontal'
     active = true
 }) => {
+    // Use deterministic pseudo-random based on index instead of Math.random()
     const particles = useMemo(() => {
         return [...Array(count)].map((_, i) => ({
             id: i,
-            x: Math.random() * 100,
-            y: Math.random() * 100,
-            size: size * (0.5 + Math.random() * 0.5),
+            x: ((i * 17) % 100), // Deterministic pseudo-random
+            y: ((i * 31) % 100), // Deterministic pseudo-random
+            size: size * (0.5 + ((i * 7) % 10) / 10), // Deterministic variation
             delay: (i / count) * speed,
-            duration: speed * (0.8 + Math.random() * 0.4)
+            duration: speed * (0.8 + ((i * 3) % 10) / 25) // Deterministic variation
         }));
     }, [count, size, speed]);
 

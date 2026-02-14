@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import legacy from '@vitejs/plugin-legacy'
+import topLevelAwait from 'vite-plugin-top-level-await'
 
 import tailwindcss from '@tailwindcss/vite'
 
@@ -10,6 +11,12 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    topLevelAwait({
+      // The export name of top-level-await promise for each chunk module
+      // promiseExportName: "__tla",
+      // The function to generate import names of top-level-await promise in each chunk module
+      // promiseImportName: i => `__tla_${i}`
+    }),
     legacy({
       targets: ['defaults', 'not IE 11', 'Android >= 5'],
     }),

@@ -196,7 +196,9 @@ export default function AIReadingViz({ stages = [], isActive = false, onReplay }
     // Auto-expand when active
     useEffect(() => {
         if (isActive && stages.length > 0) {
-            setExpanded(true);
+            queueMicrotask(() => {
+                setExpanded(true);
+            });
         }
     }, [isActive, stages.length]);
 

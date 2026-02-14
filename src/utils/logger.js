@@ -13,7 +13,8 @@ const LOG_LEVELS = {
 };
 
 // Determine log level based on environment
-const isProduction = import.meta.env.PROD;
+// For Vite projects, rely primarily on import.meta.env.PROD
+const isProduction = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD;
 const MIN_LOG_LEVEL = isProduction ? LOG_LEVELS.WARN : LOG_LEVELS.DEBUG;
 
 // Color codes for console
@@ -82,7 +83,7 @@ export function createLogger(context = '') {
         info: (message, data) => logToConsole('INFO', context, message, data),
         warn: (message, data) => logToConsole('WARN', context, message, data),
         error: (message, data) => logToConsole('ERROR', context, message, data),
-        
+
         // Group related logs
         group: (label) => {
             if (LOG_LEVELS.DEBUG >= MIN_LOG_LEVEL) {
@@ -94,7 +95,7 @@ export function createLogger(context = '') {
                 console.groupEnd();
             }
         },
-        
+
         // Time operations
         time: (label) => {
             if (LOG_LEVELS.DEBUG >= MIN_LOG_LEVEL) {

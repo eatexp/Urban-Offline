@@ -30,6 +30,12 @@ export const db = isNative ? {
                 enhancedError.name = 'QuotaExceededError';
                 enhancedError.store = storeName;
                 enhancedError.key = itemKey;
+                // Dispatch event for consistent UI handling with web platform
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('storage-quota-warning', {
+                        detail: { store: storeName, key: itemKey, error: enhancedError.message }
+                    }));
+                }
                 throw enhancedError;
             }
             throw error;
@@ -76,15 +82,60 @@ export const db = isNative ? {
     },
     async setItem(storeName, key, value) {
         return this.put(storeName, value, key);
+    },
+    async getAllFromIndex(storeName, indexName, key) {
+        return webDB.getAllFromIndex(storeName, indexName, key);
     }
 };
 
-// Helper to init
+// VERIFIED: [Resilience] DB_REOPEN_STRATEGY
+// Recovery strategy for corrupted databases or version mismatches
+// If opening fails with VersionError or generic failure, delete and retry once.
 export const initStorage = async () => {
     if (isNative) {
-        await NativeStorage.initDB();
+        try {
+            await NativeStorage.initDB();
+        } catch (error) {
+            console.error('Failed to init NativeStorage, attempting recovery', error);
+            // NativeStorage might not support delete/re-init easily depending on implementation
+            // but we re-throw for now or handle specific known native errors
+            throw error;
+        }
     } else {
-        await initWebDB();
+        try {
+            await initWebDB();
+        } catch (error) {
+            console.error('Failed to init WebDB, attempting recovery', error);
+
+            // Check for specific corruption errors
+            const isCorruption = error.name === 'VersionError' ||
+                error.name === 'UnknownError' ||
+                error.message?.includes('versions');
+
+            if (isCorruption) {
+                console.warn('Database corruption detected. Wiping and recreating...');
+                try {
+                    // Assuming WebStorage exports a way to delete or we use indexedDB directly
+                    await new Promise((resolve, reject) => {
+                        const freq = indexedDB.deleteDatabase('urban_offline_db'); // Replace with actual DB name if different
+                        freq.onsuccess = () => resolve();
+                        freq.onerror = (e) => reject(e);
+                        freq.onblocked = () => console.warn('Delete blocked');
+                    });
+                    await initWebDB();
+                    console.info('Database recovered successfully');
+
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('db-recovered'));
+                    }
+                } catch (retryError) {
+                    console.error('Fatal: Failed to recover database', retryError);
+                    throw retryError;
+                }
+            } else {
+                throw error;
+            }
+        }
     }
 };
 

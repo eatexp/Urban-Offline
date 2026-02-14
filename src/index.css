@@ -45,6 +45,15 @@
   --radius-2xl: var(--radius-2xl);
 
   --animate-emergency-pulse: emergency-pulse 1s var(--ease-in-out) infinite;
+  
+  /* Scanline animation for tactical map cards */
+  --animate-scan: scan 2s linear infinite;
+}
+
+/* Scanline animation keyframes */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 }
 
 /* View Transitions */
@@ -67,7 +76,7 @@
 }
 
 .tile-missing::after {
-  content: '�';
+  content: 'Â ';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -88,4 +97,82 @@
   border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-md);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* ==========================================================================
+   SURVIVAL MODE — "Blackout Protocol" Styles
+   Applied when data-survival-mode="true" is set on <body>
+   ========================================================================== */
+
+/* Base: Force dark mode for OLED power savings */
+[data-survival-mode="true"] {
+  color-scheme: dark;
+}
+
+/* Disable all animations and transitions */
+[data-survival-mode="true"] *,
+[data-survival-mode="true"] *::before,
+[data-survival-mode="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}
+
+/* Remove decorative effects */
+[data-survival-mode="true"] {
+  --animate-emergency-pulse: none;
+  --animate-scan: none;
+}
+
+[data-survival-mode="true"] .animate-fade-in,
+[data-survival-mode="true"] .animate-slide-up,
+[data-survival-mode="true"] .animate-scale-in,
+[data-survival-mode="true"] .animate-emergency-pulse {
+  animation: none !important;
+}
+
+/* High contrast overrides */
+[data-survival-mode="true"] {
+  --color-slate-900: #0a0a0a;
+  --color-slate-800: #1a1a1a;
+  --color-slate-700: #2a2a2a;
+}
+
+/* Remove backdrop filters (GPU intensive) */
+[data-survival-mode="true"] .backdrop-blur-md,
+[data-survival-mode="true"] .backdrop-blur-lg,
+[data-survival-mode="true"] .backdrop-blur-xl {
+  backdrop-filter: none !important;
+  background-color: rgba(10, 10, 10, 0.95) !important;
+}
+
+/* Remove box shadows */
+[data-survival-mode="true"] * {
+  box-shadow: none !important;
+}
+
+/* Binary opacity (0 or 1 only, no partial transparency) */
+[data-survival-mode="true"] .text-slate-400,
+[data-survival-mode="true"] .text-slate-500,
+[data-survival-mode="true"] .text-slate-600 {
+  opacity: 1 !important;
+  color: #888888 !important;
+}
+
+/* Reduce map tile quality indicators */
+[data-survival-mode="true"] .tile-missing::after {
+  display: none;
+}
+
+/* Force monochrome icons */
+[data-survival-mode="true"] svg {
+  filter: grayscale(100%) !important;
+}
+
+/* Simplified status bar */
+[data-survival-mode="true"] .ambient-status-bar button {
+  border-radius: 4px !important;
+  background: #1a1a1a !important;
+  border-color: #333 !important;
 }

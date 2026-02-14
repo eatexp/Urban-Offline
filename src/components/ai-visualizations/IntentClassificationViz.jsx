@@ -28,35 +28,36 @@ import {
   AnimatedNumber,
   CircularProgress
 } from './VisualizationEffects';
+import { HapticsService, NotificationType } from '../../services/HapticsService';
 
-// Route configuration
+// Route configuration - Tactical Dark Theme
 const ROUTE_CONFIG = {
   triage: {
     id: 'triage',
     label: 'Triage',
     icon: AlertCircle,
-    color: '#ef4444',
+    color: '#9f1239', // Rose-800 (Tactical Red)
     description: 'Medical emergency assessment'
   },
   protocol: {
     id: 'protocol',
     label: 'Protocol',
     icon: FileText,
-    color: '#f97316',
+    color: '#92400e', // Amber-800 (Tactical Amber)
     description: 'Step-by-step procedure'
   },
   search: {
     id: 'search',
     label: 'Search',
     icon: Compass,
-    color: '#3b82f6',
+    color: '#075985', // Sky-800 (Tactical Blue)
     description: 'Knowledge search'
   },
   chat: {
     id: 'chat',
     label: 'Chat',
     icon: MessageSquare,
-    color: '#8b5cf6',
+    color: '#3730a3', // Indigo-800 (Tactical Indigo)
     description: 'General AI chat'
   }
 };
@@ -70,16 +71,21 @@ const IntentClassificationViz = ({
   keywordResult = null,
   finalResult = null,
   matchedKeywords = [],
-  query = '',
+    _query = '',
   compact = false
 }) => {
-  const [showWinner, setShowWinner] = useState(false);
+  const [_showWinner, setShowWinner] = useState(false);
   const [particles, setParticles] = useState([]);
 
   // Trigger winner celebration
   useEffect(() => {
     if (finalResult && !isActive) {
-      setShowWinner(true);
+      queueMicrotask(() => {
+        setShowWinner(true);
+      });
+
+      // Haptic feedback for winner
+      HapticsService.notification(NotificationType.Success);
 
       // Create celebration particles
       const newParticles = Array.from({ length: 12 }, (_, i) => ({
@@ -87,7 +93,9 @@ const IntentClassificationViz = ({
         angle: (i / 12) * 360,
         delay: i * 0.05
       }));
-      setParticles(newParticles);
+      queueMicrotask(() => {
+        setParticles(newParticles);
+      });
 
       // Reset after animation
       const timer = setTimeout(() => {
@@ -117,7 +125,7 @@ const IntentClassificationViz = ({
     >
       <style>{`
         .intent-viz {
-          padding: 20px;
+          padding: 16px; /* Reduced padding for mobile */
           position: relative;
           overflow: hidden;
         }
@@ -127,7 +135,7 @@ const IntentClassificationViz = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
         
         .intent-title {
@@ -137,10 +145,12 @@ const IntentClassificationViz = ({
         }
         
         .intent-title h3 {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           color: var(--color-text-primary);
+          opacity: 0.9;
           margin: 0;
+          letter-spacing: 0.02em;
         }
         
         /* Battle arena */
@@ -150,56 +160,77 @@ const IntentClassificationViz = ({
           justify-content: space-between;
           gap: 16px;
           margin-bottom: 20px;
+          flex-wrap: wrap; /* Allow wrapping */
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+          .classification-arena {
+            flex-direction: column;
+            gap: 12px;
+          }
+          
+          .classifier-card {
+            width: 100%;
+            flex: none;
+          }
+          
+          .vs-divider {
+            transform: rotate(90deg);
+            margin: -4px 0;
+          }
         }
         
         /* Classifier card */
         .classifier-card {
           flex: 1;
-          padding: 16px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.06);
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.4); /* Darker base */
+          border-radius: 6px; /* Tighter corners */
+          border: 1px solid rgba(255, 255, 255, 0.08);
           text-align: center;
-          transition: all 0.3s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Snappier transition */
           position: relative;
         }
         
         .classifier-card:hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.1);
+          background: rgba(9, 9, 11, 0.6);
+          border-color: rgba(255, 255, 255, 0.15);
         }
         
         .classifier-card.active {
           border-color: currentColor;
-          box-shadow: 0 0 30px currentColor;
+          box-shadow: 0 0 0 1px currentColor, inset 0 0 20px rgba(0,0,0,0.5); /* Tactical border glow */
+          background: rgba(9, 9, 11, 0.8);
         }
         
         .classifier-card.winner {
-          animation: winner-glow 0.5s ease forwards;
+          animation: winner-flash 0.5s ease forwards;
         }
         
-        @keyframes winner-glow {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
+        @keyframes winner-flash {
+          0% { border-color: currentColor; background: rgba(9, 9, 11, 0.9); }
+          50% { background: rgba(255, 255, 255, 0.1); }
+          100% { border-color: currentColor; background: rgba(9, 9, 11, 0.9); }
         }
         
         .classifier-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
+          width: 32px; /* Smaller */
+          height: 32px;
+          border-radius: 4px; /* Tighter radius */
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 10px;
+          border: 1px solid rgba(255,255,255,0.05);
         }
         
         .classifier-label {
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 10px; /* Smaller label */
+          font-weight: 700;
           margin-bottom: 12px;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.1em;
         }
         
         .gauge-container {
@@ -209,17 +240,19 @@ const IntentClassificationViz = ({
         }
         
         .confidence-value {
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 700;
           font-family: var(--font-family-mono);
+          letter-spacing: -0.05em;
         }
         
         .category-badge {
           display: inline-block;
-          padding: 4px 10px;
-          background: rgba(255,255,255,0.08);
-          border-radius: 20px;
-          font-size: 10px;
+          padding: 2px 8px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 4px; /* Rectangular badge */
+          font-size: 9px;
           font-weight: 600;
           margin-top: 8px;
           text-transform: uppercase;
@@ -256,17 +289,19 @@ const IntentClassificationViz = ({
         /* Winner badge */
         .winner-badge {
           position: absolute;
-          top: -8px;
-          right: -8px;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #fbbf24, #f59e0b);
+          top: -6px;
+          right: -6px;
+          width: 24px;
+          height: 24px;
+          border-radius: 6px; /* Squircle */
+          background: #334155; /* Slate-700 */
+          border: 1px solid rgba(255,255,255,0.1);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
           animation: badge-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          z-index: 10;
         }
         
         @keyframes badge-bounce {
@@ -277,9 +312,9 @@ const IntentClassificationViz = ({
         /* Celebration particles */
         .celebration-particle {
           position: absolute;
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
+          width: 4px;
+          height: 4px;
+          border-radius: 1px; /* Square particles */
           animation: particle-burst 1s ease-out forwards;
         }
         
@@ -317,12 +352,13 @@ const IntentClassificationViz = ({
         }
         
         .keyword-chip {
-          padding: 4px 10px;
-          background: rgba(139, 92, 246, 0.15);
+          padding: 2px 8px;
+          background: rgba(139, 92, 246, 0.1);
           border: 1px solid rgba(139, 92, 246, 0.3);
-          border-radius: 20px;
-          font-size: 11px;
-          font-weight: 500;
+          border-radius: 4px; /* Rectangular chips */
+          font-size: 10px;
+          font-weight: 600;
+          font-family: var(--font-family-mono);
           color: #a78bfa;
           animation: chip-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -338,9 +374,9 @@ const IntentClassificationViz = ({
           align-items: center;
           justify-content: center;
           gap: 12px;
-          padding: 14px;
+          padding: 12px;
           background: rgba(255,255,255,0.03);
-          border-radius: 12px;
+          border-radius: 8px;
           border: 1px solid rgba(255,255,255,0.06);
         }
         
@@ -358,9 +394,9 @@ const IntentClassificationViz = ({
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 10px 16px;
-          border-radius: 12px;
-          border: 2px solid;
+          padding: 8px 12px;
+          border-radius: 6px;
+          border: 1px solid;
           transition: all 0.3s ease;
         }
         
@@ -374,17 +410,19 @@ const IntentClassificationViz = ({
         }
         
         .route-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
+          width: 28px;
+          height: 28px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
         
         .route-label {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         
         .route-desc {
@@ -396,12 +434,13 @@ const IntentClassificationViz = ({
         /* Urgency meter */
         .urgency-meter {
           margin-top: 12px;
-          padding: 10px 14px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 10px;
+          padding: 8px 12px;
+          background: rgba(255,255,255,0.02);
+          border-radius: 6px;
           display: flex;
           align-items: center;
           gap: 10px;
+          border: 1px solid rgba(255,255,255,0.05);
         }
         
         .urgency-label {
@@ -414,15 +453,15 @@ const IntentClassificationViz = ({
         
         .urgency-bar {
           flex: 1;
-          height: 8px;
-          background: rgba(255,255,255,0.1);
-          border-radius: 4px;
+          height: 6px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 2px;
           overflow: hidden;
         }
         
         .urgency-fill {
           height: 100%;
-          border-radius: 4px;
+          border-radius: 2px;
           transition: width 0.5s ease;
         }
         
@@ -461,12 +500,12 @@ const IntentClassificationViz = ({
         {/* ML Classifier */}
         <div
           className={`classifier-card ${isActive && !keywordResult ? 'active' : ''} ${winner === 'ml' ? 'winner' : ''}`}
-          style={{ color: '#8b5cf6' }}
+          style={{ color: '#6366f1' }} // Indigo-500
         >
           {winner === 'ml' && (
             <>
               <div className="winner-badge">
-                <Trophy className="w-4 h-4" style={{ color: 'white' }} />
+                <Trophy className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
               </div>
               {/* Celebration particles */}
               {particles.map(p => (
@@ -474,11 +513,11 @@ const IntentClassificationViz = ({
                   key={p.id}
                   className="celebration-particle"
                   style={{
-                    background: '#8b5cf6',
+                    background: '#6366f1',
                     top: '50%',
                     left: '50%',
-                    '--tx': `${Math.cos(p.angle * Math.PI / 180) * 60}px`,
-                    '--ty': `${Math.sin(p.angle * Math.PI / 180) * 60}px`,
+                    '--tx': `${Math.cos(p.angle * Math.PI / 180) * 20}px`, /* Tighter burst radius */
+                    '--ty': `${Math.sin(p.angle * Math.PI / 180) * 20}px`,
                     animationDelay: `${p.delay}s`
                   }}
                 />
@@ -486,26 +525,27 @@ const IntentClassificationViz = ({
             </>
           )}
 
-          <div className="classifier-icon" style={{ background: 'rgba(139, 92, 246, 0.2)' }}>
-            <Brain className="w-5 h-5" style={{ color: '#8b5cf6' }} />
+          <div className="classifier-icon" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
+            <Brain className="w-5 h-5" style={{ color: '#6366f1' }} />
           </div>
-          <div className="classifier-label" style={{ color: '#8b5cf6' }}>ML Model</div>
+          <div className="classifier-label" style={{ color: '#818cf8' }}>AI Model</div>
 
           <div className="gauge-container">
             <CircularProgress
               progress={mlResult?.confidence || 0}
-              size={70}
-              strokeWidth={5}
-              color="#8b5cf6"
+              size={60} /* Smaller size */
+              strokeWidth={4}
+              color="#6366f1"
+              showGlow={false} /* Remove glow */
             >
-              <span className="confidence-value" style={{ color: '#8b5cf6' }}>
+              <span className="confidence-value" style={{ color: '#818cf8', fontSize: '14px' }}>
                 {mlResult?.confidence || 0}%
               </span>
             </CircularProgress>
           </div>
 
           {mlResult?.category && (
-            <div className="category-badge" style={{ color: '#a78bfa' }}>
+            <div className="category-badge" style={{ color: '#818cf8', background: 'rgba(99, 102, 241, 0.1)' }}>
               {mlResult.category}
             </div>
           )}
@@ -514,32 +554,31 @@ const IntentClassificationViz = ({
         {/* VS Divider */}
         <div className="vs-divider">
           <Zap
-            className={`w-5 h-5 vs-lightning ${isActive ? '' : 'opacity-30'}`}
-            style={{ color: '#fbbf24' }}
+            className={`w-4 h-4 vs-lightning ${isActive ? '' : 'opacity-20'}`}
+            style={{ color: '#94a3b8' }} /* Slate-400 instead of Yellow */
           />
-          <span className="vs-text">VS</span>
         </div>
 
         {/* Keyword Classifier */}
         <div
           className={`classifier-card ${isActive && !mlResult ? 'active' : ''} ${winner === 'keyword' ? 'winner' : ''}`}
-          style={{ color: '#f97316' }}
+          style={{ color: '#64748b' }} // Slate-500
         >
           {winner === 'keyword' && (
             <>
               <div className="winner-badge">
-                <Trophy className="w-4 h-4" style={{ color: 'white' }} />
+                <Trophy className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
               </div>
               {particles.map(p => (
                 <div
                   key={p.id}
                   className="celebration-particle"
                   style={{
-                    background: '#f97316',
+                    background: '#64748b',
                     top: '50%',
                     left: '50%',
-                    '--tx': `${Math.cos(p.angle * Math.PI / 180) * 60}px`,
-                    '--ty': `${Math.sin(p.angle * Math.PI / 180) * 60}px`,
+                    '--tx': `${Math.cos(p.angle * Math.PI / 180) * 20}px`,
+                    '--ty': `${Math.sin(p.angle * Math.PI / 180) * 20}px`,
                     animationDelay: `${p.delay}s`
                   }}
                 />
@@ -547,26 +586,27 @@ const IntentClassificationViz = ({
             </>
           )}
 
-          <div className="classifier-icon" style={{ background: 'rgba(249, 115, 22, 0.2)' }}>
-            <Search className="w-5 h-5" style={{ color: '#f97316' }} />
+          <div className="classifier-icon" style={{ background: 'rgba(100, 116, 139, 0.15)' }}>
+            <Search className="w-5 h-5" style={{ color: '#64748b' }} />
           </div>
-          <div className="classifier-label" style={{ color: '#f97316' }}>Keywords</div>
+          <div className="classifier-label" style={{ color: '#94a3b8' }}>Keywords</div>
 
           <div className="gauge-container">
             <CircularProgress
               progress={keywordResult?.confidence || 0}
-              size={70}
-              strokeWidth={5}
-              color="#f97316"
+              size={60}
+              strokeWidth={4}
+              color="#64748b"
+              showGlow={false}
             >
-              <span className="confidence-value" style={{ color: '#f97316' }}>
+              <span className="confidence-value" style={{ color: '#94a3b8', fontSize: '14px' }}>
                 {keywordResult?.confidence || 0}%
               </span>
             </CircularProgress>
           </div>
 
           {keywordResult?.category && (
-            <div className="category-badge" style={{ color: '#fb923c' }}>
+            <div className="category-badge" style={{ color: '#94a3b8', background: 'rgba(100, 116, 139, 0.1)' }}>
               {keywordResult.category}
             </div>
           )}
@@ -678,7 +718,7 @@ const UrgencyMeter = ({ urgency }) => {
 /**
  * Compact view
  */
-const CompactIntentView = ({ mlResult, keywordResult, finalResult, isActive }) => {
+const CompactIntentView = ({ mlResult, keywordResult, finalResult, _isActive }) => {
   const winner = finalResult?.method;
   const route = finalResult?.route;
   const config = route ? ROUTE_CONFIG[route] : null;

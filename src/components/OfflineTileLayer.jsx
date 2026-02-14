@@ -22,67 +22,70 @@ const ERROR_SVG = 'data:image/svg+xml,' + encodeURIComponent(
 
 const MAX_TILE_RETRIES = 2;
 
+// VERIFIED: [Performance] OFFLINE_TILELAYER_OPTIMIZED - Phase 2.5c 2026-02-13
+// CustomLayer class definition moved outside component to prevent re-creation on every render.
+// This eliminates expensive L.TileLayer.extend() calls during re-renders.
+const CustomLayer = L.TileLayer.extend({
+    createTile: function (coords, done) {
+        const tile = document.createElement('img');
+        let retryCount = 0;
+
+        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+
+        // On network error, retry up to MAX_TILE_RETRIES times, then show error state
+        const self = this;
+        const handleError = function () {
+            if (retryCount < MAX_TILE_RETRIES && navigator.onLine) {
+                retryCount++;
+                setTimeout(() => {
+                    tile.src = self.getTileUrl(coords);
+                }, 500 * retryCount);
+            } else {
+                tile.src = navigator.onLine ? ERROR_SVG : PLACEHOLDER_SVG;
+                tile.classList.add('tile-error');
+                done(null, tile);
+            }
+        };
+        L.DomEvent.on(tile, 'error', handleError);
+
+        if (this.options.crossOrigin || this.options.crossOrigin === '') {
+            tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+        }
+
+        tile.alt = '';
+        tile.setAttribute('role', 'presentation');
+
+        // Try to get from IndexedDB
+        tileManager.getTile(coords.x, coords.y, coords.z).then(url => {
+            if (url) {
+                tile.src = url;
+            } else if (!navigator.onLine) {
+                tile.src = PLACEHOLDER_SVG;
+                tile.classList.add('tile-missing');
+                done(null, tile);
+            } else {
+                // Online: try to fetch from network
+                tile.src = this.getTileUrl(coords);
+            }
+        }).catch((err) => {
+            console.debug('Tile fetch error:', coords.z, coords.x, coords.y, err?.message || err);
+
+            if (!navigator.onLine) {
+                tile.src = PLACEHOLDER_SVG;
+                done(null, tile);
+            } else {
+                tile.src = this.getTileUrl(coords);
+            }
+        });
+
+        return tile;
+    }
+});
+
 const OfflineTileLayer = () => {
     const map = useMap();
 
     useEffect(() => {
-        const CustomLayer = L.TileLayer.extend({
-            createTile: function (coords, done) {
-                const tile = document.createElement('img');
-                let retryCount = 0;
-
-                L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
-
-                // On network error, retry up to MAX_TILE_RETRIES times, then show error state
-                const self = this;
-                const handleError = function () {
-                    if (retryCount < MAX_TILE_RETRIES && navigator.onLine) {
-                        retryCount++;
-                        setTimeout(() => {
-                            tile.src = self.getTileUrl(coords);
-                        }, 500 * retryCount);
-                    } else {
-                        tile.src = navigator.onLine ? ERROR_SVG : PLACEHOLDER_SVG;
-                        tile.classList.add('tile-error');
-                        done(null, tile);
-                    }
-                };
-                L.DomEvent.on(tile, 'error', handleError);
-
-                if (this.options.crossOrigin || this.options.crossOrigin === '') {
-                    tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
-                }
-
-                tile.alt = '';
-                tile.setAttribute('role', 'presentation');
-
-                // Try to get from IndexedDB
-                tileManager.getTile(coords.x, coords.y, coords.z).then(url => {
-                    if (url) {
-                        tile.src = url;
-                    } else if (!navigator.onLine) {
-                        tile.src = PLACEHOLDER_SVG;
-                        tile.classList.add('tile-missing');
-                        done(null, tile);
-                    } else {
-                        // Online: try to fetch from network
-                        tile.src = this.getTileUrl(coords);
-                    }
-                }).catch((err) => {
-                    console.debug('Tile fetch error:', coords.z, coords.x, coords.y, err?.message || err);
-
-                    if (!navigator.onLine) {
-                        tile.src = PLACEHOLDER_SVG;
-                        done(null, tile);
-                    } else {
-                        tile.src = this.getTileUrl(coords);
-                    }
-                });
-
-                return tile;
-            }
-        });
-
         // Use CartoDB Dark Matter for "Premium" Dark Mode (No CSS inversion needed)
         const layer = new CustomLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',

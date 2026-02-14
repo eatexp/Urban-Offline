@@ -6,21 +6,28 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Activity, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
-  RefreshCw, 
+import {
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
   Zap,
   Database,
   Search,
   Map,
   Brain,
   TrendingUp,
-  Clock
+
+  Clock,
+  Layout
 } from 'lucide-react';
 import { clawdBot } from '../../services/clawdBot';
+import {
+  DatasetNetworkGraph,
+  IntentClassificationViz,
+  DatasetActivityIndicator
+} from '../ai-visualizations';
 
 /**
  * DevDashboard Component
@@ -29,7 +36,7 @@ const DevDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
-  
+
   // Data states
   const [validationData, setValidationData] = useState(null);
   const [coverageData, setCoverageData] = useState(null);
@@ -39,7 +46,7 @@ const DevDashboard = () => {
   // Run all checks
   const runAllChecks = useCallback(async () => {
     setLoading(true);
-    
+
     try {
       // Run validation
       const validation = await clawdBot.ask('validate app');
@@ -75,13 +82,15 @@ const DevDashboard = () => {
 
   // Initial load
   useEffect(() => {
-    runAllChecks();
+    queueMicrotask(() => {
+      runAllChecks();
+    });
   }, [runAllChecks]);
 
   // Calculate overall health score
   const calculateHealthScore = () => {
     let score = 100;
-    
+
     if (validationData?.summary) {
       const { passed, failed, warnings } = validationData.summary;
       const total = passed + failed + warnings;
@@ -89,11 +98,11 @@ const DevDashboard = () => {
         score = Math.round(((passed + warnings * 0.5) / total) * 100);
       }
     }
-    
+
     if (coverageData?.coverage !== undefined) {
       score = Math.round((score + coverageData.coverage) / 2);
     }
-    
+
     return Math.max(0, Math.min(100, score));
   };
 
@@ -106,7 +115,8 @@ const DevDashboard = () => {
     { id: 'validation', label: 'Validation', icon: CheckCircle },
     { id: 'coverage', label: 'Offline Coverage', icon: Database },
     { id: 'performance', label: 'Performance', icon: TrendingUp },
-    { id: 'suggestions', label: 'Suggestions', icon: Zap }
+    { id: 'suggestions', label: 'Suggestions', icon: Zap },
+    { id: 'visualizations', label: 'Visualizations', icon: Layout }
   ];
 
   return (
@@ -144,8 +154,8 @@ const DevDashboard = () => {
                   {healthScore}%
                 </p>
               </div>
-              {React.createElement(healthIcon, { 
-                className: `w-12 h-12 ${healthColor}` 
+              {React.createElement(healthIcon, {
+                className: `w-12 h-12 ${healthColor}`
               })}
             </div>
           </div>
@@ -169,7 +179,7 @@ const DevDashboard = () => {
                 <p className="text-3xl font-bold text-purple-400">
                   {validationData?.summary?.passed ?? '--'}
                   <span className="text-lg text-slate-500">/
-                    {validationData?.summary 
+                    {validationData?.summary
                       ? validationData.summary.passed + validationData.summary.failed + validationData.summary.warnings
                       : '--'}
                   </span>
@@ -206,8 +216,8 @@ const DevDashboard = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors
-              ${activeTab === tab.id 
-                ? 'bg-primary-600 text-white' 
+              ${activeTab === tab.id
+                ? 'bg-primary-600 text-white'
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
           >
             <tab.icon className="w-4 h-4" />
@@ -219,8 +229,8 @@ const DevDashboard = () => {
       {/* Content */}
       <div className="space-y-4">
         {activeTab === 'overview' && (
-          <OverviewTab 
-            validation={validationData} 
+          <OverviewTab
+            validation={validationData}
             coverage={coverageData}
             performance={performanceData}
             suggestions={suggestionsData}
@@ -230,6 +240,7 @@ const DevDashboard = () => {
         {activeTab === 'coverage' && <CoverageTab data={coverageData} />}
         {activeTab === 'performance' && <PerformanceTab data={performanceData} />}
         {activeTab === 'suggestions' && <SuggestionsTab data={suggestionsData} />}
+        {activeTab === 'visualizations' && <VisualizationsTab />}
       </div>
     </div>
   );
@@ -288,10 +299,10 @@ const OverviewTab = ({ validation, coverage, performance, suggestions }) => {
                 </span>
               </div>
               <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-green-400 rounded-full"
-                  style={{ 
-                    width: `${Math.min(100, (3000 / performance.metrics.startup.loadComplete) * 100)}%` 
+                  style={{
+                    width: `${Math.min(100, (3000 / performance.metrics.startup.loadComplete) * 100)}%`
                   }}
                 />
               </div>
@@ -307,10 +318,10 @@ const OverviewTab = ({ validation, coverage, performance, suggestions }) => {
                 </span>
               </div>
               <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-blue-400 rounded-full"
-                  style={{ 
-                    width: `${Math.min(100, (500 / parseFloat(performance.metrics.search.averageTime)) * 100)}%` 
+                  style={{
+                    width: `${Math.min(100, (500 / parseFloat(performance.metrics.search.averageTime)) * 100)}%`
                   }}
                 />
               </div>
@@ -324,7 +335,7 @@ const OverviewTab = ({ validation, coverage, performance, suggestions }) => {
                 <span className="text-white">{coverage.coverage}%</span>
               </div>
               <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-purple-400 rounded-full"
                   style={{ width: `${coverage.coverage}%` }}
                 />
@@ -343,24 +354,22 @@ const OverviewTab = ({ validation, coverage, performance, suggestions }) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {suggestions.suggestions.slice(0, 3).map((s, i) => (
-              <div 
-                key={i} 
-                className={`p-4 rounded-lg border ${
-                  s.priority === 'high' 
-                    ? 'bg-red-950/30 border-red-800' 
-                    : s.priority === 'medium'
+              <div
+                key={i}
+                className={`p-4 rounded-lg border ${s.priority === 'high'
+                  ? 'bg-red-950/30 border-red-800'
+                  : s.priority === 'medium'
                     ? 'bg-yellow-950/30 border-yellow-800'
                     : 'bg-slate-800 border-slate-700'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    s.priority === 'high' 
-                      ? 'bg-red-900 text-red-200' 
-                      : s.priority === 'medium'
+                  <span className={`text-xs px-2 py-1 rounded ${s.priority === 'high'
+                    ? 'bg-red-900 text-red-200'
+                    : s.priority === 'medium'
                       ? 'bg-yellow-900 text-yellow-200'
                       : 'bg-slate-700 text-slate-300'
-                  }`}>
+                    }`}>
                     {s.priority.toUpperCase()}
                   </span>
                   <span className="text-xs text-slate-500">{s.category}</span>
@@ -448,11 +457,11 @@ const CoverageTab = ({ data }) => {
           </div>
           <div>
             <p className="text-slate-400">
-              {data.coverage === 100 
-                ? 'All critical paths work offline' 
-                : data.coverage >= 80 
-                ? 'Most functionality works offline'
-                : 'Some features require internet'}
+              {data.coverage === 100
+                ? 'All critical paths work offline'
+                : data.coverage >= 80
+                  ? 'Most functionality works offline'
+                  : 'Some features require internet'}
             </p>
             <p className="text-sm text-slate-500 mt-1">
               Status: {data.online ? 'Online' : 'Offline mode'}
@@ -532,26 +541,24 @@ const SuggestionsTab = ({ data }) => {
   return (
     <div className="space-y-4">
       {data.suggestions.map((suggestion, i) => (
-        <div 
+        <div
           key={i}
-          className={`p-4 rounded-xl border ${
-            suggestion.priority === 'high' 
-              ? 'bg-red-950/20 border-red-800' 
-              : suggestion.priority === 'medium'
+          className={`p-4 rounded-xl border ${suggestion.priority === 'high'
+            ? 'bg-red-950/20 border-red-800'
+            : suggestion.priority === 'medium'
               ? 'bg-yellow-950/20 border-yellow-800'
               : 'bg-slate-900 border-slate-800'
-          }`}
+            }`}
         >
           <div className="flex items-start justify-between mb-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                  suggestion.priority === 'high' 
-                    ? 'bg-red-900 text-red-200' 
-                    : suggestion.priority === 'medium'
+                <span className={`text-xs px-2 py-1 rounded font-medium ${suggestion.priority === 'high'
+                  ? 'bg-red-900 text-red-200'
+                  : suggestion.priority === 'medium'
                     ? 'bg-yellow-900 text-yellow-200'
                     : 'bg-slate-700 text-slate-300'
-                }`}>
+                  }`}>
                   {suggestion.priority.toUpperCase()}
                 </span>
                 <span className="text-xs text-slate-500 uppercase">{suggestion.category}</span>
@@ -602,6 +609,98 @@ const StatusBadge = ({ status }) => {
       <Icon className="w-3 h-3" />
       {status}
     </span>
+  );
+};
+
+/**
+ * Visualizations Tab
+ */
+const VisualizationsTab = () => {
+  const [activeDatasets, _setActiveDatasets] = React.useState(['health', 'survival']);
+  const [queryActivity, setQueryActivity] = React.useState([]);
+  const [intent, setIntent] = React.useState(null);
+  const [analyzing, setAnalyzing] = React.useState(false);
+
+  // Simulate query
+  const simulateQuery = (datasetId) => {
+    setQueryActivity(prev => [...prev.slice(-19), {
+      datasetId,
+      timestamp: Date.now(),
+      hits: Math.floor(Math.random() * 5) + 1
+    }]);
+  };
+
+  // Simulate intent analysis
+  const simulateIntent = () => {
+    setAnalyzing(true);
+    setIntent(null);
+    setTimeout(() => {
+      setAnalyzing(false);
+      const intents = [
+        { type: 'medical', confidence: 0.95, label: 'Medical Emergency' },
+        { type: 'survival', confidence: 0.88, label: 'Survival Skill' },
+        { type: 'legal', confidence: 0.92, label: 'Legal Inquiry' }
+      ];
+      setIntent(intents[Math.floor(Math.random() * intents.length)]);
+    }, 1500);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Dataset Network Graph */}
+        <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+          <h3 className="text-lg font-semibold mb-4 text-white">Dataset Network Graph</h3>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {['health', 'survival', 'law', 'guides'].map(id => (
+              <button
+                key={id}
+                onClick={() => simulateQuery(id)}
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-sm text-slate-300 transition-colors"
+              >
+                Ping {id}
+              </button>
+            ))}
+          </div>
+          <div className="h-[320px] bg-slate-950 rounded-lg overflow-hidden relative">
+            {/* Force dark mode for component */}
+            <DatasetNetworkGraph
+              activeDatasets={activeDatasets}
+              queryActivity={queryActivity}
+              size="medium"
+            />
+          </div>
+        </div>
+
+        {/* Intent Classification */}
+        <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+          <h3 className="text-lg font-semibold mb-4 text-white">Intent Classification</h3>
+          <div className="mb-4">
+            <button
+              onClick={simulateIntent}
+              disabled={analyzing}
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 rounded-lg text-white text-sm"
+            >
+              {analyzing ? 'Analyzing...' : 'Simulate Analysis'}
+            </button>
+          </div>
+          <div className="h-[200px] flex items-center justify-center p-4 bg-slate-950 rounded-lg">
+            <IntentClassificationViz
+              intent={intent}
+              isAnalyzing={analyzing}
+            />
+          </div>
+
+          <h3 className="text-lg font-semibold mt-6 mb-4 text-white">Activity Indicator</h3>
+          <div className="p-4 bg-slate-950 rounded-lg">
+            <DatasetActivityIndicator
+              activeDatasets={activeDatasets}
+              lastQuery={queryActivity[queryActivity.length - 1]}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

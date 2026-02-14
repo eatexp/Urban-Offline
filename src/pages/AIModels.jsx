@@ -35,6 +35,7 @@ const log = createLogger('AIModels');
 const AIModels = () => {
     // State
 
+    const [_models, setModels] = useState([]);
     const [importedModels, setImportedModels] = useState([]);
     const [installedModels, setInstalledModels] = useState(new Set());
     const [activeModel, setActiveModel] = useState(null);
@@ -49,6 +50,34 @@ const AIModels = () => {
     const [showLegacy, setShowLegacy] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [error, setError] = useState(null);
+
+
+    // Refresh models list
+    const refreshModels = useCallback(async () => {
+        try {
+            // Get all models with install status
+            const allModels = await AIModelManager.getAvailableModels();
+            setModels(allModels);
+
+            // Track installed
+            const installed = new Set(allModels.filter(m => m.isInstalled).map(m => m.id));
+            setInstalledModels(installed);
+
+            // Active model
+            setActiveModel(AIModelManager.getCurrentModel());
+
+            // Storage usage
+            const usage = await AIModelManager.getStorageUsage();
+            setStorageUsed(usage);
+
+            // Imported models
+            const imported = await ModelImporter.getImportedModels();
+            setImportedModels(imported);
+
+        } catch (err) {
+            log.error('Failed to refresh models', err);
+        }
+    }, [setModels, setInstalledModels, setActiveModel, setStorageUsed, setImportedModels]);
 
     // Initialize
     useEffect(() => {
@@ -78,7 +107,7 @@ const AIModels = () => {
         };
 
         init();
-    }, []);
+    }, [refreshModels]);
 
     // Online/offline listener
     useEffect(() => {
@@ -90,32 +119,6 @@ const AIModels = () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, []);
-
-    const refreshModels = useCallback(async () => {
-        try {
-            // Get all models with install status
-            const allModels = await AIModelManager.getAvailableModels();
-            setModels(allModels);
-
-            // Track installed
-            const installed = new Set(allModels.filter(m => m.isInstalled).map(m => m.id));
-            setInstalledModels(installed);
-
-            // Active model
-            setActiveModel(AIModelManager.getCurrentModel());
-
-            // Storage usage
-            const usage = await AIModelManager.getStorageUsage();
-            setStorageUsed(usage);
-
-            // Imported models
-            const imported = await ModelImporter.getImportedModels();
-            setImportedModels(imported);
-
-        } catch (err) {
-            log.error('Failed to refresh models', err);
-        }
     }, []);
 
     // Handle download

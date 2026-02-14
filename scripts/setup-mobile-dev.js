@@ -24,7 +24,7 @@ function exec(command, options = {}) {
       cwd: projectRoot,
       ...options 
     });
-  } catch (error) {
+    } catch (_error) {
     console.error(`❌ Command failed: ${command}`);
     process.exit(1);
   }

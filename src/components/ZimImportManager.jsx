@@ -21,10 +21,6 @@ export const ZimImportManager = () => {
   const fileInputRef = useRef(null);
 
   // Load existing ZIM imports on mount
-  useEffect(() => {
-    loadZimImports();
-  }, []);
-
   const loadZimImports = useCallback(async () => {
     try {
       setLoading(true);
@@ -36,6 +32,10 @@ export const ZimImportManager = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadZimImports();
+  }, [loadZimImports]);
 
   // Handle drag events
   const handleDragOver = useCallback((e) => {
@@ -63,6 +63,7 @@ export const ZimImportManager = () => {
         error: 'Please drop a .zim file'
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle file selection

@@ -1,0 +1,262 @@
+/* ═══════════════════════════════════════════════════════════════════
+ * Composer.css — Tactile Message Composer
+ * Physical, haptic input — matches Cartridge "Tactical Glass" quality
+ * Mobile-first · Design-token-compliant · Refinery Standard
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Container ────────────────────────────────────────────────────── */
+
+.composer {
+    position: relative;
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border-primary);
+    transition: border-color var(--duration-fast) ease;
+    will-change: transform;
+}
+
+.composer--focused {
+    border-top-color: color-mix(in srgb, var(--color-accent-teal) 40%, transparent);
+}
+
+/* ── Inner row ────────────────────────────────────────────────────── */
+
+.composer__row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    max-width: 56rem;
+    /* 896px — matches 4xl container */
+    margin: 0 auto;
+}
+
+/* ── Textarea wrapper ─────────────────────────────────────────────── */
+
+.composer__input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.composer__textarea {
+    width: 100%;
+    min-height: 44px;
+    max-height: 160px;
+    /* ~5 rows */
+    padding: var(--space-3) var(--space-4);
+    padding-right: var(--space-10);
+    /* space for character hint */
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+    resize: none;
+    outline: none;
+    overflow-y: auto;
+    transition: border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+
+    /* Scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-secondary) transparent;
+}
+
+.composer__textarea::placeholder {
+    color: var(--color-text-disabled);
+    font-size: var(--font-size-sm);
+}
+
+.composer__textarea:focus {
+    border-color: var(--color-accent-teal);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-teal) 12%, transparent);
+}
+
+.composer__textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Send button ──────────────────────────────────────────────────── */
+
+.composer__send {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    /* --button-height-lg */
+    height: 48px;
+    border-radius: var(--radius-xl);
+    border: 1px solid transparent;
+    background: linear-gradient(135deg,
+            color-mix(in srgb, var(--color-accent-teal) 20%, transparent),
+            color-mix(in srgb, var(--color-accent-teal) 8%, transparent));
+    color: var(--color-accent-teal);
+    cursor: pointer;
+    transition: all var(--duration-fast) ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.composer__send:hover:not(:disabled) {
+    background: linear-gradient(135deg,
+            color-mix(in srgb, var(--color-accent-teal) 30%, transparent),
+            color-mix(in srgb, var(--color-accent-teal) 15%, transparent));
+    border-color: color-mix(in srgb, var(--color-accent-teal) 40%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent-teal) 15%, transparent);
+}
+
+.composer__send:active:not(:disabled) {
+    transform: scale(0.93);
+}
+
+.composer__send--ready {
+    background: linear-gradient(135deg, var(--color-accent-teal), color-mix(in srgb, var(--color-accent-teal) 80%, #06b6d4));
+    color: white;
+    border-color: var(--color-accent-teal);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent-teal) 25%, transparent);
+}
+
+.composer__send:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-disabled);
+    box-shadow: none;
+}
+
+/* ── Keyboard shortcut hint ───────────────────────────────────────── */
+
+.composer__hint {
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+    .composer__hint {
+        display: flex;
+    }
+}
+
+.composer__hint-key {
+    font-size: 0.625rem;
+    font-family: var(--font-family-mono);
+    font-weight: var(--font-weight-medium);
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-primary);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+.composer__hint-text {
+    font-size: 0.625rem;
+    color: var(--color-text-disabled);
+}
+
+.composer__hint-sep {
+    color: var(--color-border-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * SNAP ANIMATION — triggered by JS on submit
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes composerSnap {
+    0% {
+        transform: scale(1);
+    }
+
+    20% {
+        transform: scale(0.97);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.composer--snapping {
+    animation: composerSnap 0.3s var(--ease-emergency);
+}
+
+/* Send icon fly animation */
+@keyframes sendFly {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translateY(-6px) scale(1.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.composer__send--firing .composer__send-icon {
+    animation: sendFly 0.3s var(--ease-emergency);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * REDUCED MOTION — Refinery Standard compliance
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .composer,
+    .composer__textarea,
+    .composer__send {
+        transition: none !important;
+    }
+
+    .composer--snapping,
+    .composer__send--firing .composer__send-icon {
+        animation: none !important;
+    }
+
+    .composer__send:active:not(:disabled) {
+        transform: none;
+    }
+}
+
+/* ── Small screen adjustments ─────────────────────────────────────── */
+
+@media (max-width: 400px) {
+    .composer {
+        padding: var(--space-2) var(--space-3);
+        padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .composer__textarea {
+        font-size: 16px;
+        /* Prevent iOS zoom on focus */
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .composer__send {
+        width: 44px;
+        height: 44px;
+    }
+}

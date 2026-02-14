@@ -16,6 +16,7 @@ import { SYSTEM_PROMPTS, FALLBACK_TEMPLATES, AI_CONFIG } from './AIArchitecture'
 import { AIModelManager } from './AIModelManager';
 import { datasetRegistry } from './DatasetRegistry';
 import EmbeddingEngine from './EmbeddingEngine';
+import { refine } from '../refinery/Refinery';
 import { createLogger } from '../../utils/logger';
 
 const log = createLogger('RAGPipeline');
@@ -30,11 +31,19 @@ export const RAGPipeline = {
     // Track if semantic search is available
     _semanticSearchReady: false,
     _embeddingEngine: null,
+    _semanticSearchFailed: false,
+    _semanticSearchFailureReason: null,
 
     /**
      * Initialize the RAG pipeline (including semantic search)
      */
     async init() {
+        // If we've previously failed, try again
+        if (this._semanticSearchFailed) {
+            log.info('Retrying semantic search initialization');
+            return this.retrySemanticSearch();
+        }
+
         try {
             // Initialize embedding engine for semantic search
             this._embeddingEngine = EmbeddingEngine.getInstance();
@@ -45,11 +54,93 @@ export const RAGPipeline = {
             });
 
             this._semanticSearchReady = this._embeddingEngine.isModelReady();
+            this._semanticSearchFailed = false;
+            this._semanticSearchFailureReason = null;
             log.info('RAG Pipeline initialized', { semanticSearch: this._semanticSearchReady });
 
         } catch (error) {
             log.warn('Semantic search unavailable, falling back to keyword search', error);
             this._semanticSearchReady = false;
+            this._semanticSearchFailed = true;
+            this._semanticSearchFailureReason = error.message;
+
+            // Dispatch event for UI notification
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('semantic-search-failed', {
+                    detail: { error: error.message, retryable: true }
+                }));
+            }
+
+            // Store failure state in ContextManager for settings page
+            try {
+                const ContextManager = (await import('../context/ContextManager')).default;
+                const contextManager = ContextManager.getInstance();
+                contextManager.updateState({
+                    ai: {
+                        semanticSearchFailed: true,
+                        semanticSearchError: error.message
+                    }
+                });
+            } catch (contextError) {
+                log.debug('Could not update ContextManager with semantic search failure', contextError);
+            }
+        }
+    },
+
+    /**
+     * Retry semantic search initialization
+     * @returns {Promise<boolean>} - True if retry succeeded
+     */
+    async retrySemanticSearch() {
+        log.info('Attempting to retry semantic search initialization');
+        
+        try {
+            if (!this._embeddingEngine) {
+                this._embeddingEngine = EmbeddingEngine.getInstance();
+            }
+
+            await this._embeddingEngine.initialize((progress, message) => {
+                log.debug('Embedding model retry progress', { progress, message });
+            });
+
+            this._semanticSearchReady = this._embeddingEngine.isModelReady();
+            this._semanticSearchFailed = false;
+            this._semanticSearchFailureReason = null;
+
+            // Dispatch success event
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('semantic-search-restored', {
+                    detail: { success: true }
+                }));
+            }
+
+            // Update ContextManager
+            try {
+                const ContextManager = (await import('../context/ContextManager')).default;
+                const contextManager = ContextManager.getInstance();
+                contextManager.updateState({
+                    ai: {
+                        semanticSearchFailed: false,
+                        semanticSearchError: null
+                    }
+                });
+            } catch (contextError) {
+                log.debug('Could not update ContextManager with semantic search restore', contextError);
+            }
+
+            log.info('Semantic search retry succeeded');
+            return true;
+
+        } catch (error) {
+            log.error('Semantic search retry failed', error);
+            
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('semantic-search-failed', {
+                    detail: { error: error.message, retryable: true, isRetry: true }
+                }));
+            }
+
+            return false;
         }
     },
 
@@ -315,23 +406,29 @@ You are currently limited to information from these datasets: ${datasetNames}.
 If the user's question requires knowledge outside these datasets, politely inform them and suggest enabling the relevant dataset.`;
         }
 
-        // Build context from documents
+        // Build context from documents using The Refinery
         let context = '';
         if (docs.length > 0) {
+            // Split token budget evenly across documents
+            const perDocBudget = Math.floor(800 / Math.max(docs.length, 1));
             context = '\n\n--- REFERENCE DOCUMENTS ---\n';
             docs.forEach((doc, i) => {
                 const content = doc.fullContent || doc.content || doc.description || '';
-                // Truncate long content
-                const truncated = content.length > 1000
-                    ? content.substring(0, 1000) + '...'
-                    : content;
-                context += `\n[${i + 1}] "${doc.title}" (Source: ${doc.store || 'unknown'})\n${truncated}\n`;
+                // Refine HTML→Semantic Markdown (or pass through plain text)
+                const isHTML = content.includes('<') && content.includes('>');
+                const refined = isHTML
+                    ? refine(content, { tokenBudget: perDocBudget }).markdown
+                    : content.substring(0, perDocBudget * 4);
+                context += `\n[${i + 1}] "${doc.title}" (Source: ${doc.store || 'unknown'})\n${refined}\n`;
             });
             context += '\n--- END DOCUMENTS ---\n';
         } else if (datasets && datasets.length > 0) {
             // If no docs found and filtering is active, mention it
             context = '\n\n**No relevant documents found in the currently enabled datasets.**\n';
         }
+
+
+
 
         return `${systemPrompt}
 
@@ -348,15 +445,31 @@ Response:`;
      * Generate response using loaded LLM
      * @param {string} prompt - Full prompt with context
      * @param {Object} options - Generation options
+     * @param {boolean} options.stream - Whether to return an async generator for streaming
+     * @returns {Promise<string>|AsyncGenerator<string>} - Generated text or token stream
      */
-    async _generateWithLLM(prompt, _options = {}) {
+    async _generateWithLLM(prompt, options = {}) {
         const engine = AIModelManager.getEngine();
 
         if (!engine || !engine.isModelLoaded()) {
             throw new Error('LLM not available');
         }
 
-        // Create timeout promise
+        const { stream = false, onToken = null } = options;
+
+        // If streaming is requested, return async generator
+        if (stream) {
+            log.info('Starting streaming generation with true token-level streaming');
+            return engine.generateStream(prompt, {
+                maxTokens: AI_CONFIG.generation.maxTokens,
+                temperature: AI_CONFIG.generation.temperature,
+                topP: AI_CONFIG.generation.topP,
+                stopSequences: AI_CONFIG.generation.stopSequences,
+                onToken // Optional callback for immediate UI updates
+            });
+        }
+
+        // Non-streaming: use timeout protection
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Generation timeout')), GENERATION_TIMEOUT);
         });
@@ -390,9 +503,11 @@ Response:`;
     },
 
     /**
-     * Stream response generation (returns async generator)
+     * Stream response generation with true token-level streaming
      * @param {string} prompt - Full prompt
      * @param {Object} options - Generation options
+     * @param {Function} options.onToken - Callback for each token (for UI updates)
+     * @yields {string} - Individual tokens as they're generated
      */
     async *_streamGenerate(prompt, options = {}) {
         const engine = AIModelManager.getEngine();
@@ -404,7 +519,9 @@ Response:`;
         yield* engine.generateStream(prompt, {
             maxTokens: AI_CONFIG.generation.maxTokens,
             temperature: AI_CONFIG.generation.temperature,
-            ...options
+            topP: AI_CONFIG.generation.topP,
+            stopSequences: AI_CONFIG.generation.stopSequences,
+            onToken: options.onToken
         });
     },
 
@@ -457,7 +574,9 @@ Response:`;
                 citations.push({
                     index,
                     title: docs[index].title,
-                    id: docs[index].id || docs[index].slug
+                    id: docs[index].id || docs[index].slug,
+                    store: docs[index].store, // Important for SourceViewer
+                    category: docs[index].category
                 });
             }
         }
@@ -469,7 +588,9 @@ Response:`;
                 : docs.slice(0, 3).map((d, i) => ({
                     index: i,
                     title: d.title,
-                    id: d.id || d.slug
+                    id: d.id || d.slug,
+                    store: d.store,
+                    category: d.category
                 })),
             usedFallback: false,
             confidence: 0.8
@@ -572,16 +693,39 @@ Response:`;
                 count: retrievedDocs.length
             }, 100);
 
+            // Stage 2.5: Refinery — distill HTML→Semantic Markdown
+            const perDocBudget = Math.floor(800 / Math.max(retrievedDocs.length, 1));
+            const refineryResults = retrievedDocs.map(doc => {
+                const content = doc.fullContent || doc.content || doc.description || '';
+                const isHTML = content.includes('<') && content.includes('>');
+                if (isHTML) {
+                    return refine(content, { tokenBudget: perDocBudget });
+                }
+                return { markdown: content.substring(0, perDocBudget * 4), meta: { charsBefore: content.length, charsAfter: Math.min(content.length, perDocBudget * 4), compressionRatio: 1 } };
+            });
+
+            const avgRatio = refineryResults.reduce((sum, r) => sum + (r.meta?.compressionRatio || 1), 0) / Math.max(refineryResults.length, 1);
+            const totalCharsBefore = refineryResults.reduce((sum, r) => sum + (r.meta?.charsBefore || 0), 0);
+            const totalCharsAfter = refineryResults.reduce((sum, r) => sum + (r.meta?.charsAfter || 0), 0);
+
+            emit('refinery', {
+                documentsRefined: refineryResults.length,
+                avgCompressionRatio: avgRatio.toFixed(3),
+                totalCharsBefore,
+                totalCharsAfter,
+                tokensSaved: Math.floor((totalCharsBefore - totalCharsAfter) / 4)
+            }, 100);
+
             // Stage 3: Context assembly
             const chunks = retrievedDocs.map((doc, i) => {
-                const content = doc.fullContent || doc.content || doc.description || '';
+                const refined = refineryResults[i];
                 return {
                     index: i,
                     title: doc.title || 'Untitled',
                     store: doc.store || 'unknown',
                     score: doc.score || 0,
-                    length: content.length,
-                    preview: content.substring(0, 200)
+                    length: refined.markdown.length,
+                    preview: refined.markdown.substring(0, 200)
                 };
             });
 

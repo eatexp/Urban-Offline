@@ -81,7 +81,7 @@ function generateSuggestions(context) {
 const AskAIChip = ({
     title = '',
     category = 'general',
-    content = '',
+    _content = '',
     articleId = null,
     variant = 'compact'
 }) => {

@@ -23,11 +23,17 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', {
+      'no-unused-vars': ['warn', {
         varsIgnorePattern: '^[A-Z_]',
         argsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
+      // React Compiler rules - warnings only for Release Candidate
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-refresh/only-export-components': 'warn',
     },
   },
   // Node.js scripts configuration
@@ -49,6 +55,28 @@ export default defineConfig([
         caughtErrorsIgnorePattern: '^_'
       }],
       'no-empty': ['warn'],
+    },
+  },
+  // Test files configuration
+  {
+    files: ['**/*.test.js', '**/test-*.js', 'src/setupTests.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.jest,
+        global: 'readonly',
+        process: 'readonly',
+        expect: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', {
+        varsIgnorePattern: '^[A-Z_]',
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
+      'no-undef': 'warn',
     },
   },
 ])

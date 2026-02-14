@@ -16,6 +16,8 @@
 import { pipeline, env } from '@xenova/transformers';
 import { createLogger } from '../../utils/logger';
 import { isWindowsNative } from '../../utils/platform';
+import ContextManager from '../context/ContextManager';
+import TactileSignatureEngine from '../haptics/TactileSignatureEngine.js';
 
 const log = createLogger('TransformersEngine');
 
@@ -33,6 +35,7 @@ if (!isWindowsNative()) {
 
 // Model configurations with transformers.js compatible IDs
 // Extended with rich metadata for Locally AI-style model picker
+// NOTE: Checksums should be updated when models are updated
 export const TRANSFORMERS_MODELS = {
     'smollm-360m': {
         id: 'smollm-360m',
@@ -50,7 +53,11 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['Quick lookups', 'Basic first aid', 'Simple questions'],
         recommended: false,
         tier: 'free',
-        legacy: false
+        legacy: false,
+        // SHA-256 checksum for model.onnx from HuggingFace LFS
+        checksum: '454394e1f92c1479bf71926b2cc845a3e29040c0844ba0d97ce693a390bca40c',
+        checksumSource: 'huggingface',
+        modelUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM-360M-Instruct/resolve/main/onnx/model.onnx'
     },
     'qwen-0.5b': {
         id: 'qwen-0.5b',
@@ -68,7 +75,11 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['Emergency guidance', 'Medical info', 'Survival tips'],
         recommended: false,
         tier: 'free',
-        legacy: false
+        legacy: false,
+        // SHA-256 checksum for model.onnx from HuggingFace LFS
+        checksum: '3d63556db976ef2983174f01cc496aa8d90715a81e6c9f130c2965d473984979',
+        checksumSource: 'huggingface',
+        modelUrl: 'https://huggingface.co/Xenova/Qwen1.5-0.5B-Chat/resolve/main/onnx/model.onnx'
     },
     'tinyllama': {
         id: 'tinyllama',
@@ -86,7 +97,11 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['General assistance', 'Medical triage', 'Survival guidance'],
         recommended: true,
         tier: 'pro',
-        legacy: false
+        legacy: false,
+        // SHA-256 checksum for model.onnx from HuggingFace LFS
+        checksum: '8de9e56185700b13c893ce0a7343055cf8e89b4731b5235c28343bd15524ea23',
+        checksumSource: 'huggingface',
+        modelUrl: 'https://huggingface.co/Xenova/TinyLlama-1.1B-Chat-v1.0/resolve/main/onnx/model.onnx'
     },
     'phi3-mini': {
         id: 'phi3-mini',
@@ -104,7 +119,11 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['Complex medical questions', 'Legal rights', 'Detailed analysis'],
         recommended: false,
         tier: 'pro',
-        legacy: false
+        legacy: false,
+        // SHA-256 checksum for model_q4.onnx from HuggingFace LFS (quantized version)
+        checksum: '16b8e5d28a757c37bbfa7d9420fd094c0c20e3615ca3c203b5b9501015045c8f',
+        checksumSource: 'huggingface',
+        modelUrl: 'https://huggingface.co/Xenova/Phi-3-mini-4k-instruct/resolve/main/onnx/model_q4.onnx'
     },
     'smollm-1.7b': {
         id: 'smollm-1.7b',
@@ -122,7 +141,11 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['In-depth medical advice', 'Emergency protocols', 'Comprehensive guidance'],
         recommended: false,
         tier: 'pro',
-        legacy: false
+        legacy: false,
+        // SHA-256 checksum for model.onnx from HuggingFace LFS
+        checksum: 'c538daa78f811830dc9028aa228a63a218147ab478c0c65ef6e2d8cab532380a',
+        checksumSource: 'huggingface',
+        modelUrl: 'https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/resolve/main/onnx/model.onnx'
     }
 };
 
@@ -130,8 +153,14 @@ export const TRANSFORMERS_MODELS = {
 const CHAT_TEMPLATES = {
     smollm: {
         format: (systemPrompt, userMessage) => {
+            // Inject Tool Use Instructions into System Prompt
+            const toolInstructions = `
+If the user asks about a location, explain it briefly and end your response with the tag <<MAP: LocationName>>.
+Example: "London is the capital... <<MAP: London>>"
+`;
             return `<|im_start|>system
-${systemPrompt}<|im_end|>
+${systemPrompt}
+${toolInstructions}<|im_end|>
 <|im_start|>user
 ${userMessage}<|im_end|>
 <|im_start|>assistant
@@ -140,8 +169,13 @@ ${userMessage}<|im_end|>
     },
     qwen: {
         format: (systemPrompt, userMessage) => {
+            const toolInstructions = `
+If the user asks about a location, explain it briefly and end your response with the tag <<MAP: LocationName>>.
+Example: "London is the capital... <<MAP: London>>"
+`;
             return `<|im_start|>system
-${systemPrompt}<|im_end|>
+${systemPrompt}
+${toolInstructions}<|im_end|>
 <|im_start|>user
 ${userMessage}<|im_end|>
 <|im_start|>assistant
@@ -150,8 +184,13 @@ ${userMessage}<|im_end|>
     },
     tinyllama: {
         format: (systemPrompt, userMessage) => {
+            const toolInstructions = `
+If the user asks about a location, explain it briefly and end your response with the tag <<MAP: LocationName>>.
+Example: "London is the capital... <<MAP: London>>"
+`;
             return `<|system|>
-${systemPrompt}</s>
+${systemPrompt}
+${toolInstructions}</s>
 <|user|>
 ${userMessage}</s>
 <|assistant|>
@@ -160,8 +199,13 @@ ${userMessage}</s>
     },
     phi3: {
         format: (systemPrompt, userMessage) => {
+            const toolInstructions = `
+If the user asks about a location, explain it briefly and end your response with the tag <<MAP: LocationName>>.
+Example: "London is the capital... <<MAP: London>>"
+`;
             return `<|system|>
-${systemPrompt}<|end|>
+${systemPrompt}
+${toolInstructions}<|end|>
 <|user|>
 ${userMessage}<|end|>
 <|assistant|>
@@ -183,6 +227,7 @@ class TransformersEngine {
         this.isInitializing = false;
         this.isReady = false;
         this.abortController = null;
+        this._isSwitching = false;
     }
 
     /**
@@ -320,6 +365,44 @@ class TransformersEngine {
     }
 
     /**
+     * Switch to a different model
+     * @param {string} modelId - Target model ID from TRANSFORMERS_MODELS
+     * @param {Function} onProgress - Progress callback
+     * @returns {Promise<boolean>}
+     */
+    async switchModel(modelId, onProgress = () => {}) {
+        // Guard: Prevent concurrent switches
+        if (this._isSwitching) {
+            log.warn('Model switch already in progress, ignoring request');
+            throw new Error('Model switch already in progress');
+        }
+
+        // Guard: Check if already on this model
+        if (this.currentModelId === modelId && this.isReady) {
+            log.info('Already using requested model', { modelId });
+            onProgress(100, 'Model ready');
+            return true;
+        }
+
+        this._isSwitching = true;
+
+        try {
+            // Unload current model
+            if (this.generator) {
+                log.info('Unloading current model before switch', { from: this.currentModelId, to: modelId });
+                await this.unload();
+            }
+
+            // Initialize new model
+            const success = await this.initialize(modelId, onProgress);
+            
+            return success;
+        } finally {
+            this._isSwitching = false;
+        }
+    }
+
+    /**
      * Generate text response
      * @param {string} prompt - Full prompt including system message
      * @param {Object} options - Generation options
@@ -347,6 +430,9 @@ class TransformersEngine {
         const startTime = Date.now();
 
         try {
+            // Start thinking loop
+            TactileSignatureEngine.getInstance().startLoop('ai:thinking');
+
             const output = await this.generator(prompt, {
                 max_new_tokens: maxTokens,
                 temperature: temperature,
@@ -372,9 +458,15 @@ class TransformersEngine {
                 outputLength: finalText.length
             });
 
+            // Stop thinking loop, play completion signature
+            TactileSignatureEngine.getInstance().stopLoop('ai:thinking');
+            TactileSignatureEngine.getInstance().fire('ai:complete');
+
             return finalText.trim();
 
         } catch (error) {
+            // Ensure loop stops on error
+            TactileSignatureEngine.getInstance().stopLoop('ai:thinking');
             log.error('Generation failed', error);
             throw error;
         }
@@ -401,27 +493,29 @@ class TransformersEngine {
             return this.generate(prompt, options);
         }
 
-        const formattedPrompt = template.format(systemPrompt, userMessage);
+        // --- CONTEXT INJECTION (The HUD) ---
+        // Get the live system state (Map coords, Battery, etc.)
+        const contextBlock = ContextManager.getInstance().getSystemContext();
+
+        // Prepend context to system prompt
+        // We add it just before the tool instructions or main system prompt
+        const contextualizedSystemPrompt = `${systemPrompt}\n\n${contextBlock}`;
+
+        const formattedPrompt = template.format(contextualizedSystemPrompt, userMessage);
         return this.generate(formattedPrompt, options);
     }
 
     /**
-     * Generate with streaming (yields tokens as they're generated)
+     * Generate with true token-level streaming
      *
-     * IMPORTANT LIMITATION: This method currently simulates streaming by:
-     * 1. Generating the full response first
-     * 2. Splitting into words and yielding them with small delays
-     *
-     * This is NOT true token-by-token streaming. True streaming would require
-     * using the TextStreamer callback in transformers.js, but support varies
-     * by model and may not work with all configurations.
-     *
-     * For true streaming UX, consider using this method's output to progressively
-     * display text, but be aware the full generation happens upfront.
+     * This method provides real-time token streaming using transformers.js's
+     * TextStreamer callback mechanism. Tokens are yielded as they're generated
+     * by the model, providing immediate visual feedback to users.
      *
      * @param {string} prompt - Full prompt
      * @param {Object} options - Generation options
-     * @yields {string} - Word chunks (simulated streaming, not true token streaming)
+     * @param {Function} options.onToken - Optional callback for each token (for UI updates)
+     * @yields {string} - Individual tokens as they're generated
      */
     async *generateStream(prompt, options = {}) {
         if (!this.isReady || !this.generator) {
@@ -431,36 +525,130 @@ class TransformersEngine {
         const {
             maxTokens = 512,
             temperature = 0.3,
-            topP = 0.9
+            topP = 0.9,
+            doSample = true,
+            stopSequences = [],
+            onToken = null
         } = options;
 
-        log.debug('Starting generation (simulated streaming)');
+        log.debug('Starting true token-level streaming generation', {
+            promptLength: prompt.length,
+            maxTokens,
+            temperature
+        });
+
+        // Create a queue to bridge callback-based streaming with async generator
+        const tokenQueue = [];
+        let isComplete = false;
+        let hasError = null;
+
+        // Custom streamer that receives tokens from transformers.js
+        const streamer = {
+            put: (token) => {
+                // Clean up the token (remove special tokens)
+                const cleanToken = this._cleanToken(token);
+                if (cleanToken) {
+                    tokenQueue.push(cleanToken);
+                    // Call optional onToken callback for immediate UI updates
+                    if (onToken) {
+                        try {
+                            onToken(cleanToken);
+                        } catch (e) {
+                            log.warn('onToken callback error', e);
+                        }
+                    }
+                }
+            },
+            end: () => {
+                isComplete = true;
+            }
+        };
+
+        // Start generation in the background
+        const generationPromise = this.generator(prompt, {
+            max_new_tokens: maxTokens,
+            temperature: temperature,
+            top_p: topP,
+            do_sample: doSample,
+            return_full_text: false,
+            streamer: streamer
+        }).then(output => {
+            // Handle stop sequences on complete text
+            let finalText = output[0]?.generated_text || '';
+            for (const stop of stopSequences) {
+                const stopIndex = finalText.indexOf(stop);
+                if (stopIndex !== -1) {
+                    finalText = finalText.substring(0, stopIndex);
+                }
+            }
+            return finalText;
+        }).catch(error => {
+            hasError = error;
+            throw error;
+        });
+
+        // Start thinking loop
+        TactileSignatureEngine.getInstance().startLoop('ai:thinking');
 
         try {
-            // Generate full response first - this is NOT true streaming
-            const output = await this.generator(prompt, {
-                max_new_tokens: maxTokens,
-                temperature: temperature,
-                top_p: topP,
-                do_sample: true,
-                return_full_text: false
-            });
+            // Yield tokens as they arrive
+            while (!isComplete || tokenQueue.length > 0) {
+                // Check for errors
+                if (hasError) {
+                    throw hasError;
+                }
 
-            const generatedText = output[0]?.generated_text || '';
+                // Yield available tokens
+                while (tokenQueue.length > 0) {
+                    const token = tokenQueue.shift();
+                    yield token;
+                }
 
-            // Simulate streaming by yielding word chunks
-            // NOTE: The full generation has already completed at this point
-            const words = generatedText.split(' ');
-            for (const word of words) {
-                yield word + ' ';
-                // Small delay for visual streaming effect (not real-time generation)
-                await new Promise(resolve => setTimeout(resolve, 10));
+                // If not complete, wait a bit for more tokens
+                if (!isComplete) {
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                }
             }
 
+            // Ensure generation promise completes (for error handling)
+            await generationPromise;
+
         } catch (error) {
-            log.error('Generation failed', error);
+            log.error('Streaming generation failed', error);
             throw error;
+        } finally {
+            // Always stop thinking loop
+            TactileSignatureEngine.getInstance().stopLoop('ai:thinking');
+            TactileSignatureEngine.getInstance().fire('ai:complete');
         }
+    }
+
+    /**
+     * Clean up special tokens from model output
+     * @private
+     */
+    _cleanToken(token) {
+        if (!token || typeof token !== 'string') return '';
+
+        // List of common special tokens to filter
+        const specialTokens = [
+            '<|endoftext|>',
+            '<|im_end|>',
+            '</s>',
+            '<|end|>',
+            '<|assistant|>',
+            '<|user|>',
+            '<|system|>'
+        ];
+
+        let cleaned = token;
+
+        // Remove special tokens
+        for (const special of specialTokens) {
+            cleaned = cleaned.replaceAll(special, '');
+        }
+
+        return cleaned;
     }
 
     /**

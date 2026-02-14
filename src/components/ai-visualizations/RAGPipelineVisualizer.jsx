@@ -33,46 +33,47 @@ import {
 } from './VisualizationEffects';
 
 // Pipeline stages configuration
+// Pipeline stages configuration - Tactical Dark Theme
 const PIPELINE_STAGES = [
   {
     id: 'query',
     label: 'Query',
     icon: Search,
-    description: 'User question received',
-    color: '#f97316',
-    glowColor: 'rgba(249, 115, 22, 0.4)'
+    description: 'Input',
+    color: '#64748b', // Slate-500
+    glowColor: 'rgba(100, 116, 139, 0.1)'
   },
   {
     id: 'embedding',
     label: 'Embed',
     icon: Cpu,
-    description: 'Vector embedding',
-    color: '#8b5cf6',
-    glowColor: 'rgba(139, 92, 246, 0.4)'
+    description: 'Vectorize',
+    color: '#52525b', // Zinc-600
+    glowColor: 'rgba(82, 82, 91, 0.1)'
   },
   {
     id: 'retrieval',
-    label: 'Retrieve',
+    label: 'Search',
     icon: Database,
-    description: 'Search knowledge',
-    color: '#3b82f6',
-    glowColor: 'rgba(59, 130, 246, 0.4)'
+    description: 'Lookup',
+    color: '#075985', // Sky-800
+    glowColor: 'rgba(7, 89, 133, 0.2)'
   },
   {
     id: 'context',
     label: 'Context',
     icon: FileText,
-    description: 'Build context',
-    color: '#06b6d4',
-    glowColor: 'rgba(6, 182, 212, 0.4)'
+    description: 'Assemble',
+    color: '#3730a3', // Indigo-800
+    glowColor: 'rgba(55, 48, 163, 0.2)'
   },
   {
     id: 'generate',
     label: 'Generate',
     icon: Sparkles,
-    description: 'AI response',
-    color: '#22c55e',
-    glowColor: 'rgba(34, 197, 94, 0.4)'
+    description: 'Output',
+    color: '#047857', // Emerald-700
+    glowColor: 'rgba(4, 120, 87, 0.2)'
   }
 ];
 
@@ -83,7 +84,7 @@ const RAGPipelineVisualizer = ({
   isActive = false,
   currentStage = null,
   stageData = {},
-  onStageClick,
+  _onStageClick,
   compact = false
 }) => {
   const [expandedStage, setExpandedStage] = useState(null);
@@ -99,7 +100,9 @@ const RAGPipelineVisualizer = ({
       }, 50);
       return () => clearInterval(interval);
     } else {
-      setElapsedTime(0);
+      queueMicrotask(() => {
+        setElapsedTime(0);
+      });
       startTimeRef.current = null;
     }
   }, [isActive]);
@@ -155,16 +158,18 @@ const RAGPipelineVisualizer = ({
           font-weight: 600;
           color: var(--color-text-primary);
           margin: 0;
+          letter-spacing: 0.02em;
         }
         
         .pipeline-timer {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
           font-family: var(--font-family-mono);
-          color: var(--color-primary-400);
-          background: rgba(249, 115, 22, 0.15);
-          padding: 4px 10px;
-          border-radius: 6px;
+          color: var(--color-text-muted);
+          background: rgba(255, 255, 255, 0.05); /* Stealth bg */
+          padding: 4px 8px;
+          border-radius: 4px; /* Sharper */
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .pipeline-track {
@@ -172,8 +177,34 @@ const RAGPipelineVisualizer = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 10px;
+          padding: 10px 10px; /* More vertical padding */
           margin-bottom: 16px;
+          overflow-x: auto; /* Allow scrolling on small screens */
+          scrollbar-width: none; /* Hide scrollbar Firefox */
+          -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+        }
+        
+        .pipeline-track::-webkit-scrollbar {
+          display: none; /* Hide scrollbar Chrome/Safari */
+        }
+
+        /* Ensure min-width for scrolling */
+        @media (max-width: 600px) {
+          .pipeline-track {
+            justify-content: flex-start;
+            gap: 20px;
+            padding-right: 20px;
+          }
+          
+          .pipeline-beam {
+            left: 20px;
+            width: calc(100% - 40px);
+            min-width: 400px; /* Ensure beam stretches */
+          }
+          
+          .pipeline-stage {
+            min-width: 60px; /* Ensure click target size */
+          }
         }
         
         /* Connection beam */
@@ -182,24 +213,21 @@ const RAGPipelineVisualizer = ({
           top: 50%;
           left: 40px;
           right: 40px;
-          height: 4px;
+          height: 1px; /* Thinner beam */
           background: rgba(255,255,255,0.05);
-          border-radius: 2px;
           transform: translateY(-50%);
           overflow: hidden;
         }
         
         .beam-progress {
           height: 100%;
-          border-radius: 2px;
-          background: linear-gradient(90deg, #f97316, #8b5cf6, #3b82f6, #06b6d4, #22c55e);
+          background: linear-gradient(90deg, #18181b, #27272a, #0ea5e9, #10b981); /* Zinc to Sky/Emerald */
           background-size: 200% 100%;
-          transition: width 0.5s ease;
-          box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .beam-progress.animate {
-          animation: beam-shimmer 2s linear infinite;
+          animation: beam-shimmer 1.5s linear infinite; /* Faster */
         }
         
         @keyframes beam-shimmer {
@@ -216,19 +244,20 @@ const RAGPipelineVisualizer = ({
         
         .beam-particle {
           position: absolute;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
+          width: 3px; /* Smaller */
+          height: 1px; /* Dash */
+          background: #fff;
           top: 50%;
           transform: translateY(-50%);
-          animation: particle-travel 1.5s linear infinite;
+          animation: particle-travel 1s linear infinite; /* Faster */
+          box-shadow: 0 0 2px rgba(255,255,255,0.8);
         }
         
         @keyframes particle-travel {
-          0% { left: -10px; opacity: 0; }
+          0% { left: 0; opacity: 0; }
           10% { opacity: 1; }
           90% { opacity: 1; }
-          100% { left: calc(100% + 10px); opacity: 0; }
+          100% { left: 100%; opacity: 0; }
         }
         
         /* Stage nodes */
@@ -240,48 +269,37 @@ const RAGPipelineVisualizer = ({
           align-items: center;
           gap: 8px;
           cursor: pointer;
-          transition: transform 0.3s ease;
+          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .pipeline-stage:hover {
-          transform: translateY(-4px);
+          transform: translateY(-2px);
         }
         
         .stage-node {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
+          width: 32px; /* Smaller */
+          height: 32px;
+          border-radius: 6px; /* Squircle */
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(15, 23, 42, 0.8);
-          border: 2px solid rgba(255,255,255,0.1);
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          background: rgba(0, 0, 0, 0.6); /* Darker base */
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(4px);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 2;
         }
         
         .stage-node.pending {
-          opacity: 0.5;
+          opacity: 0.4;
+          background: rgba(9, 9, 11, 0.4);
         }
         
         .stage-node.active {
           border-color: currentColor;
-          animation: stage-active-pulse 1.5s ease-in-out infinite;
-        }
-        
-        .stage-node.completed {
-          background: currentColor;
-          border-color: currentColor;
-        }
-        
-        @keyframes stage-active-pulse {
-          0%, 100% { 
-            box-shadow: 0 0 20px currentColor;
-            transform: scale(1);
-          }
-          50% { 
-            box-shadow: 0 0 35px currentColor;
-            transform: scale(1.08);
-          }
+          box-shadow: 0 0 0 1px currentColor, inset 0 0 10px rgba(0,0,0,0.5); /* Tactical active state */
+          transform: scale(1.05);
+          background: rgba(0,0,0,0.8);
         }
         
         .stage-label {
@@ -298,7 +316,7 @@ const RAGPipelineVisualizer = ({
         }
         
         .stage-timing {
-          font-size: 10px;
+          font-size: 9px;
           font-family: var(--font-family-mono);
           color: var(--color-text-muted);
           opacity: 0.7;
@@ -307,10 +325,10 @@ const RAGPipelineVisualizer = ({
         /* Expanded details */
         .stage-details {
           margin-top: 16px;
-          padding: 16px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.06);
+          padding: 12px;
+          background: rgba(255,255,255,0.02);
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.05);
           animation: details-slide-in 0.3s ease;
         }
         
@@ -324,7 +342,7 @@ const RAGPipelineVisualizer = ({
           align-items: center;
           gap: 10px;
           margin-bottom: 12px;
-          padding-bottom: 10px;
+          padding-bottom: 8px;
           border-bottom: 1px solid rgba(255,255,255,0.06);
         }
         
@@ -332,13 +350,15 @@ const RAGPipelineVisualizer = ({
           font-size: 13px;
           font-weight: 600;
           color: var(--color-text-primary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         
         .detail-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 6px 0;
+          padding: 4px 0;
         }
         
         .detail-label {
@@ -394,8 +414,8 @@ const RAGPipelineVisualizer = ({
                   key={i}
                   className="beam-particle"
                   style={{
-                    background: '#f97316',
-                    boxShadow: '0 0 10px #f97316',
+                    background: '#c2410c', /* Darker Orange */
+                    boxShadow: 'none',
                     animationDelay: `${i * 0.5}s`
                   }}
                 />
@@ -463,7 +483,7 @@ const RAGPipelineVisualizer = ({
 /**
  * Compact view for tight spaces
  */
-const CompactPipelineView = ({ isActive, currentStage, stageData, elapsedTime }) => {
+const CompactPipelineView = ({ isActive, currentStage, _stageData, elapsedTime }) => {
   const currentIndex = currentStage
     ? PIPELINE_STAGES.findIndex(s => s.id === currentStage)
     : -1;
@@ -476,10 +496,10 @@ const CompactPipelineView = ({ isActive, currentStage, stageData, elapsedTime })
           align-items: center;
           gap: 8px;
           padding: 10px 14px;
-          background: rgba(15, 23, 42, 0.6);
+          background: rgba(2, 6, 23, 0.4);
           backdrop-filter: blur(12px);
           border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .compact-stages {

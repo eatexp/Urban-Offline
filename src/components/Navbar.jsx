@@ -1,21 +1,7 @@
 import { Home, AlertTriangle, Map, Library, Brain } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-/**
- * Trigger light haptic feedback for navigation
- */
-const triggerNavHaptic = async () => {
-    try {
-        // Try Capacitor Haptics first
-        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-        await Haptics.impact({ style: ImpactStyle.Light });
-    } catch {
-        // Web fallback
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(5);
-        }
-    }
-};
+import { HapticsService, ImpactStyle } from '../services/HapticsService';
 
 const Navbar = () => {
     // =============================================================================
@@ -28,7 +14,7 @@ const Navbar = () => {
     // =============================================================================
 
     const handleNavClick = () => {
-        triggerNavHaptic();
+        HapticsService.impact(ImpactStyle.Light);
     };
 
     return (
