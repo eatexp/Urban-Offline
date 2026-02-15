@@ -7,8 +7,7 @@
  * Compliance: .clinerules §1 - Progressive download with resume capability
  */
 
-// Using vitest globals - vite.config.js has globals: true
-// describe, it, expect, vi, beforeEach, afterEach are available globally
+import { vi } from 'vitest';
 
 // Mock the db module with factory function (hoisted)
 vi.mock('./db', () => {

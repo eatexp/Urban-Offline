@@ -1,7 +1,19 @@
 @import "tailwindcss";
 
+/* NEW: Midnight Emergency Color System */
+@import './styles/colors-v2.css';
+
+/* NEW: Unified Theme System */
+@import './styles/theme-system.css';
+
+/* LEGACY: Keep for transition period (will deprecate) */
+@import './styles/colors.css';
 @import './styles/design-system.css';
 @import './styles/components.css';
+@import './styles/premium-theme.css';
+
+/* NEW: Premium Polish */
+@import './styles/premium-polish.css';
 
 @theme {
   --color-slate-50: var(--color-slate-50);
@@ -76,7 +88,7 @@
 }
 
 .tile-missing::after {
-  content: 'Â ';
+  content: 'ĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂÄÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂÄÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂ ';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -100,7 +112,7 @@
 }
 
 /* ==========================================================================
-   SURVIVAL MODE — "Blackout Protocol" Styles
+   SURVIVAL MODE ĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂÄÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂÄÂÄšÄĂĹĄĂÂÄÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂĂÂĂÂÄÂĂÂ "Blackout Protocol" Styles
    Applied when data-survival-mode="true" is set on <body>
    ========================================================================== */
 

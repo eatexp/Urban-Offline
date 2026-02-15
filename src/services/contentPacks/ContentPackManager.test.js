@@ -7,8 +7,7 @@
  * Compliance: .clinerules §1, §4 - Resume capability and checksum validation
  */
 
-// Using vitest globals - vite.config.js has globals: true
-// describe, it, expect, vi, beforeEach, afterEach are available globally
+import { vi } from 'vitest';
 
 // Mock the dependencies
 vi.mock('../db', () => ({
@@ -128,7 +127,7 @@ describe('ContentPackManager Integration', () => {
     describe('Full Download', () => {
         it('should successfully download and install a pack', async () => {
             // Mock fetch to return successful response
-            const mockArrayBuffer = new ArrayBuffer(TEST_PACK.size);
+            const _mockArrayBuffer = new ArrayBuffer(TEST_PACK.size);
             fetchMock.mockResolvedValue({
                 ok: true,
                 status: 200,
@@ -136,7 +135,7 @@ describe('ContentPackManager Integration', () => {
                 body: {
                     getReader: () => ({
                         read: vi.fn()
-                            .mockResolvedValueOnce({ done: false, value: new Uint8Array(mockArrayBuffer) })
+                            .mockResolvedValueOnce({ done: false, value: new Uint8Array(_mockArrayBuffer) })
                             .mockResolvedValueOnce({ done: true }),
                         releaseLock: vi.fn()
                     })
@@ -161,7 +160,7 @@ describe('ContentPackManager Integration', () => {
                     seek: vi.fn().mockResolvedValue(undefined)
                 }),
                 getFile: vi.fn().mockResolvedValue({
-                    arrayBuffer: vi.fn().mockResolvedValue(mockArrayBuffer)
+                    arrayBuffer: vi.fn().mockResolvedValue(_mockArrayBuffer)
                 })
             };
             navigatorStorageMock.getDirectory.mockResolvedValue({
@@ -181,7 +180,7 @@ describe('ContentPackManager Integration', () => {
 
         it('should verify checksum after download', async () => {
             // This test verifies that checksum verification is attempted
-            const mockArrayBuffer = new ArrayBuffer(100);
+            const _mockArrayBuffer = new ArrayBuffer(100);
             fetchMock.mockResolvedValue({
                 ok: true,
                 status: 200,
@@ -329,7 +328,7 @@ describe('ContentPackManager Integration', () => {
 
     describe('Checksum Failure', () => {
         it('should increment retry count on checksum failure', async () => {
-            const mockArrayBuffer = new ArrayBuffer(100);
+            const _mockArrayBuffer = new ArrayBuffer(100);
             
             fetchMock.mockResolvedValue({
                 ok: true,

@@ -5,6 +5,7 @@ import './index.css';
 import { initStorage, contentSync } from './services/db';
 import { createLogger } from './utils/logger';
 import { AppProvider } from './context/AppProvider';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { inkService } from './services/InkService';
 
 const log = createLogger('Main');
@@ -12,9 +13,11 @@ const log = createLogger('Main');
 const startApp = () => {
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-      <AppProvider>
-        <App />
-      </AppProvider>
+      <ThemeProvider>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </ThemeProvider>
     </React.StrictMode>
   );
 

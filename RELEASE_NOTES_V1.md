@@ -1,8 +1,8 @@
 # Urban-Offline V1.0 "Operation Blackout"
-## Production Release
+## Release Candidate — FIELD TESTING REQUIRED
 
 **Release Date**: 2026-02-14  
-**Status**: ✅ **PRODUCTION RELEASE**  
+**Status**: ⏳ **RELEASE CANDIDATE** — Pending Physical Device Verification  
 **Codename**: *Operation Blackout*  
 **Framework**: React 19 + Capacitor 7.4.4
 
@@ -10,9 +10,11 @@
 
 ## Summary
 
-Release Candidate 1. Build verified. Native plugins synced.
+Release Candidate 1. Implementation complete. **Field testing required before production certification.**
 
-Urban-Offline V1.0 represents the culmination of 8 implementation phases, transforming a prototype into a production-ready offline emergency intelligence application. This release candidate is compiled, verified, and ready for deployment to physical devices for field testing.
+Urban-Offline V1.0 represents the culmination of 8 implementation phases, transforming a prototype into a production-ready offline emergency intelligence application. **All features are implemented, but verification on physical devices is REQUIRED before V1.0 can be certified.**
+
+> ⚠️ **CRITICAL**: This is NOT a production release. The "Field Test Protocol" below must be completed on physical Android and iOS devices before certification.
 
 ---
 
@@ -283,26 +285,41 @@ Urban-Offline V1.0 represents the culmination of 8 implementation phases, transf
 
 ## Sign-Off Checklist
 
-✅ Version bumped to 1.0.0  
-✅ Capacitor config updated (bundledWebRuntime: false)  
-✅ 85 tests passing (0 critical failures)  
-✅ Lint: 0 errors, 79 warnings (all non-critical)  
-✅ Production build verified (dist/ folder with index.html and assets)  
-✅ Release notes updated  
-✅ Git tag v1.0.0 created  
+⏳ **PHASE 1: Implementation** (COMPLETE)
+- [x] Version bumped to 1.0.0-rc.1  
+- [x] Capacitor config updated (bundledWebRuntime: false)  
+- [x] 85 tests passing (0 critical failures)  
+- [x] Lint: 0 errors, 79 warnings (all non-critical)  
+- [x] Production build verified (dist/ folder with index.html and assets)  
+- [x] Release notes updated  
+
+⏳ **PHASE 2: Field Testing** (REQUIRED — See "Field Test Protocol" above)
+- [ ] All 14 Field Test Protocol tests completed
+- [ ] Android physical device verification
+- [ ] iOS physical device verification  
+- [ ] Cross-platform consistency validated
+- [ ] Performance benchmarks verified on-device
+
+⏳ **PHASE 3: Certification** (PENDING)
+- [ ] Field test report documented
+- [ ] Critical issues resolved (if any)
+- [ ] Git tag v1.0.0 created
+- [ ] Production release declared
 
 ---
 
 ## Declaration
 
-> **Urban-Offline V1.0 is released and ready for deployment.**
+> **Urban-Offline V1.0 "Operation Blackout" is a RELEASE CANDIDATE.**
 > 
-> Build Size: ~55 MB | Lint: 0 Errors | Tests: 85 Passing | **Status: V1.0 PRODUCTION**
+> Implementation is complete. **Physical device field testing is REQUIRED before production certification.**
+> 
+> Build Size: ~55 MB | Lint: 0 Errors | Tests: 85 Passing | **Status: V1.0 RC**
 > 
 > *"In the dark, when the grid goes down, this app is the last thing standing."*
 
 **End of Release Notes**  
-*Git Tag: v1.0.0 | Commit: chore(release): prepare v1.0.0*
+*Target Git Tag: v1.0.0 (pending field test completion)*
 
 ---
 

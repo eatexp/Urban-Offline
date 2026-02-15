@@ -597,18 +597,21 @@ src/components/
 **Phase 8 goes first** because hardening is the foundation — we don't add features on shaky ground.  
 **Phase 7 goes last** because it depends on haptic/audio systems (to disable them) and AI model switching.
 
-**Execution Status (2026-02-13):**
-- [x] Phase 8: Production Hardening — ✅ **COMPLETE** (2026-02-13)
-- [x] Phase 5: Native Polish & Haptics — ✅ **COMPLETE** (2026-02-13)
-- [x] Phase 6: AI-Enhanced Cartridges — ✅ **COMPLETE** (2026-02-13)
-- [x] Phase 7: Survival Mode — ✅ **COMPLETE** (2026-02-13)
-- [x] **Download Resilience** — ✅ **VERIFIED** (2026-02-14)
-- [x] **Final Polish & Fixes** — ✅ **COMPLETE** (2026-02-14)
-- [ ] **Operation Blackout Protocol** — 🔄 **INITIATED**
+**Execution Status (2026-02-15):**
+- [x] Phase 8: Production Hardening — ✅ **IMPLEMENTED** (2026-02-13)
+- [x] Phase 5: Native Polish & Haptics — ✅ **IMPLEMENTED** (2026-02-13)
+- [x] Phase 6: AI-Enhanced Cartridges — ✅ **IMPLEMENTED** (2026-02-13)
+- [x] Phase 7: Survival Mode — ✅ **IMPLEMENTED** (2026-02-13)
+- [x] **Download Resilience** — ✅ **IMPLEMENTED** (2026-02-14)
+- [x] **Final Polish & Fixes** — ✅ **IMPLEMENTED** (2026-02-14)
+- [x] **Operation Blackout Protocol** — ✅ **IMPLEMENTED** (2026-02-14)
+- [ ] **Field Test Verification** — ⏳ **PENDING** (Requires physical devices)
 
+**Status**: ⏳ **VERSION 1.0 RELEASE CANDIDATE — FIELD TESTING REQUIRED**
 
-
-**Status**: 🚀 **VERSION 1.0 RELEASE CANDIDATE**
+> ⚠️ **CRITICAL**: All phases are IMPLEMENTED but NOT VERIFIED on physical devices. 
+> The V1.0 Field Test Protocol (14 tests) must be completed before production certification.
+> See `RELEASE_NOTES_V1.md` for detailed test procedures.
 
 ---
 
@@ -652,18 +655,39 @@ src/
 
 Before tagging `v1.0.0`, ALL of the following must be true:
 
-| # | Criterion | Phase |
-|---|-----------|-------|
-| 1 | All cartridges pass schema validation on startup | 8 |
-| 2 | Error boundaries wrap all generative UI components | 8 |
-| 3 | Haptic signatures fire on iOS and Android | 5 |
-| 4 | Tactical audio plays with <10ms latency | 5 |
-| 5 | "Where is the hospital?" returns precise POI coords | 6 |
-| 6 | Survival Mode activates/deactivates cleanly | 7 |
-| 7 | Battery monitoring works on native platforms | 7 |
-| 8 | No unhandled promise rejections in production build | 8 |
-| 9 | Bundle size remains under budget (see `size-budget.json`) | All |
-| 10 | App runs fully offline for 24+ hours without memory leaks | All |
+### Implementation Phase (COMPLETE ✅)
+| # | Criterion | Phase | Status |
+|---|-----------|-------|--------|
+| 1 | All cartridges pass schema validation on startup | 8 | ✅ Implemented |
+| 2 | Error boundaries wrap all generative UI components | 8 | ✅ Implemented |
+| 3 | Haptic signatures fire on iOS and Android | 5 | ✅ Implemented |
+| 4 | Tactical audio plays with <10ms latency | 5 | ✅ Implemented |
+| 5 | "Where is the hospital?" returns precise POI coords | 6 | ✅ Implemented |
+| 6 | Survival Mode activates/deactivates cleanly | 7 | ✅ Implemented |
+| 7 | Battery monitoring works on native platforms | 7 | ✅ Implemented |
+| 8 | No unhandled promise rejections in production build | 8 | ✅ Implemented |
+| 9 | Bundle size remains under budget (see `size-budget.json`) | All | ✅ Verified |
+| 10 | App runs fully offline for 24+ hours without memory leaks | All | ⏳ Pending test |
+
+### Verification Phase (REQUIRED ⏳)
+| # | Criterion | Test | Status |
+|---|-----------|------|--------|
+| 11 | BatteryManager verified on Web (Chrome) | Test 1 | ⏳ Not started |
+| 12 | BatteryManager verified on Native (iOS/Android) | Test 2 | ⏳ Not started |
+| 13 | Threshold detection validated (8%, 15%, 50%) | Test 3 | ⏳ Not started |
+| 14 | Survival Mode activation < 3 seconds | Test 4 | ⏳ Not started |
+| 15 | Haptics disable verified on native | Test 5 | ⏳ Not started |
+| 16 | Audio disable verified | Test 6 | ⏳ Not started |
+| 17 | Brightness dim to 20% on native | Test 7 | ⏳ Not started |
+| 18 | CSS style reduction applied | Test 8 | ⏳ Not started |
+| 19 | SurvivalModeOverlay renders correctly | Test 9 | ⏳ Not started |
+| 20 | Manual toggle from AmbientStatusBar works | Test 10 | ⏳ Not started |
+| 21 | Auto-prompt at ≤10% battery functions | Test 11 | ⏳ Not started |
+| 22 | State restoration on deactivation | Test 12 | ⏳ Not started |
+| 23 | Web graceful degradation (Safari, no plugins) | Test 13 | ⏳ Not started |
+| 24 | Concurrent operations guard prevents races | Test 14 | ⏳ Not started |
+
+> **Note**: See `RELEASE_NOTES_V1.md` "Field Test Protocol" section for detailed test procedures.
 
 ---
 

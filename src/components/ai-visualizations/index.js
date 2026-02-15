@@ -1,31 +1,19 @@
 /**
- * AI Visualizations Index
+ * AI Visualizations - Premium visualization components for AI operations
  * 
- * Export all AI data flow visualization components
+ * Exports:
+ * - AIReadingViz: RAG pipeline visualization with glass morphism
+ * - DatasetActivityViz: Real-time dataset usage monitoring
+ * - DatasetNetworkGraph: Network graph of dataset relationships
+ * - IntentClassificationViz: Intent confidence visualization
+ * - RAGPipelineVisualizer: Combined pipeline visualization
  */
 
-export { default as RAGPipelineVisualizer } from './RAGPipelineVisualizer';
-export { default as DatasetNetworkGraph, DatasetActivityIndicator } from './DatasetNetworkGraph';
+export { default as AIReadingViz } from './AIReadingViz';
+export { default as DatasetActivityViz } from './DatasetActivityViz';
+export { default as DatasetNetworkGraph } from './DatasetNetworkGraph';
 export { default as IntentClassificationViz } from './IntentClassificationViz';
+export { default as RAGPipelineVisualizer } from './RAGPipelineVisualizer';
 
-// Export shared effects library
-export {
-  GlowFilters,
-  GlassmorphismCard,
-  AnimatedNumber,
-  PulseRing,
-  FloatingElement,
-  ParticleSystem,
-  CircularProgress,
-  DataBeam,
-  Shimmer,
-  TiltCard
-} from './VisualizationEffects';
-
-// Re-export types for convenience
-export const AI_VISUALIZATION_COMPONENTS = [
-  'RAGPipelineVisualizer',
-  'DatasetNetworkGraph',
-  'DatasetActivityIndicator',
-  'IntentClassificationViz'
-];
+// Re-export as default for convenience
+export { default } from './AIReadingViz';

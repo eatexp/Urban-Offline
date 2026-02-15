@@ -1,0 +1,314 @@
+/* =================================================================
+   URBAN-OFFLINE COLOR SYSTEM V5.0 - "MIDNIGHT EMERGENCY"
+   "Distinctive, Premium, Purpose-Built"
+   
+   NOT generic Tailwind. NOT off-the-shelf slate.
+   This is Urban-Offline's signature palette.
+   
+   Philosophy:
+   - Deep midnight backgrounds (navy-tinged, not pure black)
+   - Warm amber accents (emergency aesthetic, refined)
+   - Olive/khaki survival tones (grounded, tactical)
+   - Muted teal medical accents (calming, clinical)
+   - Dusty copper warmth (human, approachable)
+   
+   Compliance: VISION.md §7 - Premium Minimalism
+               DESIGN_SYSTEM.md §2 - Colour System
+   ================================================================= */
+
+:root {
+  /* =================================================================
+     MIDNIGHT FOUNDATION - Distinctive Deep Navy
+     Not generic slate-900. This has warmth and depth.
+     ================================================================= */
+  
+  /* Deepest layer - OLED optimized */
+  --midnight-0: #02040a;   /* Deepest void */
+  --midnight-50: #0a0f1a;  /* Primary background */
+  --midnight-100: #111827; /* Elevated surfaces */
+  --midnight-200: #1a2332; /* Card backgrounds */
+  --midnight-300: #243042; /* Borders, dividers */
+  --midnight-400: #2d3d54; /* Hover states */
+  --midnight-500: #3d4f6b; /* Primary actions */
+  --midnight-600: #4d6385; /* Secondary actions */
+  --midnight-700: #6b7fa3; /* Tertiary text */
+  --midnight-800: #9aa8c0; /* Secondary text */
+  --midnight-900: #c8d0e0; /* Primary text */
+  --midnight-950: #f0f4f8; /* Emphasis text */
+
+  /* =================================================================
+     AMBER ALERT - Warm Emergency Accents
+     Refined amber, not harsh orange. Emergency without alarm.
+     ================================================================= */
+  
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-200: #fde68a;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;    /* Primary amber */
+  --amber-600: #d97706;    /* Amber action */
+  --amber-700: #b45309;    /* Amber emphasis */
+  --amber-800: #92400e;
+  --amber-900: #78350f;
+  --amber-950: #451a03;
+
+  /* =================================================================
+     SURVIOLIVE - Tactical Olive/Khaki
+     Grounded, outdoorsy, survival aesthetic.
+     ================================================================= */
+  
+  --olive-50: #f7f8f4;
+  --olive-100: #eef0e6;
+  --olive-200: #dde1cc;
+  --olive-300: #c4cba5;
+  --olive-400: #a7b17d;
+  --olive-500: #8b9658;    /* Primary olive */
+  --olive-600: #6e7843;    /* Olive action */
+  --olive-700: #555f35;
+  --olive-800: #454c2e;
+  --olive-900: #3b4129;
+  --olive-950: #1e2113;
+
+  /* =================================================================
+     MEDICAL TEAL - Calming Clinical
+     Trustworthy medical aesthetic without sterility.
+     ================================================================= */
+  
+  --teal-50: #f0fdfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #99f6e4;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;     /* Primary teal */
+  --teal-600: #0d9488;     /* Teal action */
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+  --teal-950: #042f2e;
+
+  /* =================================================================
+     COPPER WARMTH - Human, Premium
+     Metallic warmth for premium touches.
+     ================================================================= */
+  
+  --copper-50: #fdf8f6;
+  --copper-100: #f9ebe4;
+  --copper-200: #f2d5c6;
+  --copper-300: #e8b8a0;
+  --copper-400: #db9470;
+  --copper-500: #c9764e;   /* Primary copper */
+  --copper-600: #b05f38;   /* Copper action */
+  --copper-700: #924d2e;
+  --copper-800: #77402a;
+  --copper-900: #603626;
+  --copper-950: #341a12;
+
+  /* =================================================================
+     EMERGENCY RED - Reserved for True Danger
+     Desaturated, serious. Never used for decoration.
+     ================================================================= */
+  
+  --danger-50: #fef2f2;
+  --danger-100: #fee2e2;
+  --danger-200: #fecaca;
+  --danger-300: #fca5a5;
+  --danger-400: #f87171;
+  --danger-500: #dc2626;   /* Emergency only */
+  --danger-600: #b91c1c;
+  --danger-700: #991b1b;
+  --danger-800: #7f1d1d;
+  --danger-900: #450a0a;
+
+  /* =================================================================
+     SEMANTIC MAPPING - Purpose-Built
+     Every color has a specific job.
+     ================================================================= */
+
+  /* Background Layers - Z-depth system */
+  --bg-void: var(--midnight-0);
+  --bg-primary: var(--midnight-50);
+  --bg-secondary: var(--midnight-100);
+  --bg-tertiary: var(--midnight-200);
+  --bg-elevated: var(--midnight-200);
+  --bg-hover: var(--midnight-300);
+  --bg-active: var(--midnight-400);
+
+  /* Text Hierarchy */
+  --text-primary: var(--midnight-950);
+  --text-secondary: var(--midnight-800);
+  --text-tertiary: var(--midnight-700);
+  --text-muted: var(--midnight-600);
+  --text-disabled: var(--midnight-500);
+  --text-inverse: var(--midnight-50);
+
+  /* Interactive Elements */
+  --accent-primary: var(--amber-500);
+  --accent-primary-hover: var(--amber-400);
+  --accent-primary-active: var(--amber-600);
+  
+  --accent-secondary: var(--teal-500);
+  --accent-secondary-hover: var(--teal-400);
+  --accent-secondary-active: var(--teal-600);
+
+  /* Feature Colors */
+  --color-ai: var(--copper-500);
+  --color-ai-glow: rgba(201, 118, 78, 0.3);
+  
+  --color-knowledge: var(--olive-500);
+  --color-knowledge-glow: rgba(139, 150, 88, 0.3);
+  
+  --color-emergency: var(--danger-500);
+  --color-emergency-glow: rgba(220, 38, 38, 0.3);
+
+  /* Status Colors */
+  --status-success: var(--olive-500);
+  --status-success-bg: rgba(139, 150, 88, 0.15);
+  
+  --status-warning: var(--amber-500);
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  
+  --status-error: var(--danger-500);
+  --status-error-bg: rgba(220, 38, 38, 0.15);
+  
+  --status-info: var(--teal-500);
+  --status-info-bg: rgba(20, 184, 166, 0.15);
+
+  /* Border System */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-standard: rgba(255, 255, 255, 0.1);
+  --border-emphasis: rgba(255, 255, 255, 0.15);
+  --border-focus: var(--amber-500);
+
+  /* Glow Effects - Subtle, purposeful */
+  --glow-amber: 0 0 20px rgba(245, 158, 11, 0.2);
+  --glow-teal: 0 0 20px rgba(20, 184, 166, 0.2);
+  --glow-olive: 0 0 20px rgba(139, 150, 88, 0.2);
+  --glow-copper: 0 0 20px rgba(201, 118, 78, 0.2);
+  --glow-danger: 0 0 20px rgba(220, 38, 38, 0.3);
+
+  /* Gradient Accents */
+  --gradient-amber: linear-gradient(135deg, var(--amber-400) 0%, var(--amber-600) 100%);
+  --gradient-teal: linear-gradient(135deg, var(--teal-400) 0%, var(--teal-600) 100%);
+  --gradient-olive: linear-gradient(135deg, var(--olive-400) 0%, var(--olive-600) 100%);
+  --gradient-copper: linear-gradient(135deg, var(--copper-400) 0%, var(--copper-600) 100%);
+  --gradient-midnight: linear-gradient(180deg, var(--midnight-100) 0%, var(--midnight-50) 100%);
+}
+
+/* =================================================================
+   DARK MODE - Optimized for OLED
+   ================================================================= */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  
+  --bg-primary: var(--midnight-50);
+  --bg-secondary: var(--midnight-100);
+  --bg-tertiary: var(--midnight-200);
+  
+  --text-primary: var(--midnight-950);
+  --text-secondary: var(--midnight-800);
+  --text-tertiary: var(--midnight-700);
+}
+
+/* =================================================================
+   HIGH CONTRAST MODE - Accessibility
+   ================================================================= */
+
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --border-standard: rgba(255, 255, 255, 0.3);
+    --border-focus: var(--amber-400);
+  }
+}
+
+/* =================================================================
+   REDUCED MOTION - Respect user preference
+   ================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0.01ms;
+    --transition-normal: 0.01ms;
+    --transition-slow: 0.01ms;
+  }
+}
+
+/* =================================================================
+   UTILITY CLASSES - Semantic, not decorative
+   ================================================================= */
+
+/* Background utilities */
+.bg-void { background-color: var(--bg-void); }
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }
+.bg-elevated { background-color: var(--bg-elevated); }
+
+/* Text utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-muted { color: var(--text-muted); }
+
+/* Accent utilities */
+.accent-amber { color: var(--accent-primary); }
+.accent-teal { color: var(--accent-secondary); }
+.accent-olive { color: var(--color-knowledge); }
+.accent-copper { color: var(--color-ai); }
+
+/* Border utilities */
+.border-subtle { border-color: var(--border-subtle); }
+.border-standard { border-color: var(--border-standard); }
+.border-emphasis { border-color: var(--border-emphasis); }
+
+/* Glow utilities */
+.glow-amber { box-shadow: var(--glow-amber); }
+.glow-teal { box-shadow: var(--glow-teal); }
+.glow-olive { box-shadow: var(--glow-olive); }
+.glow-copper { box-shadow: var(--glow-copper); }
+
+/* Feature badges */
+.badge-ai {
+  background: rgba(201, 118, 78, 0.15);
+  color: var(--color-ai);
+  border: 1px solid rgba(201, 118, 78, 0.3);
+}
+
+.badge-knowledge {
+  background: rgba(139, 150, 88, 0.15);
+  color: var(--color-knowledge);
+  border: 1px solid rgba(139, 150, 88, 0.3);
+}
+
+.badge-emergency {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--color-emergency);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+/* =================================================================
+   COMPONENT TOKENS - Consistent component styling
+   ================================================================= */
+
+:root {
+  /* Card */
+  --card-bg: var(--bg-elevated);
+  --card-border: var(--border-standard);
+  --card-radius: 16px;
+  --card-padding: 20px;
+  
+  /* Button */
+  --btn-height: 48px;
+  --btn-radius: 12px;
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-text: var(--midnight-0);
+  
+  /* Input */
+  --input-height: 52px;
+  --input-bg: var(--bg-secondary);
+  --input-border: var(--border-standard);
+  --input-focus-border: var(--border-focus);
+}

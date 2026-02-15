@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-14T07:26:19.995Z",
+  "generatedAt": "2026-02-15T14:33:37.516Z",
   "bundled": true,
   "packs": [
     {
@@ -22,11 +22,11 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors, licensed under CC-BY-SA 4.0",
-        "lastVerified": "2026-02-14"
+        "lastVerified": "2026-02-15"
       },
       "version": "1.0.0",
       "articleCount": 75,
-      "size": 19743500,
+      "size": 19743430,
       "sizeDisplay": "18.8 MB",
       "dataUrl": "/assets/packs/medical-core.json",
       "bundled": true
@@ -50,7 +50,7 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-14"
+        "lastVerified": "2026-02-15"
       },
       "version": "1.0.0",
       "articleCount": 8,
@@ -78,7 +78,7 @@
         "license": "CC-BY-SA-4.0",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
         "attribution": "Content from Wikipedia contributors",
-        "lastVerified": "2026-02-14"
+        "lastVerified": "2026-02-15"
       },
       "version": "1.0.0",
       "articleCount": 6,
@@ -89,5 +89,5 @@
     }
   ],
   "totalArticles": 89,
-  "totalSize": 21171470
+  "totalSize": 21171400
 }

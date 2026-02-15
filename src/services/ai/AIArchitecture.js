@@ -57,7 +57,7 @@
 
 import { createLogger } from '../../utils/logger';
 
-const log = createLogger('AIArchitecture');
+const _log = createLogger('AIArchitecture');
 
 // Model Definitions - Using transformers.js compatible models
 // See TransformersEngine.js for the actual model configurations
@@ -291,7 +291,7 @@ export const AI_CONFIG = {
         minStorage: 2 * 1024 * 1024 * 1024, // 2 GB free
         webGPURequired: true // For WebLLM acceleration
     },
-    
+
     // RAG settings
     rag: {
         maxContextChunks: 5,
@@ -299,7 +299,7 @@ export const AI_CONFIG = {
         minRelevanceScore: 0.3,
         includeMetadata: true
     },
-    
+
     // Generation settings
     generation: {
         maxTokens: 512,
@@ -315,11 +315,11 @@ export const AI_CONFIG = {
  */
 const isWindowsNative = () => {
     if (typeof window === 'undefined') return false;
-    
+
     const hasElectronAPI = !!(window.electron || window.process?.versions?.electron);
-    const isWindows = window.navigator?.platform?.includes('Win') || 
-                      window.navigator?.userAgent?.includes('Windows');
-    
+    const isWindows = window.navigator?.platform?.includes('Win') ||
+        window.navigator?.userAgent?.includes('Windows');
+
     return hasElectronAPI || (isWindows && typeof window.require !== 'undefined');
 };
 
@@ -338,14 +338,12 @@ export async function checkAICapability() {
         unavailableReason: null
     };
 
-    // P1 FIX: Check for Windows native environment first
-    // Windows native (Electron) doesn't support transformers.js
+    // P1 FIX: Windows native environment check removed.
+    // We now allow Windows (Electron) to attempt AI initialization.
+    // Real hardware capabilities (WebGPU/WASM) will determine support.
     if (isWindowsNative()) {
         capabilities.isWindowsNative = true;
-        capabilities.aiAvailable = false;
-        capabilities.unavailableReason = 'AI features are not available in the Windows desktop app. Please use the web version for AI-powered assistance.';
-        log.warn('AI unavailable: Windows native environment detected');
-        return capabilities;
+        // logic continues to actual capability checks...
     }
 
     // Check WebGPU support

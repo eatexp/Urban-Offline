@@ -15,7 +15,10 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 100",
     "preview": "vite preview",
     "cap:sync": "cap sync",
-    "cap:open": "cap open"
+    "cap:open": "cap open",
+    "quality": "node scripts/quality-gates.js",
+    "prepare": "husky install",
+    "audit": "npm run quality && npm run lint"
   },
   "dependencies": {
     "@capacitor-community/screen-brightness": "^8.0.0",

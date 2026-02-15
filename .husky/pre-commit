@@ -1,0 +1,17 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running Urban-Offline Quality Gates..."
+
+# Run quality gates
+node scripts/quality-gates.js
+
+# If quality gates pass, run lint
+if [ $? -eq 0 ]; then
+  echo "✅ Quality gates passed"
+  echo "🧹 Running linter..."
+  npm run lint
+else
+  echo "❌ Quality gates failed. Fix errors before committing."
+  exit 1
+fi

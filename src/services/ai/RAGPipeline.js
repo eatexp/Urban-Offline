@@ -93,7 +93,7 @@ export const RAGPipeline = {
      */
     async retrySemanticSearch() {
         log.info('Attempting to retry semantic search initialization');
-        
+
         try {
             if (!this._embeddingEngine) {
                 this._embeddingEngine = EmbeddingEngine.getInstance();
@@ -133,7 +133,7 @@ export const RAGPipeline = {
 
         } catch (error) {
             log.error('Semantic search retry failed', error);
-            
+
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('semantic-search-failed', {
                     detail: { error: error.message, retryable: true, isRetry: true }
@@ -469,22 +469,44 @@ Response:`;
             });
         }
 
-        // Non-streaming: use timeout protection
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Generation timeout')), GENERATION_TIMEOUT);
-        });
+        // Non-streaming: use timeout protection with retry
+        const generateWithRetry = async () => {
+            const MAX_RETRIES = 2;
+            const RETRY_DELAY_MS = 1000;
+
+            for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+                try {
+                    // Create a fresh timeout for each attempt
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Generation timeout')), GENERATION_TIMEOUT);
+                    });
+
+                    // Race generation against timeout
+                    return await Promise.race([
+                        engine.generate(prompt, {
+                            maxTokens: AI_CONFIG.generation.maxTokens,
+                            temperature: AI_CONFIG.generation.temperature,
+                            topP: AI_CONFIG.generation.topP,
+                            stopSequences: AI_CONFIG.generation.stopSequences
+                        }),
+                        timeoutPromise
+                    ]);
+                } catch (error) {
+                    const isTimeout = error.message === 'Generation timeout';
+                    const isLastAttempt = attempt > MAX_RETRIES;
+
+                    if (isTimeout || isLastAttempt) {
+                        throw error;
+                    }
+
+                    log.warn(`LLM generation attempt ${attempt} failed, retrying...`, error);
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+                }
+            }
+        };
 
         try {
-            // Race generation against timeout
-            const response = await Promise.race([
-                engine.generate(prompt, {
-                    maxTokens: AI_CONFIG.generation.maxTokens,
-                    temperature: AI_CONFIG.generation.temperature,
-                    topP: AI_CONFIG.generation.topP,
-                    stopSequences: AI_CONFIG.generation.stopSequences
-                }),
-                timeoutPromise
-            ]);
+            const response = await generateWithRetry();
 
             log.info('LLM generation complete', {
                 promptLength: prompt.length,

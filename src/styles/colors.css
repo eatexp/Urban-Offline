@@ -1,0 +1,204 @@
+/* =================================================================
+   URBAN-OFFLINE COLOR SYSTEM V3.0
+   "Clean Slate" - Muted, Professional, Minimal
+   ================================================================= */
+
+:root {
+  /* =================================================================
+     CORE PALETTE - Muted & Professional
+     ================================================================= */
+  
+  /* PRIMARY - Slate Blue (replacing bright orange) */
+  --color-primary-50: #f8fafc;
+  --color-primary-100: #f1f5f9;
+  --color-primary-200: #e2e8f0;
+  --color-primary-300: #cbd5e1;
+  --color-primary-400: #94a3b8;
+  --color-primary-500: #64748b;  /* Muted slate - primary action */
+  --color-primary-600: #475569;
+  --color-primary-700: #334155;
+  --color-primary-800: #1e293b;
+  --color-primary-900: #0f172a;
+  --color-primary-950: #020617;
+
+  /* SECONDARY - Soft Indigo (replacing bright purple) */
+  --color-secondary-50: #eef2ff;
+  --color-secondary-100: #e0e7ff;
+  --color-secondary-200: #c7d2fe;
+  --color-secondary-300: #a5b4fc;
+  --color-secondary-400: #818cf8;
+  --color-secondary-500: #6366f1;  /* Soft indigo - secondary accent */
+  --color-secondary-600: #4f46e5;
+  --color-secondary-700: #4338ca;
+  --color-secondary-800: #3730a3;
+  --color-secondary-900: #312e81;
+  --color-secondary-950: #1e1b4b;
+
+  /* EMERGENCY - Desaturated Red (for true emergencies only) */
+  --color-emergency-50: #fef2f2;
+  --color-emergency-100: #fee2e2;
+  --color-emergency-200: #fecaca;
+  --color-emergency-300: #fca5a5;
+  --color-emergency-400: #f87171;
+  --color-emergency-500: #dc4446;  /* Desaturated red - emergencies only */
+  --color-emergency-600: #b91c1c;
+  --color-emergency-700: #991b1b;
+  --color-emergency-800: #7f1d1d;
+  --color-emergency-900: #450a0a;
+
+  /* SUCCESS - Muted Green */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #16a34a;  /* Muted green */
+  --color-success-600: #15803d;
+  --color-success-700: #166534;
+
+  /* WARNING - Soft Amber */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #d97706;  /* Soft amber */
+  --color-warning-600: #b45309;
+
+  /* INFO - Neutral Blue */
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
+  --color-info-300: #93c5fd;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+
+  /* =================================================================
+     SURFACE COLORS - Clean & Light
+     ================================================================= */
+  
+  /* Background - Pure white to light gray */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8fafc;  /* Slate 50 */
+  --color-bg-tertiary: #f1f5f9;   /* Slate 100 */
+  --color-bg-elevated: #ffffff;   /* Cards, modals */
+  
+  /* Dark mode backgrounds (for OLED option) */
+  --color-bg-dark: #0f172a;
+  --color-bg-dark-elevated: #1e293b;
+
+  /* =================================================================
+     TEXT COLORS - High contrast, clean
+     ================================================================= */
+  
+  /* Primary text - Near black */
+  --color-text-primary: #0f172a;   /* Slate 900 */
+  --color-text-secondary: #475569; /* Slate 600 */
+  --color-text-muted: #64748b;     /* Slate 500 */
+  --color-text-disabled: #94a3b8;  /* Slate 400 */
+  --color-text-inverse: #f8fafc;   /* For dark backgrounds */
+
+  /* =================================================================
+     BORDER COLORS - Subtle definition
+     ================================================================= */
+  
+  --color-border-primary: #e2e8f0;   /* Slate 200 - primary borders */
+  --color-border-secondary: #cbd5e1; /* Slate 300 - dividers */
+  --color-border-focus: #6366f1;     /* Indigo - focus states */
+  --color-border-emergency: #dc4446; /* Emergency border */
+
+  /* =================================================================
+     SEMANTIC MAPPING - Clean & Purposeful
+     ================================================================= */
+  
+  /* AI/Intelligence - Now uses muted primary */
+  --color-ai-primary: var(--color-primary-600);
+  --color-ai-secondary: var(--color-secondary-500);
+  
+  /* Knowledge/Grokopedia - Soft indigo */
+  --color-knowledge-primary: var(--color-secondary-600);
+  
+  /* Emergency - Reserved for critical only */
+  --color-emergency-primary: var(--color-emergency-500);
+  
+  /* Status - Clean semantic colors */
+  --color-status-success: var(--color-success-600);
+  --color-status-warning: var(--color-warning-600);
+  --color-status-error: var(--color-emergency-500);
+  --color-status-info: var(--color-info-600);
+
+  /* =================================================================
+     EFFECTS - Minimal & Clean
+     ================================================================= */
+  
+  /* No glow effects - use borders instead */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  
+  /* Only use shadow for modals/overlays */
+  --shadow-modal: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* Border-based depth (preferred over shadows) */
+  --border-subtle: 1px solid var(--color-border-primary);
+  --border-standard: 1px solid var(--color-border-secondary);
+  --border-focus: 2px solid var(--color-border-focus);
+
+  /* No gradients for backgrounds - use solid colors */
+  --gradient-none: none;
+}
+
+/* =================================================================
+   DARK MODE - OLED Optimized (Optional)
+   ================================================================= */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  --color-bg-elevated: #1e293b;
+  
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-disabled: #64748b;
+  --color-text-inverse: #0f172a;
+  
+  --color-border-primary: #334155;
+  --color-border-secondary: #475569;
+}
+
+/* =================================================================
+   HIGH CONTRAST MODE
+   ================================================================= */
+
+@media (prefers-contrast: high) {
+  :root {
+    --color-text-primary: #000000;
+    --color-text-secondary: #1a1a1a;
+    --color-border-primary: #000000;
+    --color-border-focus: #0000ff;
+  }
+  
+  [data-theme="dark"] {
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #f0f0f0;
+    --color-border-primary: #ffffff;
+  }
+}
+
+/* =================================================================
+   REDUCED MOTION
+   ================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0.01ms;
+    --transition-normal: 0.01ms;
+    --transition-slow: 0.01ms;
+  }
+}

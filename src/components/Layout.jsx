@@ -78,16 +78,16 @@ const Layout = () => {
             <SurvivalModeOverlay />
 
             <div className={`app-layout flex flex-col h-screen ${isMounted ? 'animate-fade-in' : 'opacity-0'}`}>
-                <header
-                    className="bg-slate-900/95 backdrop-blur-lg p-3 shadow-lg z-50 border-b border-slate-800"
-                    style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
-                >
-                    <div className="container mx-auto flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="font-bold text-primary text-sm tracking-tighter flex items-center gap-2">
-                                <div className="w-2 h-2 bg-primary rounded-full animate-emergency-pulse"></div>
-                                URBAN OFFLINE
-                            </div>
+            <header
+                className="bg-white border-b border-slate-200 p-3 z-50"
+                style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+            >
+                <div className="container mx-auto flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                            <div className="w-2 h-2 bg-slate-800 rounded-full"></div>
+                            Urban Offline
+                        </div>
                             {/* Ambient Intelligence Status Bar - Desktop */}
                             <div className="hidden md:block">
                                 <AmbientStatusBarBoundary>

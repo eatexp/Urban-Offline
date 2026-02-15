@@ -3,16 +3,27 @@
  * 
  * Centralized platform detection for cross-platform compatibility.
  * Used to handle platform-specific behaviors and feature availability.
+ * 
+ * All functions are wrapped in try-catch blocks to gracefully handle
+ * unexpected environments and default to web mode (false) on errors.
  */
 
 import { Capacitor } from '@capacitor/core';
+import { createLogger } from './logger';
+
+const log = createLogger('platform');
 
 /**
  * Check if running in a native mobile environment (iOS/Android)
  * @returns {boolean}
  */
 export const isNativeMobile = () => {
-    return Capacitor.isNativePlatform() && !isWindowsNative();
+    try {
+        return Capacitor.isNativePlatform() && !isWindowsNative();
+    } catch (error) {
+        log.warn('isNativeMobile detection failed, defaulting to web', error);
+        return false;
+    }
 };
 
 /**
@@ -20,20 +31,25 @@ export const isNativeMobile = () => {
  * @returns {boolean}
  */
 export const isWindowsNative = () => {
-    // Check for Electron/Windows specific indicators
-    if (typeof window === 'undefined') return false;
-    
-    // Electron sets window.electron or process.versions.electron
-    const hasElectronAPI = !!(window.electron || window.process?.versions?.electron);
-    
-    // Windows platform check
-    const isWindows = window.navigator?.platform?.includes('Win') || 
-                      window.navigator?.userAgent?.includes('Windows');
-    
-    // Node.js context in renderer (Electron specific)
-    const hasNodeContext = typeof window.require !== 'undefined';
-    
-    return hasElectronAPI || (isWindows && hasNodeContext);
+    try {
+        // Check for Electron/Windows specific indicators
+        if (typeof window === 'undefined') return false;
+        
+        // Electron sets window.electron or process.versions.electron
+        const hasElectronAPI = !!(window.electron || window.process?.versions?.electron);
+        
+        // Windows platform check
+        const isWindows = window.navigator?.platform?.includes('Win') || 
+                          window.navigator?.userAgent?.includes('Windows');
+        
+        // Node.js context in renderer (Electron specific)
+        const hasNodeContext = typeof window.require !== 'undefined';
+        
+        return hasElectronAPI || (isWindows && hasNodeContext);
+    } catch (error) {
+        log.warn('isWindowsNative detection failed, defaulting to web', error);
+        return false;
+    }
 };
 
 /**
@@ -41,7 +57,12 @@ export const isWindowsNative = () => {
  * @returns {boolean}
  */
 export const isIOSNative = () => {
-    return Capacitor.getPlatform() === 'ios';
+    try {
+        return Capacitor.getPlatform() === 'ios';
+    } catch (error) {
+        log.warn('isIOSNative detection failed, defaulting to web', error);
+        return false;
+    }
 };
 
 /**
@@ -49,7 +70,12 @@ export const isIOSNative = () => {
  * @returns {boolean}
  */
 export const isAndroidNative = () => {
-    return Capacitor.getPlatform() === 'android';
+    try {
+        return Capacitor.getPlatform() === 'android';
+    } catch (error) {
+        log.warn('isAndroidNative detection failed, defaulting to web', error);
+        return false;
+    }
 };
 
 /**
@@ -57,10 +83,15 @@ export const isAndroidNative = () => {
  * @returns {boolean}
  */
 export const isWebView = () => {
-    const userAgent = window.navigator?.userAgent || '';
-    const isIOSWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(userAgent);
-    const isAndroidWebView = userAgent.includes('wv') || userAgent.includes('WebView');
-    return isIOSWebView || isAndroidWebView;
+    try {
+        const userAgent = window.navigator?.userAgent || '';
+        const isIOSWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(userAgent);
+        const isAndroidWebView = userAgent.includes('wv') || userAgent.includes('WebView');
+        return isIOSWebView || isAndroidWebView;
+    } catch (error) {
+        log.warn('isWebView detection failed, defaulting to web', error);
+        return false;
+    }
 };
 
 /**
@@ -68,7 +99,12 @@ export const isWebView = () => {
  * @returns {boolean}
  */
 export const isWeb = () => {
-    return !Capacitor.isNativePlatform();
+    try {
+        return !Capacitor.isNativePlatform();
+    } catch (error) {
+        log.warn('isWeb detection failed, defaulting to true', error);
+        return true;
+    }
 };
 
 /**
@@ -76,19 +112,24 @@ export const isWeb = () => {
  * @returns {boolean}
  */
 export const supportsViewTransitions = () => {
-    // Windows native/Electron has inconsistent support
-    if (isWindowsNative()) return false;
-    
-    // iOS Safari doesn't support View Transitions
-    if (isIOSNative() || (isWeb() && /iPad|iPhone|iPod/.test(navigator.userAgent))) {
+    try {
+        // Windows native/Electron has inconsistent support
+        if (isWindowsNative()) return false;
+        
+        // iOS Safari doesn't support View Transitions
+        if (isIOSNative() || (isWeb() && /iPad|iPhone|iPod/.test(navigator.userAgent))) {
+            return false;
+        }
+        
+        // Android WebView has partial support that may flicker
+        if (isWebView() && isAndroidNative()) return false;
+        
+        // Check for API availability
+        return typeof document !== 'undefined' && !!document.startViewTransition;
+    } catch (error) {
+        log.warn('supportsViewTransitions detection failed, defaulting to false', error);
         return false;
     }
-    
-    // Android WebView has partial support that may flicker
-    if (isWebView() && isAndroidNative()) return false;
-    
-    // Check for API availability
-    return typeof document !== 'undefined' && !!document.startViewTransition;
 };
 
 /**
@@ -96,30 +137,35 @@ export const supportsViewTransitions = () => {
  * @returns {{ available: boolean, reason: string|null }}
  */
 export const checkAIAvailability = () => {
-    // Windows native doesn't support transformers.js
-    if (isWindowsNative()) {
-        return {
-            available: false,
-            reason: 'AI features are not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI-powered assistance.'
-        };
+    try {
+        // Windows native doesn't support transformers.js
+        if (isWindowsNative()) {
+            return {
+                available: false,
+                reason: 'AI features are not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI-powered assistance.'
+            };
+        }
+        
+        // WebGL/WebGPU required for transformers.js
+        if (typeof window === 'undefined') {
+            return { available: false, reason: 'Server-side rendering not supported' };
+        }
+        
+        const hasWebGL = !!window.WebGLRenderingContext;
+        const hasWebGPU = 'gpu' in navigator;
+        
+        if (!hasWebGL && !hasWebGPU) {
+            return {
+                available: false,
+                reason: 'Your device does not support the required graphics capabilities for AI features.'
+            };
+        }
+        
+        return { available: true, reason: null };
+    } catch (error) {
+        log.warn('checkAIAvailability failed, defaulting to unavailable', error);
+        return { available: false, reason: 'Platform detection error' };
     }
-    
-    // WebGL/WebGPU required for transformers.js
-    if (typeof window === 'undefined') {
-        return { available: false, reason: 'Server-side rendering not supported' };
-    }
-    
-    const hasWebGL = !!window.WebGLRenderingContext;
-    const hasWebGPU = 'gpu' in navigator;
-    
-    if (!hasWebGL && !hasWebGPU) {
-        return {
-            available: false,
-            reason: 'Your device does not support the required graphics capabilities for AI features.'
-        };
-    }
-    
-    return { available: true, reason: null };
 };
 
 /**
@@ -127,21 +173,26 @@ export const checkAIAvailability = () => {
  * @returns {string} Directory constant from @capacitor/filesystem
  */
 export const getStorageDirectory = async () => {
-    // Dynamically import to avoid issues in web environment
-    const { Directory } = await import('@capacitor/filesystem');
-    
-    // Windows native works better with Data directory
-    if (isWindowsNative()) {
-        return Directory.Data;
+    try {
+        // Dynamically import to avoid issues in web environment
+        const { Directory } = await import('@capacitor/filesystem');
+        
+        // Windows native works better with Data directory
+        if (isWindowsNative()) {
+            return Directory.Data;
+        }
+        
+        // iOS/Android use Documents
+        if (isNativeMobile()) {
+            return Directory.Documents;
+        }
+        
+        // Web doesn't use filesystem
+        return null;
+    } catch (error) {
+        log.warn('getStorageDirectory failed, returning null', error);
+        return null;
     }
-    
-    // iOS/Android use Documents
-    if (isNativeMobile()) {
-        return Directory.Documents;
-    }
-    
-    // Web doesn't use filesystem
-    return null;
 };
 
 /**
@@ -149,8 +200,13 @@ export const getStorageDirectory = async () => {
  * @returns {boolean}
  */
 export const prefersReducedMotion = () => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (error) {
+        log.warn('prefersReducedMotion detection failed, defaulting to false', error);
+        return false;
+    }
 };
 
 /**
@@ -158,18 +214,34 @@ export const prefersReducedMotion = () => {
  * @returns {Object}
  */
 export const getPlatformInfo = () => {
-    return {
-        isNativeMobile: isNativeMobile(),
-        isWindowsNative: isWindowsNative(),
-        isIOSNative: isIOSNative(),
-        isAndroidNative: isAndroidNative(),
-        isWebView: isWebView(),
-        isWeb: isWeb(),
-        supportsViewTransitions: supportsViewTransitions(),
-        aiAvailable: checkAIAvailability(),
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-        platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown'
-    };
+    try {
+        return {
+            isNativeMobile: isNativeMobile(),
+            isWindowsNative: isWindowsNative(),
+            isIOSNative: isIOSNative(),
+            isAndroidNative: isAndroidNative(),
+            isWebView: isWebView(),
+            isWeb: isWeb(),
+            supportsViewTransitions: supportsViewTransitions(),
+            aiAvailable: checkAIAvailability(),
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+            platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown'
+        };
+    } catch (error) {
+        log.error('getPlatformInfo failed, returning safe defaults', error);
+        return {
+            isNativeMobile: false,
+            isWindowsNative: false,
+            isIOSNative: false,
+            isAndroidNative: false,
+            isWebView: false,
+            isWeb: true,
+            supportsViewTransitions: false,
+            aiAvailable: { available: false, reason: 'Platform detection error' },
+            userAgent: 'unknown',
+            platform: 'unknown'
+        };
+    }
 };
 
 // Default export

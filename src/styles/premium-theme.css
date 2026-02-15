@@ -1,0 +1,405 @@
+/* =================================================================
+   URBAN-OFFLINE PREMIUM THEME SYSTEM V4.0
+   "Native Excellence" - iOS/Android Premium Feel
+   ================================================================= */
+
+:root {
+  /* =================================================================
+     PREMIUM ACCENT - Subtle Gold/Copper for Elite Touches
+     ================================================================= */
+  --color-premium: #d4a574;
+  --color-premium-light: #e8c9a8;
+  --color-premium-dark: #b8935f;
+  --color-premium-glow: rgba(212, 165, 116, 0.15);
+  --color-premium-glow-strong: rgba(212, 165, 116, 0.3);
+
+  /* =================================================================
+     DEPTH LAYER SYSTEM - Native iOS-style Elevation
+     ================================================================= */
+  --color-bg-depth-0: #000000;
+  --color-bg-depth-1: #0a0f1a;     /* Deepest */
+  --color-bg-depth-2: #0f172a;     /* Base background */
+  --color-bg-depth-3: #1e293b;     /* Elevated cards */
+  --color-bg-depth-4: #334155;     /* Higher elevation */
+  --color-bg-depth-5: #475569;     /* Maximum elevation */
+
+  /* =================================================================
+     GLASS MORPHISM - Native Blur Effects
+     ================================================================= */
+  --glass-bg: rgba(30, 41, 59, 0.72);
+  --glass-bg-light: rgba(248, 250, 252, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-strong: rgba(255, 255, 255, 0.15);
+  --glass-blur: 20px;
+  --glass-blur-heavy: 40px;
+  --glass-saturation: 180%;
+
+  /* =================================================================
+     NATIVE SHADOWS - Platform-Appropriate Depth
+     ================================================================= */
+  /* iOS-style subtle shadows */
+  --shadow-native-sm: 0 1px 2px rgba(0, 0, 0, 0.08), 
+                      0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-native-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                      0 2px 4px -2px rgba(0, 0, 0, 0.08);
+  --shadow-native-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.12), 
+                      0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  --shadow-native-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 
+                      0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Android Material elevation */
+  --shadow-material-1: 0 1px 3px rgba(0, 0, 0, 0.12), 
+                       0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-material-2: 0 3px 6px rgba(0, 0, 0, 0.15), 
+                       0 2px 4px rgba(0, 0, 0, 0.12);
+  --shadow-material-3: 0 10px 20px rgba(0, 0, 0, 0.15), 
+                       0 3px 6px rgba(0, 0, 0, 0.1);
+  --shadow-material-4: 0 14px 28px rgba(0, 0, 0, 0.2), 
+                       0 10px 10px rgba(0, 0, 0, 0.15);
+
+  /* Premium glow shadows */
+  --shadow-glow-premium: 0 0 20px var(--color-premium-glow);
+  --shadow-glow-success: 0 0 20px rgba(52, 199, 89, 0.2);
+  --shadow-glow-warning: 0 0 20px rgba(255, 149, 0, 0.2);
+  --shadow-glow-error: 0 0 20px rgba(255, 59, 48, 0.2);
+  --shadow-glow-purple: 0 0 20px rgba(168, 85, 247, 0.2);
+
+  /* =================================================================
+     HAPTIC COLORS - iOS System Colors
+     ================================================================= */
+  --color-success-haptic: #34c759;
+  --color-success-haptic-dark: #248a3d;
+  --color-warning-haptic: #ff9500;
+  --color-warning-haptic-dark: #c77700;
+  --color-error-haptic: #ff3b30;
+  --color-error-haptic-dark: #c41c14;
+  --color-info-haptic: #007aff;
+  --color-info-haptic-dark: #0051d5;
+
+  /* =================================================================
+     PREMIUM GRADIENTS
+     ================================================================= */
+  --gradient-premium: linear-gradient(135deg, var(--color-premium) 0%, var(--color-premium-dark) 100%);
+  --gradient-premium-shine: linear-gradient(135deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.1) 50%, 
+    rgba(255,255,255,0) 100%);
+  --gradient-dark-elevated: linear-gradient(180deg, 
+    var(--color-bg-depth-3) 0%, 
+    var(--color-bg-depth-2) 100%);
+  --gradient-mesh: linear-gradient(135deg, 
+    rgba(168, 85, 247, 0.08) 0%, 
+    rgba(59, 130, 246, 0.08) 50%, 
+    rgba(16, 185, 129, 0.08) 100%);
+
+  /* =================================================================
+     ANIMATION CURVES - Native Feel
+     ================================================================= */
+  --ease-ios-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-ios-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-android-material: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* =================================================================
+     DURATION STANDARDS
+     ================================================================= */
+  --duration-instant: 50ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+  --duration-page: 400ms;
+
+  /* =================================================================
+     SPACING - 8px Grid with Native Feel
+     ================================================================= */
+  --space-safe-top: env(safe-area-inset-top);
+  --space-safe-bottom: env(safe-area-inset-bottom);
+  --space-safe-left: env(safe-area-inset-left);
+  --space-safe-right: env(safe-area-inset-right);
+
+  /* =================================================================
+     TYPOGRAPHY - Premium Hierarchy
+     ================================================================= */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.02em;
+  --letter-spacing-wider: 0.05em;
+
+  /* =================================================================
+     COMPONENT TOKENS - Premium
+     ================================================================= */
+  --card-premium-radius: 16px;
+  --card-premium-padding: 20px;
+  --card-premium-gap: 16px;
+  
+  --button-premium-height: 48px;
+  --button-premium-radius: 12px;
+  
+  --input-premium-height: 52px;
+  --input-premium-radius: 12px;
+}
+
+/* =================================================================
+   PLATFORM-SPECIFIC OVERRIDES
+   ================================================================= */
+
+/* iOS Premium Feel */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --glass-blur: 24px;
+    --shadow-native-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-native-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --card-premium-radius: 20px;
+  }
+  
+  /* iOS-specific glass */
+  .glass-ios {
+    background: rgba(30, 41, 59, 0.65);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+}
+
+/* Android Material You Feel */
+@supports not (-webkit-touch-callout: none) {
+  :root {
+    --card-premium-radius: 16px;
+    --button-premium-radius: 16px;
+  }
+  
+  .material-elevated {
+    box-shadow: var(--shadow-material-2);
+    transition: box-shadow 0.2s var(--ease-android-material);
+  }
+  
+  .material-elevated:hover {
+    box-shadow: var(--shadow-material-3);
+  }
+}
+
+/* =================================================================
+   PREMIUM UTILITY CLASSES
+   ================================================================= */
+
+/* Glass Morphism Cards */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-premium-radius);
+  box-shadow: var(--shadow-native-md);
+}
+
+.glass-card-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-premium-radius);
+  box-shadow: var(--shadow-native-md);
+}
+
+/* Premium Button */
+.btn-premium {
+  height: var(--button-premium-height);
+  padding: 0 24px;
+  border-radius: var(--button-premium-radius);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: var(--letter-spacing-wide);
+  transition: all var(--duration-fast) var(--ease-ios-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-premium::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-premium-shine);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+
+.btn-premium:hover::after {
+  opacity: 1;
+}
+
+.btn-premium:active {
+  transform: scale(0.96);
+}
+
+/* Premium Glow Effects */
+.glow-premium {
+  box-shadow: 0 0 0 1px var(--color-premium-glow),
+              0 0 20px var(--color-premium-glow);
+}
+
+.glow-success {
+  box-shadow: 0 0 0 1px rgba(52, 199, 89, 0.1),
+              0 0 20px rgba(52, 199, 89, 0.2);
+}
+
+.glow-purple {
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.1),
+              0 0 20px rgba(168, 85, 247, 0.2);
+}
+
+/* Premium Text Gradients */
+.text-gradient-premium {
+  background: linear-gradient(135deg, var(--color-premium) 0%, var(--color-premium-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Depth Layers */
+.bg-depth-1 { background-color: var(--color-bg-depth-1); }
+.bg-depth-2 { background-color: var(--color-bg-depth-2); }
+.bg-depth-3 { background-color: var(--color-bg-depth-3); }
+.bg-depth-4 { background-color: var(--color-bg-depth-4); }
+
+/* Premium Status Badges */
+.badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-premium-gold {
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.2) 0%, rgba(184, 147, 95, 0.2) 100%);
+  color: var(--color-premium);
+  border: 1px solid rgba(212, 165, 116, 0.3);
+}
+
+.badge-premium-success {
+  background: rgba(52, 199, 89, 0.15);
+  color: var(--color-success-haptic);
+  border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+/* Native Spring Animation */
+@keyframes spring-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slide-up-spring {
+  0% { transform: translateY(20px); opacity: 0; }
+  60% { transform: translateY(-4px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-spring-in {
+  animation: spring-in 0.5s var(--ease-ios-spring);
+}
+
+.animate-slide-up-spring {
+  animation: slide-up-spring 0.5s var(--ease-ios-spring);
+}
+
+/* Premium Pulse */
+@keyframes pulse-premium {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--color-premium-glow); }
+  50% { opacity: 0.8; box-shadow: 0 0 20px 10px var(--color-premium-glow); }
+}
+
+.animate-pulse-premium {
+  animation: pulse-premium 2s ease-in-out infinite;
+}
+
+/* Shimmer Loading Effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.05) 50%, 
+    rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Mesh Gradient Background */
+.bg-mesh {
+  background: var(--gradient-mesh);
+  position: relative;
+}
+
+.bg-mesh::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Premium Scrollbar */
+.premium-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Touch Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn-premium:active {
+    transform: scale(0.96);
+    transition-duration: var(--duration-instant);
+  }
+  
+  .glass-card {
+    /* Reduce blur on low-end devices */
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spring-in,
+  .animate-slide-up-spring,
+  .animate-pulse-premium,
+  .shimmer {
+    animation: none;
+  }
+  
+  .btn-premium,
+  .glass-card,
+  .material-elevated {
+    transition: none;
+  }
+}

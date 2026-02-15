@@ -5,6 +5,7 @@ import { AIGeneratingProvider } from './contexts/AIGeneratingContext';
 import { router } from './router';
 import { isNativeMobile } from './utils/platform';
 import BatteryManager from './services/power/BatteryManager';
+import { usePremiumNativeFeel } from './hooks/useNativeFeel';
 
 // Android hardware back button handling
 // Uses Capacitor App plugin if available, falls back gracefully on web
@@ -125,6 +126,9 @@ const useBatteryManager = () => {
 };
 
 function App() {
+    // Initialize premium native feel (iOS/Android optimizations)
+    usePremiumNativeFeel();
+
     // Initialize Android hardware back button handling
     useAndroidBackButton();
 

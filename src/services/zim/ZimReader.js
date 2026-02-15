@@ -102,46 +102,49 @@ export class ZimReader {
   }
 
   /**
-   * Check if device can handle the ZIM file size
-   * @returns {{allowed: boolean, maxSize: number, reason: string|null}}
+   * Check if device can handle the ZIM metadata (indices)
+   * @returns {{allowed: boolean, overheadEstimates: object, reason: string|null}}
    */
   _checkMemoryConstraints() {
+    // Estimate index overhead:
+    // - URL Ptrs: 8 bytes * articleCount
+    // - Title Ptrs: 4 bytes * articleCount
+    // - Cluster Ptrs: 8 bytes * clusterCount
+    // - MIME List: Negligible
+    // - Overhead factor: 1.5x
+
+    // We can't know exact counts before parsing header, but we can estimate from file size if we assume average article size.
+    // Or we just allow it and fail if allocation fails during init.
+    // For now, we perform a much looser check than before, since we don't load the whole file.
+
     const fileSizeMB = this.file.size / (1024 * 1024);
 
-    // Get device memory (in GB) - available in modern browsers
-    const deviceMemory = typeof navigator !== 'undefined' && navigator.deviceMemory
-      ? navigator.deviceMemory
-      : null;
-
-    // Set max file size based on device memory
-    // Conservative: 20% of available RAM, with upper limit
-    let maxSizeMB = 500; // Default 500MB limit
-    let reason = null;
-
-    if (deviceMemory) {
-      // deviceMemory is in GB
-      const availableMB = deviceMemory * 1024;
-      maxSizeMB = Math.min(availableMB * 0.20, 1000); // 20% of RAM, max 1GB
-
-      if (fileSizeMB > maxSizeMB) {
-        reason = `File size (${fileSizeMB.toFixed(0)}MB) exceeds safe limit for ${deviceMemory}GB device (${maxSizeMB.toFixed(0)}MB). ` +
-          `Large ZIM files may cause out-of-memory errors on this device.`;
-      }
-    } else {
-      // Unknown device memory - be conservative
-      maxSizeMB = 300; // 300MB default for unknown devices
-      if (fileSizeMB > maxSizeMB) {
-        reason = `File size (${fileSizeMB.toFixed(0)}MB) exceeds safe limit (${maxSizeMB.toFixed(0)}MB) for unknown device memory.`;
-      }
-    }
-
+    // If file is > 50GB, maybe we warn? But 2GB is definitely fine now.
     return {
-      allowed: fileSizeMB <= maxSizeMB,
-      maxSize: maxSizeMB,
+      allowed: true,
       fileSize: fileSizeMB,
-      deviceMemory,
-      reason
+      reason: null
     };
+  }
+
+  /**
+   * Read a chunk of the file as an ArrayBuffer
+   * @param {number} offset 
+   * @param {number} length 
+   */
+  async _readChunk(offset, length) {
+    const blob = this.file.slice(offset, offset + length);
+    return await blob.arrayBuffer();
+  }
+
+  /**
+   * Read a chunk and return a DataView
+   * @param {number} offset 
+   * @param {number} length 
+   */
+  async _readView(offset, length) {
+    const buffer = await this._readChunk(offset, length);
+    return new DataView(buffer);
   }
 
   /**
@@ -151,29 +154,9 @@ export class ZimReader {
     try {
       log.info(`Loading ZIM file: ${this.file.name} (${this.formatBytes(this.file.size)})`);
 
-      // =============================================================================
-      // VERIFIED: [P2][Performance] ZIM_MEMORY_PRESSURE_HANDLING
-      // Implementation: Added memory constraint check before loading file.
-      //   Checks navigator.deviceMemory and sets max file size based on available RAM.
-      //   Warns users before OOM occurs, preventing crashes on low-memory devices.
-      //   Future enhancement: Implement File.slice() for chunked reading of large files.
-      // =============================================================================
-
-      // Check memory constraints before loading
-      const memoryCheck = this._checkMemoryConstraints();
-      if (!memoryCheck.allowed) {
-        log.error('ZIM file too large for device', memoryCheck);
-        throw new Error(`ZIM_FILE_TOO_LARGE: ${memoryCheck.reason}`);
-      }
-
-      if (memoryCheck.deviceMemory) {
-        log.debug(`Memory check passed: ${memoryCheck.fileSize.toFixed(0)}MB file on ${memoryCheck.deviceMemory}GB device (limit: ${memoryCheck.maxSize.toFixed(0)}MB)`);
-      }
-
-      // Read the entire file into memory
-      // For large files, we may want to implement chunked reading in the future
-      this.arrayBuffer = await this.file.arrayBuffer();
-      this.view = new DataView(this.arrayBuffer);
+      // NO full file load!
+      // this.arrayBuffer = await this.file.arrayBuffer(); // REMOVED
+      // this.view = new DataView(this.arrayBuffer); // REMOVED
 
       // Parse ZIM header
       await this._parseHeader();
@@ -204,44 +187,39 @@ export class ZimReader {
    * Parse ZIM file header
    */
   async _parseHeader() {
-    const view = this.view;
+    // Read first 100 bytes (header is usually ~80-100 bytes)
+    const view = await this._readView(0, 100);
 
     // ZIM header format (little-endian):
     // Offset  Size  Field
     // 0       4     Magic number (0x44, 0x49, 0x4D, 0x5A = "ZIMD")
-    // 4       4     Major version
-    // 8       4     Minor version
-    // 12      8     UUID (part 1)
-    // 20      8     UUID (part 2)
-    // 28      8     Article count
-    // 36      8     Cluster count
-    // 44      8     URL pointer list position
-    // 52      8     Title pointer list position
-    // 60      8     Cluster pointer list position
-    // 68      8     MIME type list position
-    // 76      4     Main page
-    // 80      4     Layout page
+    // ...
     // 84      8     Checksum position
-    // 92      8     Geo index position (optional)
 
-    // Check magic number
     const magic = view.getUint32(0, true);
-    if (magic !== 0x5A494D44) { // "ZIMD" in little-endian
+    if (magic !== 0x5A494D44) {
       throw new Error('Invalid ZIM file: wrong magic number');
     }
+
+    // Helper for 64-bit read from view
+    const readU64 = (v, off) => {
+      const low = v.getUint32(off, true);
+      const high = v.getUint32(off + 4, true);
+      return BigInt(low) | (BigInt(high) << BigInt(32));
+    };
 
     this.metadata = {
       majorVersion: view.getUint32(4, true),
       minorVersion: view.getUint32(8, true),
-      articleCount: this._readUint64(28),
-      clusterCount: this._readUint64(36),
-      urlPtrPos: this._readUint64(44),
-      titlePtrPos: this._readUint64(52),
-      clusterPtrPos: this._readUint64(60),
-      mimeListPos: this._readUint64(68),
+      articleCount: readU64(view, 28),
+      clusterCount: readU64(view, 36),
+      urlPtrPos: readU64(view, 44),
+      titlePtrPos: readU64(view, 52),
+      clusterPtrPos: readU64(view, 60),
+      mimeListPos: readU64(view, 68),
       mainPage: view.getUint32(76, true),
       layoutPage: view.getUint32(80, true),
-      checksumPos: this._readUint64(84)
+      checksumPos: readU64(view, 84)
     };
 
     this.articleCount = Number(this.metadata.articleCount);
@@ -258,55 +236,59 @@ export class ZimReader {
    */
   async _parseMimeTypeList() {
     const pos = Number(this.metadata.mimeListPos);
-    const view = this.view;
 
-    // MIME type list is null-terminated strings
-    let offset = pos;
+    // Read a reasonable chunk for MIME types (e.g. 1KB)
+    // MIME lists are usually very small
+    const chunk = await this._readChunk(pos, 1024);
+    const view = new DataView(chunk);
+
+    let offset = 0;
     const mimeTypes = [];
 
-    // Read until we hit an empty string (double null)
     while (offset < view.byteLength) {
-      const str = this._readNullTerminatedString(offset);
-      if (str === '') break;
+      // Find null terminator
+      let end = offset;
+      while (end < view.byteLength && view.getUint8(end) !== 0) end++;
+
+      if (end >= view.byteLength) break; // Should not happen in valid file if chunk is big enough
+
+      const strBytes = new Uint8Array(chunk, offset, end - offset);
+      if (strBytes.length === 0) break; // Double null = end
+
+      const str = new TextDecoder().decode(strBytes);
       mimeTypes.push(str);
-      offset += str.length + 1; // +1 for null terminator
+      offset = end + 1;
     }
 
     this.mimeTypeList = mimeTypes;
     log.debug(`Parsed ${mimeTypes.length} MIME types`);
   }
 
-  /**
-   * Parse URL pointer list
-   */
   async _parseUrlPtrList() {
     const pos = Number(this.metadata.urlPtrPos);
     const count = Number(this.metadata.articleCount);
-
-    // URL pointer list is an array of 64-bit offsets
-    this.urlPtrList = new BigUint64Array(this.arrayBuffer, pos, count);
+    // 8 bytes per entry
+    const size = count * 8;
+    const buffer = await this._readChunk(pos, size);
+    this.urlPtrList = new BigUint64Array(buffer);
   }
 
-  /**
-   * Parse title pointer list
-   */
   async _parseTitlePtrList() {
     const pos = Number(this.metadata.titlePtrPos);
     const count = Number(this.metadata.articleCount);
-
-    // Title pointer list is an array of 32-bit article indices
-    this.titlePtrList = new Uint32Array(this.arrayBuffer, pos, count);
+    // 4 bytes per entry
+    const size = count * 4;
+    const buffer = await this._readChunk(pos, size);
+    this.titlePtrList = new Uint32Array(buffer);
   }
 
-  /**
-   * Parse cluster pointer list
-   */
   async _parseClusterPtrList() {
     const pos = Number(this.metadata.clusterPtrPos);
     const count = Number(this.metadata.clusterCount);
-
-    // Cluster pointer list is an array of 64-bit offsets
-    this.clusterPtrList = new BigUint64Array(this.arrayBuffer, pos, count);
+    // 8 bytes per entry
+    const size = count * 8;
+    const buffer = await this._readChunk(pos, size);
+    this.clusterPtrList = new BigUint64Array(buffer);
   }
 
   /**
@@ -427,7 +409,10 @@ export class ZimReader {
    * @returns {ZimArticle}
    */
   async _parseDirectoryEntry(offset) {
-    const view = this.view;
+    // Read a 2KB chunk - sufficient for most directory entries
+    // (MIME + params + namespace + revision + URL + Title)
+    const chunk = await this._readChunk(offset, 2048);
+    const view = new DataView(chunk);
 
     // Directory entry format:
     // Offset  Size  Field
@@ -440,7 +425,7 @@ export class ZimReader {
     // varies  varies  Cluster index (4 bytes, for content entries)
     // varies  varies  Blob index (4 bytes, for content entries)
 
-    let pos = offset;
+    let pos = 0; // Relative to chunk
 
     const mimeTypeNum = view.getUint16(pos, true);
     pos += 2;
@@ -454,13 +439,27 @@ export class ZimReader {
     const revision = view.getUint32(pos, true);
     pos += 4;
 
+    // Helper to read string from local view
+    const readString = (p) => {
+      let end = p;
+      while (end < view.byteLength && view.getUint8(end) !== 0) end++;
+      if (end >= view.byteLength) throw new Error('Directory entry exceeds chunk size');
+      const bytes = new Uint8Array(chunk, p, end - p);
+      return {
+        str: new TextDecoder().decode(bytes),
+        len: bytes.length + 1 // +1 for null
+      };
+    };
+
     // Read URL (null-terminated)
-    const url = this._readNullTerminatedString(pos);
-    pos += url.length + 1;
+    const urlData = readString(pos);
+    const url = urlData.str;
+    pos += urlData.len;
 
     // Read title (null-terminated, may be empty)
-    let title = this._readNullTerminatedString(pos);
-    pos += title.length + 1;
+    const titleData = readString(pos);
+    let title = titleData.str;
+    pos += titleData.len;
 
     // If title is empty, use URL as title
     if (!title) {
@@ -513,9 +512,10 @@ export class ZimReader {
     // Get cluster offset
     const clusterOffset = Number(this.clusterPtrList[clusterIndex]);
 
-    // Read cluster header
-    // First byte: compression type
-    const compressionType = this.view.getUint8(clusterOffset);
+    // Read cluster header (compression byte)
+    // For efficiency, let's read the first 8 bytes (enough for compression type + first offset)
+    const headerChunk = await this._readView(clusterOffset, 8);
+    const compressionType = headerChunk.getUint8(0);
 
     // Read blob offsets
     const blobOffsets = await this._readBlobOffsets(clusterOffset, compressionType);
@@ -532,7 +532,8 @@ export class ZimReader {
     const dataOffset = this._getDataOffset(clusterOffset, compressionType, blobOffsets.length);
     const blobStart = dataOffset + startOffset;
 
-    const compressedData = new Uint8Array(this.arrayBuffer, blobStart, blobSize);
+    // Read ONLY the compressed blob data we need
+    const compressedData = new Uint8Array(await this._readChunk(blobStart, blobSize));
 
     // Decompress if necessary
     return await this._decompressBlob(compressedData, compressionType);
@@ -545,13 +546,18 @@ export class ZimReader {
     const headerSize = compressionType === COMPRESSION_ZSTD ? 1 : 4;
     const offsetPos = clusterOffset + headerSize;
 
-    // First offset gives us the number of blobs
-    const firstOffset = this.view.getUint32(offsetPos, true);
+    // Read first offset to know how many blobs
+    const firstOffsetView = await this._readView(offsetPos, 4);
+    const firstOffset = firstOffsetView.getUint32(0, true);
     const numBlobs = (firstOffset - headerSize) / 4;
+
+    // Read all offsets
+    const offsetsSize = (numBlobs + 1) * 4;
+    const offsetsView = await this._readView(offsetPos, offsetsSize);
 
     const offsets = [];
     for (let i = 0; i <= numBlobs; i++) {
-      offsets.push(this.view.getUint32(offsetPos + i * 4, true));
+      offsets.push(offsetsView.getUint32(i * 4, true));
     }
 
     return offsets;
@@ -653,38 +659,8 @@ export class ZimReader {
   }
 
   /**
-   * Read null-terminated string
+   * Format bytes to human-readable string
    */
-  _readNullTerminatedString(offset) {
-    const bytes = [];
-    let pos = offset;
-
-    while (pos < this.view.byteLength) {
-      const byte = this.view.getUint8(pos);
-      if (byte === 0) break;
-      bytes.push(byte);
-      pos++;
-    }
-
-    return new TextDecoder().decode(new Uint8Array(bytes));
-  }
-
-  /**
-   * Read 64-bit unsigned integer
-   */
-  _readUint64(offset) {
-    // JavaScript can't precisely represent all 64-bit integers,
-    // but for ZIM files under 8GB, the low 32 bits should suffice
-    const low = this.view.getUint32(offset, true);
-    const high = this.view.getUint32(offset + 4, true);
-
-    if (high > 0) {
-      // File is >4GB, we may have issues
-      log.warn(`Large file detected: high 32 bits = ${high}`);
-    }
-
-    return BigInt(low) | (BigInt(high) << BigInt(32));
-  }
 
   /**
    * Format bytes to human-readable string

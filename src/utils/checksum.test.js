@@ -7,8 +7,7 @@
  * Compliance: .clinerules §1 - SHA-256 verification for all downloaded assets
  */
 
-// Using vitest globals - vite.config.js has globals: true
-// describe, it, expect, vi, beforeEach are available globally
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Import functions from checksum.js
 import {

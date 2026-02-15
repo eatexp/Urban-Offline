@@ -37,46 +37,54 @@ export const AIModelManager = {
     _abortControllers: new Map(),
     _isInitialized: false,
 
-    /**
-     * Initialize the model manager
-     */
-    async init() {
-        if (this._isInitialized) {
-            return this._capabilities;
+/**
+ * Initialize the model manager
+ */
+async init() {
+    if (this._isInitialized) {
+        return this._capabilities;
+    }
+
+    try {
+        // Check device capabilities (includes Windows native detection)
+        // Platform detection is now fail-safe - defaults to web mode on errors
+        const capabilities = await checkAICapability();
+
+        log.info('Device capabilities', {
+            webGPU: capabilities.webGPU,
+            wasmSIMD: capabilities.wasmSIMD,
+            aiAvailable: capabilities.aiAvailable,
+            isWindowsNative: capabilities.isWindowsNative,
+            recommendedModel: capabilities.recommendedModel?.name
+        });
+
+        // Windows Native mode detection
+        if (capabilities.isWindowsNative) {
+            log.info('AI Model Manager initializing in Windows native mode - AI unavailable');
+            // Windows native doesn't support transformers.js - will use fallback search mode
         }
 
-        try {
-            // Check device capabilities (includes Windows native detection)
-            const capabilities = await checkAICapability();
+        // Get the TransformersEngine singleton
+        // Note: Even on Windows native, we initialize the engine for potential future support
+        this._engine = TransformersEngine.getInstance();
+        this._capabilities = capabilities;
+        this._isInitialized = true;
 
-            log.info('Device capabilities', {
-                webGPU: capabilities.webGPU,
-                wasmSIMD: capabilities.wasmSIMD,
-                aiAvailable: capabilities.aiAvailable,
-                isWindowsNative: capabilities.isWindowsNative,
-                recommendedModel: capabilities.recommendedModel?.name
-            });
-
-            // P1 FIX: Skip TransformersEngine initialization on Windows native
-            // AI is unavailable on Windows desktop app - transformers.js requires browser APIs
-            if (!capabilities.aiAvailable && capabilities.isWindowsNative) {
-                log.warn('AI Model Manager initialized in fallback mode: Windows native');
-                this._capabilities = capabilities;
-                this._isInitialized = true;
-                return capabilities;
-            }
-
-            // Get the TransformersEngine singleton (only for non-Windows platforms)
-            this._engine = TransformersEngine.getInstance();
-            this._capabilities = capabilities;
-            this._isInitialized = true;
-
-            return capabilities;
-        } catch (error) {
-            log.error('Init failed', error);
-            return null;
-        }
-    },
+        return capabilities;
+    } catch (error) {
+        log.error('Init failed', error);
+        // Graceful fallback: return minimal capabilities that disable AI features
+        this._capabilities = {
+            aiAvailable: false,
+            isWindowsNative: false,
+            webGPU: false,
+            wasmSIMD: false,
+            reason: 'Initialization error: ' + error.message
+        };
+        this._isInitialized = true;
+        return this._capabilities;
+    }
+},
 
     /**
      * Get all available models with install status
@@ -120,7 +128,7 @@ export const AIModelManager = {
     async downloadModel(modelId, onProgress, options = {}) {
         const { skipChecksum = false } = options;
         const model = TRANSFORMERS_MODELS[modelId];
-        
+
         if (!model) {
             return { success: false, error: 'Model not found' };
         }
@@ -138,15 +146,7 @@ export const AIModelManager = {
             }
         }
 
-        // P1 FIX: Block AI model downloads on Windows native platform
-        if (this._capabilities?.isWindowsNative || !this._capabilities?.aiAvailable) {
-            log.warn('AI download blocked: Windows native platform');
-            return { 
-                success: false, 
-                error: 'AI models are not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI-powered assistance.',
-                isWindowsNative: true 
-            };
-        }
+        // Windows Native Download Block Removed
 
         // Check if already installed
         const installed = await this.isModelInstalled(modelId);
@@ -161,7 +161,7 @@ export const AIModelManager = {
         // Check for existing checkpoint (resume capability)
         const checkpoint = await DownloadCheckpoint.getCheckpoint(model.modelUrl);
         const canResume = checkpoint && DownloadCheckpoint.canResume(checkpoint);
-        
+
         if (canResume && onProgress) {
             onProgress(
                 Math.round((checkpoint.bytesReceived / checkpoint.totalBytes) * 100),
@@ -176,14 +176,14 @@ export const AIModelManager = {
 
         this._downloadProgress.set(modelId, 0);
         let retryCount = 0;
-        
+
         // Download with retry logic for checksum failures
         while (retryCount < MAX_CHECKSUM_RETRIES) {
             try {
                 const result = await this._downloadWithValidation(
-                    modelId, 
-                    model, 
-                    onProgress, 
+                    modelId,
+                    model,
+                    onProgress,
                     checkpoint,
                     skipChecksum
                 );
@@ -195,24 +195,24 @@ export const AIModelManager = {
                 // Checksum failure - retry
                 if (result.checksumFailed) {
                     retryCount++;
-                    log.warn('Checksum validation failed, retrying', { 
-                        modelId, 
-                        retryCount, 
-                        maxRetries: MAX_CHECKSUM_RETRIES 
+                    log.warn('Checksum validation failed, retrying', {
+                        modelId,
+                        retryCount,
+                        maxRetries: MAX_CHECKSUM_RETRIES
                     });
-                    
+
                     if (onProgress) {
                         onProgress(0, `Verification failed. Retrying... (${retryCount}/${MAX_CHECKSUM_RETRIES})`);
                     }
 
                     // Increment retry count in checkpoint
                     await DownloadCheckpoint.incrementRetry(model.modelUrl);
-                    
+
                     // Clear checkpoint to force fresh download on retry
                     if (retryCount < MAX_CHECKSUM_RETRIES) {
                         await DownloadCheckpoint.deleteCheckpoint(model.modelUrl);
                     }
-                    
+
                     continue;
                 }
 
@@ -226,14 +226,14 @@ export const AIModelManager = {
                 }
 
                 log.error('Download error', { modelId, error: error.message, retryCount });
-                
+
                 // Check if we can resume
                 const updatedCheckpoint = await DownloadCheckpoint.getCheckpoint(model.modelUrl);
                 if (updatedCheckpoint && DownloadCheckpoint.canResume(updatedCheckpoint)) {
-                    return { 
-                        success: false, 
+                    return {
+                        success: false,
                         error: 'Download interrupted. You can resume later.',
-                        canResume: true 
+                        canResume: true
                     };
                 }
 
@@ -243,9 +243,9 @@ export const AIModelManager = {
 
         // Max retries exceeded
         await DownloadCheckpoint.deleteCheckpoint(model.modelUrl);
-        return { 
-            success: false, 
-            error: `Download failed after ${MAX_CHECKSUM_RETRIES} attempts. Please try again later.` 
+        return {
+            success: false,
+            error: `Download failed after ${MAX_CHECKSUM_RETRIES} attempts. Please try again later.`
         };
     },
 
@@ -257,8 +257,8 @@ export const AIModelManager = {
         const startTime = Date.now();
 
         try {
-            if (onProgress) onProgress(checkpoint ? 
-                Math.round((checkpoint.bytesReceived / checkpoint.totalBytes) * 100) : 0, 
+            if (onProgress) onProgress(checkpoint ?
+                Math.round((checkpoint.bytesReceived / checkpoint.totalBytes) * 100) : 0,
                 checkpoint ? 'Resuming download...' : 'Initializing download...'
             );
 
@@ -278,7 +278,7 @@ export const AIModelManager = {
             // Stall detection
             let lastProgressTime = Date.now();
             let lastProgress = checkpoint?.bytesReceived || 0;
-            
+
             const stallCheck = setInterval(() => {
                 if (Date.now() - lastProgressTime > 30000) {
                     log.warn('Download stalled, aborting', { modelId });
@@ -292,17 +292,17 @@ export const AIModelManager = {
             // Progress callback that updates checkpoint
             const progressCallback = async (progress, message) => {
                 const bytesReceived = Math.round((progress / 100) * model.size);
-                
+
                 if (bytesReceived !== lastProgress) {
                     lastProgressTime = Date.now();
                     lastProgress = bytesReceived;
-                    
+
                     // Update checkpoint every 1MB
                     if (bytesReceived % (1024 * 1024) < 100000) {
                         await DownloadCheckpoint.updateProgress(model.modelUrl, bytesReceived);
                     }
                 }
-                
+
                 this._downloadProgress.set(modelId, progress);
                 if (onProgress) onProgress(progress, message);
             };
@@ -315,16 +315,16 @@ export const AIModelManager = {
             // Verify checksum if model has one defined
             if (!skipChecksum && model.checksum) {
                 if (onProgress) onProgress(95, 'Verifying download integrity...');
-                
+
                 // Note: Transformers.js handles caching internally, so we verify the cached files
                 // In a full implementation, we'd need to access the cached files directly
                 // For now, we log that checksum verification would happen here
-                
-                log.info('Checksum verification would occur here', { 
-                    modelId, 
-                    expectedChecksum: model.checksum 
+
+                log.info('Checksum verification would occur here', {
+                    modelId,
+                    expectedChecksum: model.checksum
                 });
-                
+
                 // TODO: Implement direct cache file access for checksum verification
                 // This requires accessing the internal transformers.js cache structure
             }
@@ -349,10 +349,10 @@ export const AIModelManager = {
             this._downloadProgress.delete(modelId);
 
             const duration = Date.now() - startTime;
-            log.info('Model downloaded successfully', { 
-                modelId, 
+            log.info('Model downloaded successfully', {
+                modelId,
                 duration: `${(duration / 1000).toFixed(1)}s`,
-                checksumVerified: !!model.checksum 
+                checksumVerified: !!model.checksum
             });
 
             if (onProgress) onProgress(100, 'Complete!');
@@ -363,7 +363,7 @@ export const AIModelManager = {
             // Save progress for resume on error
             const currentProgress = this._downloadProgress.get(modelId) || 0;
             const bytesReceived = Math.round((currentProgress / 100) * model.size);
-            
+
             try {
                 await DownloadCheckpoint.updateProgress(model.modelUrl, bytesReceived);
             } catch (checkpointError) {

@@ -1,0 +1,346 @@
+/* =================================================================
+   URBAN-OFFLINE THEME SYSTEM V1.0
+   "Unified Design Language"
+   
+   Centralized theme variables, platform adaptations, and 
+   component tokens for consistent premium experience.
+   
+   Compliance: VISION.md §4 - Premium Native Experience
+               DESIGN_SYSTEM.md §2 - Colour System
+   ================================================================= */
+
+@import './colors-v2.css';
+
+:root {
+  /* =================================================================
+     PLATFORM DETECTION - CSS Custom Properties
+     These are set by JS based on platform detection
+     ================================================================= */
+  
+  /* Animation Physics */
+  --platform-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --platform-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --platform-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Border Radius */
+  --radius-ios: 20px;
+  --radius-ios-sm: 12px;
+  --radius-android: 16px;
+  --radius-android-sm: 16px;
+  
+  /* Card Radius - Platform Adaptive */
+  --card-radius: var(--radius-ios);
+  --button-radius: var(--radius-ios-sm);
+  
+  /* Backdrop Blur - iOS prefers heavier blur */
+  --blur-ios: 24px;
+  --blur-android: 16px;
+  --blur-standard: var(--blur-ios);
+  
+  /* Touch Targets */
+  --touch-target-min: 48px;
+  --touch-target-preferred: 48px;
+  
+  /* Safe Area */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+}
+
+/* =================================================================
+   PLATFORM-SPECIFIC ADAPTATIONS
+   ================================================================= */
+
+/* iOS Platform */
+[data-platform="ios"] {
+  --card-radius: var(--radius-ios);
+  --button-radius: var(--radius-ios-sm);
+  --blur-standard: var(--blur-ios);
+  --platform-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* iOS overscroll behavior */
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Android Platform */
+[data-platform="android"] {
+  --card-radius: var(--radius-android);
+  --button-radius: var(--radius-android-sm);
+  --blur-standard: var(--blur-android);
+  --platform-spring: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Material elevation */
+  --elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --elevation-2: 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+  --elevation-3: 0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.1);
+}
+
+/* Web Platform */
+[data-platform="web"] {
+  --card-radius: 16px;
+  --button-radius: 12px;
+  --blur-standard: 20px;
+}
+
+/* =================================================================
+   GLASS MORPHISM SYSTEM
+   ================================================================= */
+
+.glass {
+  background: rgba(30, 41, 59, 0.72);
+  backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--card-radius);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card-premium {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.9) 0%,
+    rgba(15, 23, 42, 0.95) 100%
+  );
+  backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--card-radius);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* =================================================================
+   CATEGORY COLOR SYSTEM
+   Maps semantic categories to the color palette
+   ================================================================= */
+
+/* Medical - Teal */
+.category-medical {
+  --cat-primary: var(--teal-500);
+  --cat-primary-hover: var(--teal-400);
+  --cat-bg: rgba(20, 184, 166, 0.15);
+  --cat-border: rgba(20, 184, 166, 0.3);
+  --cat-glow: 0 0 20px rgba(20, 184, 166, 0.2);
+  --cat-gradient: linear-gradient(135deg, var(--teal-400) 0%, var(--teal-600) 100%);
+}
+
+/* Survival - Olive */
+.category-survival {
+  --cat-primary: var(--olive-500);
+  --cat-primary-hover: var(--olive-400);
+  --cat-bg: rgba(139, 150, 88, 0.15);
+  --cat-border: rgba(139, 150, 88, 0.3);
+  --cat-glow: 0 0 20px rgba(139, 150, 88, 0.2);
+  --cat-gradient: linear-gradient(135deg, var(--olive-400) 0%, var(--olive-600) 100%);
+}
+
+/* Legal - Amber */
+.category-legal {
+  --cat-primary: var(--amber-500);
+  --cat-primary-hover: var(--amber-400);
+  --cat-bg: rgba(245, 158, 11, 0.15);
+  --cat-border: rgba(245, 158, 11, 0.3);
+  --cat-glow: 0 0 20px rgba(245, 158, 11, 0.2);
+  --cat-gradient: linear-gradient(135deg, var(--amber-400) 0%, var(--amber-600) 100%);
+}
+
+/* AI/Knowledge - Copper */
+.category-ai {
+  --cat-primary: var(--copper-500);
+  --cat-primary-hover: var(--copper-400);
+  --cat-bg: rgba(201, 118, 78, 0.15);
+  --cat-border: rgba(201, 118, 78, 0.3);
+  --cat-glow: 0 0 20px rgba(201, 118, 78, 0.2);
+  --cat-gradient: linear-gradient(135deg, var(--copper-400) 0%, var(--copper-600) 100%);
+}
+
+/* Emergency - Danger Red */
+.category-emergency {
+  --cat-primary: var(--danger-500);
+  --cat-primary-hover: var(--danger-400);
+  --cat-bg: rgba(220, 38, 38, 0.15);
+  --cat-border: rgba(220, 38, 38, 0.3);
+  --cat-glow: 0 0 20px rgba(220, 38, 38, 0.3);
+  --cat-gradient: linear-gradient(135deg, var(--danger-400) 0%, var(--danger-600) 100%);
+}
+
+/* General - Indigo/Purple */
+.category-general {
+  --cat-primary: var(--accent-secondary);
+  --cat-primary-hover: var(--color-secondary-400);
+  --cat-bg: rgba(99, 102, 241, 0.15);
+  --cat-border: rgba(99, 102, 241, 0.3);
+  --cat-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+  --cat-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+}
+
+/* =================================================================
+   COMPONENT TOKENS
+   ================================================================= */
+
+:root {
+  /* Buttons */
+  --btn-height-sm: 36px;
+  --btn-height-md: 44px;
+  --btn-height-lg: 52px;
+  --btn-height-xl: 60px;
+  
+  --btn-padding-x: 24px;
+  --btn-font-size: 15px;
+  --btn-font-weight: 600;
+  --btn-letter-spacing: 0.02em;
+  
+  /* Cards */
+  --card-padding-sm: 16px;
+  --card-padding-md: 20px;
+  --card-padding-lg: 24px;
+  
+  /* Inputs */
+  --input-height: 52px;
+  --input-padding-x: 16px;
+  --input-border-radius: 12px;
+  
+  /* Typography Scale */
+  --text-hero: 30px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 18px;
+  --text-body: 16px;
+  --text-small: 14px;
+  --text-caption: 12px;
+  
+  /* Spacing Scale (8px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  
+  /* Z-Index Scale */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-toast: 500;
+}
+
+/* =================================================================
+   ANIMATION DURATION SCALE
+   ================================================================= */
+
+:root {
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+  
+  /* Stagger delays */
+  --stagger-1: 30ms;
+  --stagger-2: 60ms;
+  --stagger-3: 90ms;
+  --stagger-4: 120ms;
+  --stagger-5: 150ms;
+}
+
+/* =================================================================
+   UTILITY CLASSES
+   ================================================================= */
+
+/* Text utilities with semantic meaning */
+.text-hero { font-size: var(--text-hero); font-weight: 700; line-height: 1.2; }
+.text-h1 { font-size: var(--text-h1); font-weight: 700; line-height: 1.3; }
+.text-h2 { font-size: var(--text-h2); font-weight: 600; line-height: 1.4; }
+.text-h3 { font-size: var(--text-h3); font-weight: 600; line-height: 1.4; }
+.text-body { font-size: var(--text-body); line-height: 1.6; }
+.text-small { font-size: var(--text-small); line-height: 1.5; }
+.text-caption { font-size: var(--text-caption); font-weight: 500; line-height: 1.4; }
+
+/* Spacing utilities */
+.p-1 { padding: var(--space-1); }
+.p-2 { padding: var(--space-2); }
+.p-3 { padding: var(--space-3); }
+.p-4 { padding: var(--space-4); }
+.p-5 { padding: var(--space-5); }
+.p-6 { padding: var(--space-6); }
+
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-6 { gap: var(--space-6); }
+
+/* Safe area utilities */
+.safe-top { padding-top: var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+.safe-x { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+
+/* Touch target utilities */
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+/* Platform-specific utilities */
+.ios-spring {
+  transition-timing-function: var(--platform-spring);
+}
+
+.android-material {
+  transition-timing-function: var(--platform-smooth);
+}
+
+/* Focus states */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+/* Premium scrollbar */
+.premium-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

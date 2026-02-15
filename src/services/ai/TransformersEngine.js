@@ -119,6 +119,7 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['Complex medical questions', 'Legal rights', 'Detailed analysis'],
         recommended: false,
         tier: 'pro',
+        isNew: true,
         legacy: false,
         // SHA-256 checksum for model_q4.onnx from HuggingFace LFS (quantized version)
         checksum: '16b8e5d28a757c37bbfa7d9420fd094c0c20e3615ca3c203b5b9501015045c8f',
@@ -141,6 +142,7 @@ export const TRANSFORMERS_MODELS = {
         useCases: ['In-depth medical advice', 'Emergency protocols', 'Comprehensive guidance'],
         recommended: false,
         tier: 'pro',
+        isNew: true,
         legacy: false,
         // SHA-256 checksum for model.onnx from HuggingFace LFS
         checksum: 'c538daa78f811830dc9028aa228a63a218147ab478c0c65ef6e2d8cab532380a',
@@ -370,7 +372,7 @@ class TransformersEngine {
      * @param {Function} onProgress - Progress callback
      * @returns {Promise<boolean>}
      */
-    async switchModel(modelId, onProgress = () => {}) {
+    async switchModel(modelId, onProgress = () => { }) {
         // Guard: Prevent concurrent switches
         if (this._isSwitching) {
             log.warn('Model switch already in progress, ignoring request');
@@ -395,7 +397,7 @@ class TransformersEngine {
 
             // Initialize new model
             const success = await this.initialize(modelId, onProgress);
-            
+
             return success;
         } finally {
             this._isSwitching = false;

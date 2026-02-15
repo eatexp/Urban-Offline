@@ -1,11 +1,33 @@
 # Phase 7: Offline Survival Mode ("Blackout Protocol") — Task Checklist
 
 **Phase**: 7 — "Blackout Protocol"  
-**Status**: ✅ **IMPLEMENTED** — Verification Required  
+**Status**: ✅ **IMPLEMENTED** — ⏳ PENDING FIELD VERIFICATION  
 **Start Date**: 2026-02-13  
-**Target Completion**: ✅ Verified (Ready for V1.0)  
+**Target Completion**: ⏳ Awaiting Physical Device Testing  
 **Assignee**: Development Team  
 **Dependencies**: Phase 5 (Haptics/Audio) ✅, Phase 6 (AI Model Switching) ✅
+
+---
+
+## 🚨 V1.0 FIELD TEST PROTOCOL — MANDATORY BEFORE RELEASE
+
+> **CRITICAL**: Urban-Offline V1.0 cannot be certified as "Production Release" until all 14 field tests are completed on physical devices. Current status: **NOT VERIFIED**.
+
+### Verification Status Summary
+
+| Platform | Test Count | Status |
+|----------|------------|--------|
+| Web (Chrome) | 9 tests | ⏳ Pending |
+| Android Native | 5 tests | ⏳ Pending |
+| iOS Native | 5 tests | ⏳ Pending (macOS required) |
+| **TOTAL** | **14 tests** | **0% Complete** |
+
+### Physical Device Requirements
+
+- [ ] Android device (Android 10/API 29 or newer) — **REQUIRED**
+- [ ] iOS device (iPhone 12 or newer recommended) — **REQUIRED**  
+- [ ] Android Studio installed and configured — **PENDING**
+- [ ] Xcode (macOS only) — **NOT AVAILABLE** (Windows environment)
 
 ---
 

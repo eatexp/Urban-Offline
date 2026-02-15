@@ -127,7 +127,7 @@ export function createStreamingChecksum(onProgress = null) {
             if (onProgress) {
                 try {
                     onProgress(totalBytes, null); // Total unknown in streaming mode
-                } catch (e) {
+                } catch (_e) {
                     // Ignore progress callback errors
                 }
             }

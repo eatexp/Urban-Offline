@@ -17,6 +17,8 @@ const Survival = lazy(() => import('./pages/Survival'));
 const Law = lazy(() => import('./pages/Law'));
 const ProtocolPage = lazy(() => import('./pages/ProtocolPage'));
 const AIModels = lazy(() => import('./pages/AIModels'));
+const Grokopedia = lazy(() => import('./pages/Grokopedia'));
+const GrokopediaArticle = lazy(() => import('./pages/GrokopediaArticle'));
 const DevDashboard = lazy(() => import('./components/clawdBot/DevDashboard'));
 
 // Loaders
@@ -86,6 +88,14 @@ export const router = createBrowserRouter([
             {
                 path: "protocol/:scenarioId",
                 element: <SuspenseWrapper><ProtocolPage /></SuspenseWrapper>
+            },
+            {
+                path: "grokopedia",
+                element: <SuspenseWrapper><Grokopedia /></SuspenseWrapper>
+            },
+            {
+                path: "grokopedia/article/:articleId",
+                element: <SuspenseWrapper><GrokopediaArticle /></SuspenseWrapper>
             },
             {
                 path: "dev",

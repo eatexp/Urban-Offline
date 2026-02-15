@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BookOpen, Cpu, RefreshCw, Upload } from 'lucide-react';
+import { BookOpen, Cpu, RefreshCw, Upload, Grid3X3, List } from 'lucide-react';
 import StorageBar from '../components/library/StorageBar';
 import DownloadCard from '../components/library/DownloadCard';
+import CategoryGrid from '../components/CategoryGrid';
 import { ContentPackManager } from '../services/contentPacks/ContentPackManager';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import TransformersEngine from '../services/ai/TransformersEngine';
+import HighStakesDeleteModal, { requiresHighStakesDelete } from '../components/HighStakesDeleteModal';
 
 const styles = `
   .library-page {
@@ -176,6 +178,11 @@ export default function Library() {
     const [downloadStates, setDownloadStates] = useState(new Map());
     const [activeModelId, setActiveModelId] = useState(null);
     const [capabilities, setCapabilities] = useState(null);
+    
+    // High-stakes delete modal state
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [itemTypeToDelete, setItemTypeToDelete] = useState('model'); // 'model' or 'contentPack'
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -242,10 +249,30 @@ export default function Library() {
     }, [loadData]);
 
     const handleDeletePack = useCallback(async (packId) => {
+        const pack = contentPacks.find(p => p.id === packId);
+        if (!pack) return;
+        
+        // Check if high-stakes deletion is required
+        if (requiresHighStakesDelete(pack)) {
+            setItemToDelete(pack);
+            setItemTypeToDelete('contentPack');
+            setDeleteModalOpen(true);
+            return;
+        }
+        
+        // Simple confirmation for smaller packs
         if (!confirm('Remove this content pack?')) return;
         await ContentPackManager.uninstallPack(packId);
         loadData();
-    }, [loadData]);
+    }, [loadData, contentPacks]);
+
+    const handleConfirmDeletePack = useCallback(async () => {
+        if (!itemToDelete) return;
+        await ContentPackManager.uninstallPack(itemToDelete.id);
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        loadData();
+    }, [itemToDelete, loadData]);
 
     const handleDownloadModel = useCallback(async (modelId) => {
         setDownloadStates(prev => {
@@ -282,10 +309,30 @@ export default function Library() {
     }, [loadData]);
 
     const handleDeleteModel = useCallback(async (modelId) => {
+        const model = aiModels.find(m => m.id === modelId);
+        if (!model) return;
+        
+        // Check if high-stakes deletion is required
+        if (requiresHighStakesDelete(model)) {
+            setItemToDelete(model);
+            setItemTypeToDelete('model');
+            setDeleteModalOpen(true);
+            return;
+        }
+        
+        // Simple confirmation for smaller models
         if (!confirm('Remove this AI model?')) return;
         await AIModelManager.deleteModel(modelId);
         loadData();
-    }, [loadData]);
+    }, [loadData, aiModels]);
+
+    const handleConfirmDeleteModel = useCallback(async () => {
+        if (!itemToDelete) return;
+        await AIModelManager.deleteModel(itemToDelete.id);
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        loadData();
+    }, [itemToDelete, loadData]);
 
     const handleActivateModel = useCallback(async (modelId) => {
         setDownloadStates(prev => {
@@ -340,6 +387,23 @@ export default function Library() {
                 <StorageBar
                     contentBytes={contentStorageBytes}
                     modelBytes={modelStorageBytes}
+                />
+
+                {/* Category Grid - Visual content discovery */}
+                <div className="library-section-header" style={{ marginTop: 20 }}>
+                    <span className="library-section-title">Browse by Category</span>
+                </div>
+                <CategoryGrid
+                    packs={contentPacks}
+                    models={aiModels}
+                    onCategorySelect={(category) => {
+                        // Switch to appropriate tab based on category
+                        if (category === 'ai') {
+                            setActiveTab('models');
+                        } else {
+                            setActiveTab('content');
+                        }
+                    }}
                 />
 
                 <div className="library-tabs">
@@ -469,6 +533,18 @@ export default function Library() {
                         )}
                     </div>
                 )}
+
+                {/* High Stakes Delete Modal */}
+                <HighStakesDeleteModal
+                    isOpen={deleteModalOpen}
+                    onClose={() => {
+                        setDeleteModalOpen(false);
+                        setItemToDelete(null);
+                    }}
+                    onConfirm={itemTypeToDelete === 'model' ? handleConfirmDeleteModel : handleConfirmDeletePack}
+                    item={itemToDelete}
+                    itemType={itemTypeToDelete}
+                />
             </div>
         </>
     );

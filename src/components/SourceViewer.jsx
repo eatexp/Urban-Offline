@@ -77,9 +77,9 @@ const SourceViewer = ({ source, isOpen, onClose }) => {
                             found = true;
                             break;
                         }
-    } catch (_e) {
-        // Continue searching
-    }
+                    } catch (_e) {
+                        // Continue searching
+                    }
                 }
 
                 if (!found) {
@@ -133,6 +133,15 @@ const SourceViewer = ({ source, isOpen, onClose }) => {
                             title="Toggle Text Size"
                         >
                             <Type size={18} />
+                        </button>
+                        <button
+                            className="action-btn"
+                            onClick={() => {
+                                navigator.clipboard.writeText(source?.fullContent || source?.content || '');
+                            }}
+                            title="Copy Content"
+                        >
+                            <Share2 size={18} />
                         </button>
                         <button className="close-btn" onClick={onClose} aria-label="Close">
                             <X size={24} />

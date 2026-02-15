@@ -36,20 +36,12 @@ import {
 // Pipeline stages configuration - Tactical Dark Theme
 const PIPELINE_STAGES = [
   {
-    id: 'query',
-    label: 'Query',
+    id: 'intent',
+    label: 'Intent',
     icon: Search,
-    description: 'Input',
+    description: 'Classify',
     color: '#64748b', // Slate-500
     glowColor: 'rgba(100, 116, 139, 0.1)'
-  },
-  {
-    id: 'embedding',
-    label: 'Embed',
-    icon: Cpu,
-    description: 'Vectorize',
-    color: '#52525b', // Zinc-600
-    glowColor: 'rgba(82, 82, 91, 0.1)'
   },
   {
     id: 'retrieval',
@@ -60,6 +52,14 @@ const PIPELINE_STAGES = [
     glowColor: 'rgba(7, 89, 133, 0.2)'
   },
   {
+    id: 'refinery',
+    label: 'Refine',
+    icon: CheckCircle2,
+    description: 'Distill',
+    color: '#eab308', // Yellow-500
+    glowColor: 'rgba(234, 179, 8, 0.2)'
+  },
+  {
     id: 'context',
     label: 'Context',
     icon: FileText,
@@ -68,7 +68,7 @@ const PIPELINE_STAGES = [
     glowColor: 'rgba(55, 48, 163, 0.2)'
   },
   {
-    id: 'generate',
+    id: 'generation',
     label: 'Generate',
     icon: Sparkles,
     description: 'Output',
@@ -602,34 +602,16 @@ const CompactPipelineView = ({ isActive, currentStage, _stageData, elapsedTime }
 const StageDetails = ({ stage, data }) => {
   const renderDetails = () => {
     switch (stage.id) {
-      case 'query':
+      case 'intent':
         return (
           <>
             <div className="detail-row">
-              <span className="detail-label">Query Length</span>
-              <span className="detail-value">{data.length} chars</span>
+              <span className="detail-label">Classification</span>
+              <span className="detail-value highlight">{data.classification || 'general'}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Category</span>
-              <span className="detail-value highlight">{data.category || 'general'}</span>
-            </div>
-          </>
-        );
-
-      case 'embedding':
-        return (
-          <>
-            <div className="detail-row">
-              <span className="detail-label">Model</span>
-              <span className="detail-value">MiniLM-L6</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Dimensions</span>
-              <span className="detail-value">384</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Method</span>
-              <span className="detail-value highlight">{data.method || 'semantic'}</span>
+              <span className="detail-label">Confidence</span>
+              <span className="detail-value">{Math.round((data.confidence || 0) * 100)}%</span>
             </div>
           </>
         );
@@ -639,15 +621,29 @@ const StageDetails = ({ stage, data }) => {
           <>
             <div className="detail-row">
               <span className="detail-label">Docs Found</span>
-              <span className="detail-value highlight">{data.docCount || 0}</span>
+              <span className="detail-value highlight">{data.count || 0}</span>
             </div>
             <div className="detail-row">
               <span className="detail-label">Search Mode</span>
               <span className="detail-value">{data.searchMethod || 'hybrid'}</span>
             </div>
+          </>
+        );
+
+      case 'refinery':
+        return (
+          <>
             <div className="detail-row">
-              <span className="detail-label">Datasets</span>
-              <span className="detail-value">{data.datasets?.join(', ') || 'all'}</span>
+              <span className="detail-label">Refined</span>
+              <span className="detail-value highlight">{data.documentsRefined || 0} docs</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Compression</span>
+              <span className="detail-value">{data.avgCompressionRatio || '1.0'}x</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Tokens Saved</span>
+              <span className="detail-value">{data.tokensSaved || 0}</span>
             </div>
           </>
         );
@@ -657,33 +653,25 @@ const StageDetails = ({ stage, data }) => {
           <>
             <div className="detail-row">
               <span className="detail-label">Context Size</span>
-              <span className="detail-value highlight">{data.tokenCount || 0} tokens</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Documents</span>
-              <span className="detail-value">{data.docCount || 0}</span>
+              <span className="detail-value highlight">{data.totalTokensEstimate || 0} tokens</span>
             </div>
             <div className="detail-row">
               <span className="detail-label">Chunks</span>
-              <span className="detail-value">{data.chunkCount || 0}</span>
+              <span className="detail-value">{(data.chunks || []).length}</span>
             </div>
           </>
         );
 
-      case 'generate':
+      case 'generation':
         return (
           <>
             <div className="detail-row">
-              <span className="detail-label">Model</span>
-              <span className="detail-value highlight">{data.model || 'fallback'}</span>
+              <span className="detail-label">Status</span>
+              <span className="detail-value highlight">{data.generating ? 'Generating...' : 'Complete'}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Output</span>
-              <span className="detail-value">{data.outputTokens || 0} tokens</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Temperature</span>
-              <span className="detail-value">{data.temperature || 0.3}</span>
+              <span className="detail-label">Citations</span>
+              <span className="detail-value">{(data.citations || []).length}</span>
             </div>
           </>
         );

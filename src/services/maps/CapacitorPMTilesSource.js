@@ -42,6 +42,14 @@ export class CapacitorPMTilesSource {
             }
         }
 
+        // CRITICAL FIX: Check for large 200 OK response BEFORE reading body to prevent OOM
+        if (response.status === 200) {
+            const contentLength = parseInt(response.headers.get('Content-Length') || '0');
+            if (contentLength > 10 * 1024 * 1024) {
+                throw new Error(`OOM Protection: Server returned full file (${contentLength} bytes) instead of range. Aborting.`);
+            }
+        }
+
         const buffer = await response.arrayBuffer();
 
         // Safety Check: If server ignored Range and sent 200 OK (full file),
@@ -58,8 +66,15 @@ export class CapacitorPMTilesSource {
             // Case B: 200 OK (Whole File)
 
             if (response.status === 200) {
-                // We possess the entire file in memory (expensive, but we are here now).
-                // We must return the slice requested.
+                // CRITICAL: If we get 200 OK, the server ignored the Range header.
+                // If the file is large (e.g. > 10MB), reading it will cause OOM.
+                const contentLength = parseInt(response.headers.get('Content-Length') || '0');
+
+                if (contentLength > 10 * 1024 * 1024) { // 10MB safety limit for 200 OK fallback
+                    throw new Error(`OOM Protection: Server returned full file (${contentLength} bytes) instead of range. Aborting.`);
+                }
+
+                // For small files, we can accept the full download fallback
                 return new Uint8Array(buffer.slice(offset, offset + length));
             }
 

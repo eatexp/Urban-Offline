@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     Bot, BookOpen, Sparkles, X,
     Wifi, WifiOff, Settings, Database,
-    Activity, Cpu, Menu
+    Activity, Cpu, Menu, Zap, Loader2
 } from 'lucide-react';
 
 // Living Reader components
@@ -11,6 +12,7 @@ import Composer from '../components/Composer';
 import MessageThread from '../components/MessageThread';
 import SourceViewer from '../components/SourceViewer';
 import SessionList from '../components/chat/SessionList';
+import DatasetActivityIndicator from '../components/DatasetActivityIndicator';
 
 import { useAIGenerating } from '../contexts/AIGeneratingContext';
 import { useChatSession } from '../hooks/useChatSession';
@@ -24,7 +26,6 @@ import { createLogger } from '../utils/logger';
 import {
     RAGPipelineVisualizer,
     DatasetNetworkGraph,
-    DatasetActivityIndicator,
     IntentClassificationViz
 } from '../components/ai-visualizations';
 import AIReadingViz from '../components/ai-visualizations/AIReadingViz';
@@ -430,6 +431,59 @@ const AIChat = () => {
                 {/* Composer */}
                 <Composer onSend={handleSend} disabled={isLoading || isGenerating} />
 
+                {/* Refinery Chip - Trust Builder */}
+                <AnimatePresence>
+                    {isGenerating && (() => {
+                        const refineryStage = vizStages.find(s => s.stage === 'refinery');
+                        const retrievalStage = vizStages.find(s => s.stage === 'retrieval' || (s.type === 'tool_start' && s.tool === 'search'));
+
+                        // Case 1: Refining in progress (Retrieval done, but no refinery data yet)
+                        if (retrievalStage && !refineryStage?.data) {
+                            return (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 5 }}
+                                    className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-md shadow-lg shadow-blue-900/5 ring-1 ring-black/5"
+                                >
+                                    <Loader2 size={14} className="text-blue-400 animate-spin" />
+                                    <span className="text-xs font-semibold text-blue-200">Scanning Knowledge...</span>
+                                </motion.div>
+                            );
+                        }
+
+                        if (!refineryStage?.data) return null;
+
+                        const { documentsRefined, tokensSaved, totalCharsBefore, totalCharsAfter } = refineryStage.data;
+                        if (!tokensSaved || tokensSaved <= 0) return null;
+
+                        const savingsPercent = totalCharsBefore > 0
+                            ? Math.round(((totalCharsBefore - totalCharsAfter) / totalCharsBefore) * 100)
+                            : 0;
+
+                        return (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md shadow-lg shadow-amber-900/5 ring-1 ring-black/5"
+                            >
+                                <motion.div
+                                    animate={{ rotate: [0, 15, -15, 0] }}
+                                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                                >
+                                    <Zap size={14} className="text-amber-400 fill-amber-400/20" />
+                                </motion.div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-semibold text-amber-200">Refined {documentsRefined} source{documentsRefined !== 1 ? 's' : ''}</span>
+                                    <span className="w-1 h-1 rounded-full bg-amber-500/30" />
+                                    <span className="text-xs font-medium text-amber-100/80">Saved {tokensSaved} tokens ({savingsPercent}%)</span>
+                                </div>
+                            </motion.div>
+                        );
+                    })()}
+                </AnimatePresence>
+
                 {/* History Sidebar Overlay */}
                 {showHistory && (
                     <div className="absolute inset-0 z-50 flex">
@@ -458,6 +512,16 @@ const AIChat = () => {
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {/* Dataset Activity Indicator - Always visible when viz panel is open */}
+                        <DatasetActivityIndicator
+                            datasets={enabledDatasets}
+                            isGenerating={isGenerating}
+                            stageData={vizStages.reduce((acc, stage) => {
+                                acc[stage.stage] = stage.data;
+                                return acc;
+                            }, {})}
+                        />
+
                         {vizTab === 'logic' ? (
                             <AIReadingViz stages={vizStages} isActive={vizActive} onReplay={() => { setVizStages([]); setTimeout(() => setVizStages(vizStages), 50); }} />
                         ) : (

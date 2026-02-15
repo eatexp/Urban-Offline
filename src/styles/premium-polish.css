@@ -1,0 +1,572 @@
+/* =================================================================
+   URBAN-OFFLINE PREMIUM POLISH
+   "Native Excellence - Refined Interactions"
+   
+   Premium micro-interactions, refined animations, and native-feel
+   enhancements that elevate the app above "stock" experiences.
+   
+   Philosophy:
+   - Every interaction has purpose
+   - Animations are snappy, never sluggish
+   - Haptics and visuals work together
+   - Platform-specific refinements where beneficial
+   
+   Compliance: VISION.md §4 - Premium Native Experience
+               DESIGN_SYSTEM.md §6 - Animation
+               .clinerules §6 - Native haptics
+   ================================================================= */
+
+/* =================================================================
+   MOTION SYSTEM - Refined Physics
+   ================================================================= */
+
+:root {
+  /* Duration Scale - Snappy, purposeful */
+  --duration-instant: 80ms;      /* Micro-feedback */
+  --duration-fast: 150ms;        /* Button presses */
+  --duration-normal: 250ms;      /* State changes */
+  --duration-slow: 350ms;        /* Page transitions */
+  --duration-spring: 500ms;      /* Enter animations */
+  
+  /* Easing - Natural motion */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Stagger delays */
+  --stagger-fast: 30ms;
+  --stagger-normal: 50ms;
+  --stagger-slow: 80ms;
+}
+
+/* =================================================================
+   BUTTON REFINEMENTS - Premium Press States
+   ================================================================= */
+
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);  /* GPU acceleration */
+  transition: 
+    transform var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+/* Ripple effect container */
+.btn-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--ripple-x, 50%) var(--ripple-y, 50%),
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transform: scale(0);
+  transition: 
+    opacity var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-decelerate);
+}
+
+.btn-premium:active {
+  transform: scale(0.96);
+  transition-duration: var(--duration-instant);
+}
+
+.btn-premium:active::before {
+  opacity: 1;
+  transform: scale(2);
+}
+
+/* Premium shine effect on hover */
+.btn-premium::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) rotate(45deg);
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+.btn-premium:hover::after {
+  transform: translateX(100%) rotate(45deg);
+}
+
+/* =================================================================
+   CARD REFINEMENTS - Subtle Depth
+   ================================================================= */
+
+.card-premium {
+  position: relative;
+  transform: translateZ(0);
+  transition: 
+    transform var(--duration-normal) var(--ease-spring),
+    box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 40px -12px rgba(0, 0, 0, 0.25),
+    0 4px 12px -4px rgba(0, 0, 0, 0.1);
+}
+
+.card-premium:active {
+  transform: translateY(-2px) scale(0.995);
+  transition-duration: var(--duration-fast);
+}
+
+/* Glow on focus/hover for interactive cards */
+.card-interactive:focus-visible {
+  outline: none;
+  box-shadow: 
+    0 0 0 2px var(--accent-primary),
+    0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+/* =================================================================
+   INPUT REFINEMENTS - Responsive Focus
+   ================================================================= */
+
+.input-premium {
+  position: relative;
+  transition: 
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-smooth);
+}
+
+.input-premium:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 
+    0 0 0 3px rgba(245, 158, 11, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Label animation */
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: 
+    all var(--duration-fast) var(--ease-smooth);
+  transform-origin: left top;
+}
+
+.input-wrapper input:focus + label,
+.input-wrapper input:not(:placeholder-shown) + label {
+  top: 0;
+  transform: translateY(-50%) scale(0.85);
+  color: var(--accent-primary);
+  background: var(--bg-primary);
+  padding: 0 4px;
+}
+
+/* =================================================================
+   LIST REFINEMENTS - Staggered Entry
+   ================================================================= */
+
+.list-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: list-item-enter var(--duration-spring) var(--ease-spring) forwards;
+}
+
+.list-stagger > *:nth-child(1) { animation-delay: calc(var(--stagger-fast) * 0); }
+.list-stagger > *:nth-child(2) { animation-delay: calc(var(--stagger-fast) * 1); }
+.list-stagger > *:nth-child(3) { animation-delay: calc(var(--stagger-fast) * 2); }
+.list-stagger > *:nth-child(4) { animation-delay: calc(var(--stagger-fast) * 3); }
+.list-stagger > *:nth-child(5) { animation-delay: calc(var(--stagger-fast) * 4); }
+.list-stagger > *:nth-child(6) { animation-delay: calc(var(--stagger-fast) * 5); }
+.list-stagger > *:nth-child(7) { animation-delay: calc(var(--stagger-fast) * 6); }
+.list-stagger > *:nth-child(8) { animation-delay: calc(var(--stagger-fast) * 7); }
+
+@keyframes list-item-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* List item hover state */
+.list-item-interactive {
+  transition: 
+    background-color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-smooth);
+}
+
+.list-item-interactive:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  transform: translateX(4px);
+}
+
+/* =================================================================
+   PAGE TRANSITIONS - Smooth Navigation
+   ================================================================= */
+
+.page-transition-enter {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: 
+    opacity var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-spring) var(--ease-spring);
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: scale(1.02);
+  transition: 
+    opacity var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-accelerate);
+}
+
+/* =================================================================
+   LOADING STATES - Premium Skeletons
+   ================================================================= */
+
+.skeleton-premium {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Pulse for indeterminate states */
+.pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* =================================================================
+   SCROLL BEHAVIOR - Smooth & Native
+   ================================================================= */
+
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom premium scrollbar */
+.scrollbar-premium::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* =================================================================
+   MODAL/SHEET REFINEMENTS - Layered Animation
+   ================================================================= */
+
+.modal-overlay {
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+}
+
+.modal-overlay.active {
+  opacity: 1;
+}
+
+.modal-content {
+  transform: translateY(100%) scale(0.95);
+  transition: 
+    transform var(--duration-spring) var(--ease-spring),
+    opacity var(--duration-normal) var(--ease-smooth);
+  opacity: 0;
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* =================================================================
+   BADGE & CHIP REFINEMENTS - Micro-interactions
+   ================================================================= */
+
+.badge-interactive {
+  transition: 
+    transform var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.badge-interactive:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.badge-interactive:active {
+  transform: scale(0.95);
+}
+
+/* =================================================================
+   TOGGLE/SWITCH REFINEMENTS - Satisfying Feedback
+   ================================================================= */
+
+.toggle-premium {
+  position: relative;
+  width: 52px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border-radius: 16px;
+  transition: background-color var(--duration-normal) var(--ease-smooth);
+  cursor: pointer;
+}
+
+.toggle-premium::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: 
+    transform var(--duration-spring) var(--ease-spring),
+    width var(--duration-fast) var(--ease-smooth);
+}
+
+.toggle-premium:active::after {
+  width: 28px;
+}
+
+.toggle-premium.active {
+  background: var(--accent-primary);
+}
+
+.toggle-premium.active::after {
+  transform: translateX(20px);
+}
+
+.toggle-premium.active:active::after {
+  transform: translateX(16px);
+}
+
+/* =================================================================
+   PLATFORM-SPECIFIC REFINEMENTS
+   ================================================================= */
+
+/* iOS-specific */
+@supports (-webkit-touch-callout: none) {
+  .ios-spring {
+    transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .ios-blur {
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+  
+  /* Disable default touch callout */
+  .no-callout {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* Android Material You */
+@supports not (-webkit-touch-callout: none) {
+  .material-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .material-ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.2) 0%,
+      transparent 70%
+    );
+    opacity: 0;
+    transform: scale(0);
+    transition: 
+      opacity var(--duration-fast) var(--ease-smooth),
+      transform var(--duration-normal) var(--ease-decelerate);
+  }
+  
+  .material-ripple:active::after {
+    opacity: 1;
+    transform: scale(2);
+  }
+  
+  /* Material elevation */
+  .material-elevated {
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.12),
+      0 1px 2px rgba(0, 0, 0, 0.24);
+    transition: box-shadow var(--duration-normal) var(--ease-smooth);
+  }
+  
+  .material-elevated:hover {
+    box-shadow: 
+      0 3px 6px rgba(0, 0, 0, 0.15),
+      0 2px 4px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* =================================================================
+   ACCESSIBILITY - Respect User Preferences
+   ================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .skeleton-premium {
+    animation: none;
+    background: var(--bg-tertiary);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .card-premium,
+  .btn-premium,
+  .input-premium {
+    border-width: 2px;
+  }
+  
+  .input-premium:focus {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* =================================================================
+   UTILITY CLASSES - Quick Application
+   ================================================================= */
+
+/* Animation utilities */
+.animate-fade-in { animation: fade-in var(--duration-normal) var(--ease-smooth); }
+.animate-slide-up { animation: slide-up var(--duration-spring) var(--ease-spring); }
+.animate-scale-in { animation: scale-in var(--duration-spring) var(--ease-spring); }
+.animate-bounce-in { animation: bounce-in var(--duration-spring) var(--ease-bounce); }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from { 
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-in {
+  0% { 
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% { 
+    transform: scale(1.05);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Hover utilities */
+.hover-lift:hover { transform: translateY(-4px); }
+.hover-scale:hover { transform: scale(1.02); }
+.hover-glow:hover { box-shadow: var(--glow-amber); }
+
+/* Focus utilities */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+/* Active states */
+.active-press:active { transform: scale(0.96); }

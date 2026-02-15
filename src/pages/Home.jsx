@@ -1,4 +1,4 @@
-import { Shield, Library, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download } from 'lucide-react';
+import { Shield, Library, Navigation, Heart, Tent, Scale, Sparkles, Wifi, WifiOff, Brain, Download, BookOpen } from 'lucide-react';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import { AIModelManager } from '../services/ai/AIModelManager';
@@ -119,13 +119,13 @@ const Home = memo(() => {
             </section>
 
             {/* Enhanced AI Assistant Card */}
-            <section className="animate-scale-in" style={{ animationDelay: '100ms' }}>
+            <section className="animate-fade-in-up delay-100">
                 <Link
                     to="/ai"
-                    className="group flex items-center p-5 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl shadow-xl text-white hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
+                    className="group flex items-center p-5 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl shadow-xl text-white hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] card-hover"
                 >
                     <div className="bg-white/20 p-4 rounded-xl mr-5 group-hover:bg-white/30 transition-all duration-300 transform group-hover:scale-110">
-                        <Sparkles className="w-8 h-8 text-white animate-emergency-pulse" />
+                        <Sparkles className="w-8 h-8 text-white animate-glow-pulse" />
                     </div>
                     <div className="flex-1">
                         <h3 className="font-bold text-lg mb-1">AI Emergency Assistant</h3>
@@ -137,7 +137,7 @@ const Home = memo(() => {
                 {/* AI Model Status Badge */}
                 <Link
                     to="/ai-models"
-                    className="group flex items-center justify-between mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-purple-500/20 hover:border-purple-400/30 hover:bg-white/[0.07] transition-all"
+                    className="group flex items-center justify-between mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-purple-500/20 hover:border-purple-400/30 hover:bg-white/[0.07] transition-all btn-press"
                 >
                     <div className="flex items-center gap-2">
                         <Brain size={16} className="text-purple-400" />
@@ -161,6 +161,23 @@ const Home = memo(() => {
                             </>
                         )}
                     </div>
+                </Link>
+            </section>
+
+            {/* Grokopedia Card */}
+            <section className="animate-fade-in-up delay-200">
+                <Link
+                    to="/grokopedia"
+                    className="group flex items-center p-5 bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-600 rounded-2xl shadow-xl text-white hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] card-hover"
+                >
+                    <div className="bg-white/20 p-4 rounded-xl mr-5 group-hover:bg-white/30 transition-all duration-300 transform group-hover:scale-110">
+                        <BookOpen className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-1">Grokopedia</h3>
+                        <p className="text-sm text-white/90">Browse and search your offline knowledge base</p>
+                    </div>
+                    <Navigation className="w-6 h-6 text-white/70 group-hover:text-white transition-all duration-300 transform group-hover:translate-x-1" />
                 </Link>
             </section>
 
