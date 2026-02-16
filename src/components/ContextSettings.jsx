@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import {
     Package, Heart, MapPin, Droplets, X, Plus, Trash2,
     Save, Download, Upload, AlertCircle
@@ -113,7 +113,11 @@ const ContextSettings = ({ onClose }) => {
                         {saveMessage && (
                             <span className="text-sm text-green-600">{saveMessage}</span>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-100 rounded-lg"
+                            aria-label="Close settings"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -260,6 +264,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
             <div className="bg-slate-50 p-3 rounded-lg space-y-2">
                 <input
                     type="text"
+                    aria-label="Item name"
                     placeholder="Item name (e.g., Water bottle, Lighter)"
                     value={newItem.name}
                     onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
@@ -269,6 +274,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                 <div className="flex gap-2">
                     <input
                         type="number"
+                        aria-label="Item quantity"
                         placeholder="Qty"
                         min="1"
                         value={newItem.quantity}
@@ -276,6 +282,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                         className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <select
+                        aria-label="Item category"
                         value={newItem.category}
                         onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -289,6 +296,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                     <button
                         onClick={addItem}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        aria-label="Add item"
                     >
                         <Plus className="w-4 h-4" />
                     </button>
@@ -309,6 +317,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                         <button
                             onClick={() => removeItem(item.id)}
                             className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            aria-label={`Remove ${item.name}`}
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -324,6 +333,8 @@ const InventoryTab = ({ inventory, setInventory }) => {
 
 // Medical Tab
 const MedicalTab = ({ medical, setMedical }) => {
+    const id = useId();
+
     return (
         <div className="space-y-4">
             <p className="text-sm text-slate-600">
@@ -332,8 +343,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Allergies */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
+                <label htmlFor={`${id}-allergies`} className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
                 <input
+                    id={`${id}-allergies`}
                     type="text"
                     placeholder="e.g., NSAIDs, penicillin (comma-separated)"
                     value={(medical.allergies || []).join(', ')}
@@ -347,8 +359,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Conditions */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
+                <label htmlFor={`${id}-conditions`} className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
                 <input
+                    id={`${id}-conditions`}
                     type="text"
                     placeholder="e.g., Diabetes, Asthma (comma-separated)"
                     value={(medical.conditions || []).join(', ')}
@@ -362,8 +375,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Blood Type */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
+                <label htmlFor={`${id}-blood`} className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
                 <select
+                    id={`${id}-blood`}
                     value={medical.bloodType || ''}
                     onChange={(e) => setMedical({ ...medical, bloodType: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -396,6 +410,7 @@ const LocationTab = ({ location, setLocation }) => {
                 <h3 className="font-semibold text-sm">Home</h3>
                 <input
                     type="text"
+                    aria-label="Home Address"
                     placeholder="Address"
                     value={location.home?.address || ''}
                     onChange={(e) => setLocation({
@@ -407,6 +422,7 @@ const LocationTab = ({ location, setLocation }) => {
                 <div className="grid grid-cols-2 gap-2">
                     <input
                         type="text"
+                        aria-label="Home Postcode"
                         placeholder="Postcode"
                         value={location.home?.postcode || ''}
                         onChange={(e) => setLocation({
@@ -417,6 +433,7 @@ const LocationTab = ({ location, setLocation }) => {
                     />
                     <input
                         type="text"
+                        aria-label="Home Floor"
                         placeholder="Floor (e.g., ground floor)"
                         value={location.home?.floor || ''}
                         onChange={(e) => setLocation({
@@ -428,6 +445,7 @@ const LocationTab = ({ location, setLocation }) => {
                 </div>
                 <input
                     type="text"
+                    aria-label="Home Layout"
                     placeholder="Layout (e.g., 2-bed flat, terraced house)"
                     value={location.home?.layout || ''}
                     onChange={(e) => setLocation({
@@ -443,6 +461,7 @@ const LocationTab = ({ location, setLocation }) => {
                 <h3 className="font-semibold text-sm">Work</h3>
                 <input
                     type="text"
+                    aria-label="Work Address"
                     placeholder="Work address (optional)"
                     value={location.work?.address || ''}
                     onChange={(e) => setLocation({
@@ -458,6 +477,8 @@ const LocationTab = ({ location, setLocation }) => {
 
 // Resources Tab
 const ResourcesTab = ({ resources, setResources }) => {
+    const id = useId();
+
     return (
         <div className="space-y-4">
             <p className="text-sm text-slate-600">
@@ -469,8 +490,9 @@ const ResourcesTab = ({ resources, setResources }) => {
                 <h3 className="font-semibold text-sm">Water</h3>
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <label className="block text-xs text-slate-600 mb-1">Bottled (liters)</label>
+                        <label htmlFor={`${id}-water-bottled`} className="block text-xs text-slate-600 mb-1">Bottled (liters)</label>
                         <input
+                            id={`${id}-water-bottled`}
                             type="number"
                             min="0"
                             value={resources.water?.bottled || 0}
@@ -482,8 +504,9 @@ const ResourcesTab = ({ resources, setResources }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-600 mb-1">Stored (liters)</label>
+                        <label htmlFor={`${id}-water-stored`} className="block text-xs text-slate-600 mb-1">Stored (liters)</label>
                         <input
+                            id={`${id}-water-stored`}
                             type="number"
                             min="0"
                             value={resources.water?.stored || 0}
@@ -499,8 +522,9 @@ const ResourcesTab = ({ resources, setResources }) => {
 
             {/* Food */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Food Supply (days)</label>
+                <label htmlFor={`${id}-food`} className="block text-sm font-medium text-slate-700 mb-1">Food Supply (days)</label>
                 <input
+                    id={`${id}-food`}
                     type="number"
                     min="0"
                     value={resources.food?.daysSupply || 0}
@@ -514,8 +538,9 @@ const ResourcesTab = ({ resources, setResources }) => {
 
             {/* Cash */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Cash on Hand (£)</label>
+                <label htmlFor={`${id}-cash`} className="block text-sm font-medium text-slate-700 mb-1">Cash on Hand (£)</label>
                 <input
+                    id={`${id}-cash`}
                     type="number"
                     min="0"
                     value={resources.cash || 0}
