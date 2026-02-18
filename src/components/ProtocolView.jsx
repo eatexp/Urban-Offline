@@ -215,7 +215,12 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                     return (
                         <div
                             key={index}
-                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all ${
+                            onClick={(e) => {
+                                // Prevent toggling if clicking the checkbox input directly (handled by onChange)
+                                if (e.target.tagName === 'INPUT') return;
+                                toggleStep(index);
+                            }}
+                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all cursor-pointer ${
                                 isChecked
                                     ? 'bg-green-50 border-green-300'
                                     : 'bg-white border-slate-200 hover:border-slate-300'
@@ -269,7 +274,10 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             {/* Voice Button */}
                             {voiceEnabled && (
                                 <button
-                                    onClick={() => speakStep(step.text, step.context)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakStep(step.text, step.context);
+                                    }}
                                     className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
                                     aria-label="Read step aloud"
                                 >
