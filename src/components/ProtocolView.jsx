@@ -215,7 +215,8 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                     return (
                         <div
                             key={index}
-                            className={`flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all ${
+                            onClick={() => toggleStep(index)}
+                            className={`cursor-pointer flex items-start gap-4 p-4 md:p-6 rounded-xl shadow-lg border-2 transition-all ${
                                 isChecked
                                     ? 'bg-green-50 border-green-300'
                                     : 'bg-white border-slate-200 hover:border-slate-300'
@@ -227,6 +228,7 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleStep(index)}
+                                onClick={(e) => e.stopPropagation()}
                                 className="sr-only peer"
                                 // =============================================================================
                                 // VERIFIED: [P0][Accessibility] PROTOCOL_CHECKBOX_ARIA_LABELS
@@ -269,7 +271,10 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             {/* Voice Button */}
                             {voiceEnabled && (
                                 <button
-                                    onClick={() => speakStep(step.text, step.context)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakStep(step.text, step.context);
+                                    }}
                                     className="flex-shrink-0 p-2 md:p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
                                     aria-label="Read step aloud"
                                 >

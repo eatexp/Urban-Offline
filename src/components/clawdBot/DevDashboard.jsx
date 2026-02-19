@@ -26,7 +26,7 @@ import { clawdBot } from '../../services/clawdBot';
 import {
   DatasetNetworkGraph,
   IntentClassificationViz,
-  DatasetActivityIndicator
+  DatasetActivityViz as DatasetActivityIndicator
 } from '../ai-visualizations';
 
 /**
