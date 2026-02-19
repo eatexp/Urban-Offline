@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     AlertTriangle, RefreshCw, Home, ChevronRight, 
-    Storage, Brain, Wifi, FileX, Shield, BatteryWarning,
+    HardDrive as Storage, Brain, Wifi, FileX, Shield, BatteryWarning,
     Thermometer, AlertCircle, RotateCcw, ArrowRight
 } from 'lucide-react';
 import { getErrorFallbackProps, ErrorRecovery } from '../utils/errorRecovery';
