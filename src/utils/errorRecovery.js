@@ -294,11 +294,12 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: true,
                 handler: async () => {
                     if (isNativeMobile()) {
-                        const { NativeSettings } = await import('@capacitor/native-settings');
-                        await NativeSettings.open({
-                            optionAndroid: 'application-details',
-                            optionIOS: 'app'
-                        });
+                        // const { NativeSettings } = await import('@capacitor/native-settings');
+                        // await NativeSettings.open({
+                        //     optionAndroid: 'application-details',
+                        //     optionIOS: 'app'
+                        // });
+                        console.warn('NativeSettings not available in this environment');
                     }
                 }
             },
