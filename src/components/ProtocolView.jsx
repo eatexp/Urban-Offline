@@ -224,6 +224,7 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             {/* Checkbox */}
                             <label className="flex-shrink-0 cursor-pointer">
                             <input
+                                id={`protocol-step-${index}`}
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleStep(index)}
@@ -246,7 +247,7 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                             </label>
 
                             {/* Step Content */}
-                            <div className="flex-1 min-w-0">
+                            <label htmlFor={`protocol-step-${index}`} className="flex-1 min-w-0 cursor-pointer">
                                 <div className="flex items-start gap-2">
                                     <span className="text-2xl md:text-3xl font-bold text-slate-900 flex-shrink-0">
                                         {index + 1}.
@@ -264,7 +265,7 @@ const ProtocolView = ({ protocol, onClose, onRegenerate }) => {
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            </label>
 
                             {/* Voice Button */}
                             {voiceEnabled && (
