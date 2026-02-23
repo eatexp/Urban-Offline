@@ -29,11 +29,6 @@ const ProtocolPage = () => {
     const [error, setError] = useState(null);
     const [scenario, setScenario] = useState(null);
 
-    // Generate protocol on mount
-    useEffect(() => {
-        generateProtocol();
-    }, [generateProtocol]);
-
     const generateProtocol = useCallback(async () => {
         try {
             setLoading(true);
@@ -84,6 +79,11 @@ const ProtocolPage = () => {
             setLoading(false);
         }
     }, [scenarioId]);
+
+    // Generate protocol on mount
+    useEffect(() => {
+        generateProtocol();
+    }, [generateProtocol]);
 
     // Handle regeneration (user clicks "Regenerate" button)
     const handleRegenerate = async () => {
