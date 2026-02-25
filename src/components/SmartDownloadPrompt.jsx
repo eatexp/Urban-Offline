@@ -203,6 +203,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
         <div
             className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up"
             style={{ maxWidth: '400px', margin: '0 auto' }}
+            role="region"
+            aria-label="AI Download Prompt"
         >
             <div
                 className="rounded-2xl overflow-hidden shadow-2xl"
@@ -223,9 +225,11 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         <span className="font-semibold text-white">Enhance Your Assistant</span>
                     </div>
                     <button
+                        type="button"
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss download prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -282,16 +286,23 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             {/* Model selection */}
                             <div className="mb-4">
                                 <p
+                                    id="model-selection-label"
                                     className="text-xs mb-2"
                                     style={{ color: 'var(--color-text-muted)' }}
                                 >
                                     Choose AI model:
                                 </p>
-                                <div className="space-y-2">
+                                <div
+                                    className="space-y-2"
+                                    role="group"
+                                    aria-labelledby="model-selection-label"
+                                >
                                     {Object.values(TRANSFORMERS_MODELS).map(model => (
                                         <button
                                             key={model.id}
+                                            type="button"
                                             onClick={() => setSelectedModel(model.id)}
+                                            aria-pressed={selectedModel === model.id}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
                                                 background: selectedModel === model.id
@@ -330,6 +341,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             {/* Action buttons */}
                             <div className="flex gap-2">
                                 <button
+                                    type="button"
                                     onClick={handleDismiss}
                                     className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors"
                                     style={{
@@ -341,6 +353,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                     Maybe Later
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleDownload}
                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all"
                                     style={{
@@ -379,6 +392,11 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 </span>
                             </div>
                             <div
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-label={`Download progress for ${modelConfig?.name}`}
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
                             >
@@ -398,11 +416,13 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                     Don't close the app during download
                                 </p>
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         AIModelManager.cancelDownload(selectedModel);
                                         setIsDownloading(false);
                                         setDownloadProgress(0);
                                     }}
+                                    aria-label="Cancel download"
                                     className="text-xs px-3 py-1 rounded-lg transition-colors"
                                     style={{
                                         background: 'var(--color-bg-tertiary)',
