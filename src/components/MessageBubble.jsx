@@ -8,15 +8,54 @@
  *   - Interactive CitationChips
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { User, Bot, AlertCircle, Database } from 'lucide-react';
+import { User, Bot, AlertCircle, Database, Check, Copy } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import CitationChip from './CitationChip';
 import MiniMapCard from './chat/MiniMapCard';
 import MiniMapCardBoundary from './chat/MiniMapCardBoundary';
 import './MessageBubble.css';
+
+// ═════════════════════════════════════════════════════════════════
+// HELPER COMPONENTS
+// ═════════════════════════════════════════════════════════════════
+
+const CopyButton = ({ text }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = useCallback(async () => {
+        if (!text) return;
+
+        try {
+            await navigator.clipboard.writeText(String(text));
+            setCopied(true);
+
+            // Reset after 2s
+            setTimeout(() => {
+                setCopied(false);
+            }, 2000);
+        } catch (err) {
+            console.warn('Failed to copy to clipboard', err);
+        }
+    }, [text]);
+
+    return (
+        <button
+            className="msg-bubble__copy-btn"
+            onClick={handleCopy}
+            aria-label={copied ? "Copied" : "Copy code"}
+            title={copied ? "Copied!" : "Copy code"}
+        >
+            {copied ? (
+                <Check size={14} className="text-emerald-400" />
+            ) : (
+                <Copy size={14} />
+            )}
+        </button>
+    );
+};
 
 // ═════════════════════════════════════════════════════════════════
 // MESSAGE BUBBLE COMPONENT
@@ -145,11 +184,51 @@ const MessageBubble = React.memo(({
                                             ol: ({ node: _node, ...props }) => <ol className="msg-bubble__list" {...props} />,
                                             li: ({ node: _node, ...props }) => <li className="msg-bubble__list-item" {...props} />,
                                             blockquote: ({ node: _node, ...props }) => <blockquote className="msg-bubble__blockquote" {...props} />,
+                                            // Override pre to wrap code blocks with copy button
+                                            pre: ({ node: _node, children, ...props }) => {
+                                                // Extract text content from the code block inside pre
+                                                // ReactMarkdown usually structures this as <pre><code>text</code></pre>
+                                                // So children is typically the <code> element
+                                                let codeText = '';
+
+                                                try {
+                                                    if (children) {
+                                                        if (typeof children === 'string') {
+                                                            codeText = children;
+                                                        } else if (children.props && children.props.children) {
+                                                            const grandChildren = children.props.children;
+                                                            if (Array.isArray(grandChildren)) {
+                                                                codeText = grandChildren.join('');
+                                                            } else if (typeof grandChildren === 'string') {
+                                                                codeText = grandChildren;
+                                                            } else {
+                                                                // Fallback for complex structures
+                                                                codeText = String(grandChildren);
+                                                            }
+                                                        } else if (Array.isArray(children)) {
+                                                            codeText = children.map(c =>
+                                                                typeof c === 'string' ? c : (c?.props?.children || '')
+                                                            ).join('');
+                                                        }
+                                                    }
+                                                } catch (e) {
+                                                    console.warn('Failed to extract code text', e);
+                                                }
+
+                                                return (
+                                                    <div className="msg-bubble__code-wrapper">
+                                                        <CopyButton text={codeText} />
+                                                        <pre className="msg-bubble__code-block" {...props}>
+                                                            {children}
+                                                        </pre>
+                                                    </div>
+                                                );
+                                            },
                                             code: ({ node: _node, inline, className: _className, children, ...props }) => {
                                                 return inline ? (
                                                     <code className="msg-bubble__inline-code" {...props}>{children}</code>
                                                 ) : (
-                                                    <pre className="msg-bubble__code-block"><code {...props}>{children}</code></pre>
+                                                    <code {...props}>{children}</code>
                                                 );
                                             },
                                             table: ({ node: _node, ...props }) => (
