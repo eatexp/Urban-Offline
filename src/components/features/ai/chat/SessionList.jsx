@@ -65,6 +65,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
 
                             {/* Delete Action (visible on hover or active) */}
                             <button
+                                aria-label="Delete Mission Log"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onDelete(session.id);
@@ -95,6 +96,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                     <span>Mission Logs</span>
                 </div>
                 <button
+                    aria-label="New Mission"
                     onClick={onNew}
                     className="p-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
                     title="New Mission"
