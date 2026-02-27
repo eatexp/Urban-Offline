@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-21T00:51:17.110Z",
+  "timestamp": "2026-02-26T06:13:41.794Z",
   "targets": {
     "total": 524288000,
     "code": 52428800,
@@ -8,37 +8,37 @@
     "buffer": 104857600
   },
   "actual": {
-    "dist": 1716289,
+    "dist": 58287808,
     "contentDb": 26779648,
-    "ink": 51821,
-    "code": 1716289,
-    "content": 26831469,
-    "total": 28547758
+    "ink": 245046,
+    "code": 58287808,
+    "content": 27024694,
+    "total": 85312502
   },
   "breakdown": {
     "dist": {
-      "size": 1716289,
-      "formatted": "1.64 MB"
+      "size": 58287808,
+      "formatted": "55.59 MB"
     },
     "contentDb": {
       "size": 26779648,
       "formatted": "25.54 MB",
-      "path": "C:\\Users\\ieatexp\\Desktop\\Projects\\247s\\Urban-Offline\\public\\assets\\content.db"
+      "path": "c:\\Users\\ieatexp\\Desktop\\Projects\\247s\\Urban-Offline\\public\\assets\\content.db"
     },
     "ink": {
-      "size": 51821,
-      "formatted": "50.61 KB"
+      "size": 245046,
+      "formatted": "239.3 KB"
     },
-    "jsTotal": 1640132,
-    "cssTotal": 19817
+    "jsTotal": 9095284,
+    "cssTotal": 225406
   },
   "percentages": {
-    "code": "3.3",
-    "content": "17.1",
-    "total": "5.4"
+    "code": "111.2",
+    "content": "17.2",
+    "total": "16.3"
   },
   "status": {
-    "code": "✅",
+    "code": "⚠️",
     "content": "✅",
     "total": "✅"
   },
@@ -81,6 +81,27 @@
       },
       "status": {
         "code": "✅",
+        "content": "✅",
+        "total": "✅"
+      }
+    },
+    {
+      "timestamp": "2026-02-26T06:13:41.794Z",
+      "actual": {
+        "dist": 58287808,
+        "contentDb": 26779648,
+        "ink": 245046,
+        "code": 58287808,
+        "content": 27024694,
+        "total": 85312502
+      },
+      "percentages": {
+        "code": "111.2",
+        "content": "17.2",
+        "total": "16.3"
+      },
+      "status": {
+        "code": "⚠️",
         "content": "✅",
         "total": "✅"
       }

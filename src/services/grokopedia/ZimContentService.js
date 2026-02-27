@@ -19,9 +19,14 @@ import { createLogger } from '../../utils/logger';
 
 const log = createLogger('ZimContentService');
 
+import {
+    PACK_METADATA_STORE,
+    CONTENT_STORES,
+    CATEGORY_TO_STORE_MAP
+} from '../../constants/ContentConstants';
+
 // Storage keys
-const ZIM_METADATA_STORE = 'zim_metadata';
-const ZIM_ARTICLES_STORE = 'zim_articles';
+const ZIM_METADATA_STORE = PACK_METADATA_STORE;
 const READING_PROGRESS_STORE = 'reading_progress';
 
 /**
@@ -30,7 +35,7 @@ const READING_PROGRESS_STORE = 'reading_progress';
 export const ZimContentService = {
     _zimCache: new Map(),
     _articleCache: new Map(),
-    
+
     /**
      * Initialize service and load metadata
      */
@@ -38,7 +43,7 @@ export const ZimContentService = {
         log.info('Initializing ZimContentService');
         await this._loadAllMetadata();
     },
-    
+
     /**
      * Load metadata for all installed ZIM files
      * @private
@@ -54,14 +59,14 @@ export const ZimContentService = {
             log.error('Failed to load ZIM metadata', error);
         }
     },
-    
+
     /**
      * Get all installed content packs (ZIM files)
      * @returns {Promise<Array<ContentPack>>}
      */
     async getInstalledPacks() {
         const packs = [];
-        
+
         for (const [id, metadata] of this._zimCache) {
             packs.push({
                 id,
@@ -81,7 +86,7 @@ export const ZimContentService = {
                 lastAccessed: metadata.lastAccessed
             });
         }
-        
+
         // Sort by last accessed (most recent first), then by name
         return packs.sort((a, b) => {
             if (a.lastAccessed && b.lastAccessed) {
@@ -92,7 +97,7 @@ export const ZimContentService = {
             return a.name.localeCompare(b.name);
         });
     },
-    
+
     /**
      * Get detailed information about a specific pack
      * @param {string} packId
@@ -101,10 +106,10 @@ export const ZimContentService = {
     async getPackDetails(packId) {
         const metadata = this._zimCache.get(packId);
         if (!metadata) return null;
-        
+
         // Get article statistics
         const articles = await this._getArticlesForPack(packId);
-        
+
         return {
             ...metadata,
             sizeDisplay: this._formatSize(metadata.size),
@@ -114,7 +119,7 @@ export const ZimContentService = {
             popularArticles: this._getPopularArticles(articles)
         };
     },
-    
+
     /**
      * Search across all ZIM content
      * @param {string} query - Search query
@@ -126,16 +131,16 @@ export const ZimContentService = {
      */
     async search(query, options = {}) {
         const { packId, limit = 20, includeContent = true } = options;
-        
+
         if (!query || query.trim().length < 2) {
             return [];
         }
-        
+
         log.info('Searching ZIM content', { query, packId, includeContent });
-        
+
         const normalizedQuery = query.toLowerCase().trim();
         const results = [];
-        
+
         // Get articles to search
         let articles;
         if (packId) {
@@ -143,10 +148,10 @@ export const ZimContentService = {
         } else {
             articles = await this._getAllArticles();
         }
-        
+
         for (const article of articles) {
             let score = 0;
-            
+
             // Title match (highest weight)
             const titleLower = article.title.toLowerCase();
             if (titleLower === normalizedQuery) {
@@ -156,14 +161,14 @@ export const ZimContentService = {
             } else if (titleLower.includes(normalizedQuery)) {
                 score += 60; // Contains query
             }
-            
+
             // Content match (if enabled)
             if (includeContent && article.content) {
                 const contentLower = article.content.toLowerCase();
                 const occurrences = (contentLower.match(new RegExp(normalizedQuery, 'g')) || []).length;
                 score += Math.min(occurrences * 5, 40); // Cap content score
             }
-            
+
             if (score > 0) {
                 results.push({
                     ...article,
@@ -172,13 +177,13 @@ export const ZimContentService = {
                 });
             }
         }
-        
+
         // Sort by score descending
         results.sort((a, b) => b.score - a.score);
-        
+
         return results.slice(0, limit);
     },
-    
+
     /**
      * Get a specific article by ID
      * @param {string} articleId
@@ -189,15 +194,41 @@ export const ZimContentService = {
         if (this._articleCache.has(articleId)) {
             return this._articleCache.get(articleId);
         }
-        
+
         try {
-            const article = await db.get(ZIM_ARTICLES_STORE, articleId);
+            let article = null;
+            let foundStore = null;
+
+            // Try to find article in any of the content stores
+            // We search in a specific order of likelihood or just all of them
+            const stores = Object.values(CONTENT_STORES);
+
+            for (const store of stores) {
+                try {
+                    article = await db.get(store, articleId);
+                    if (article) {
+                        foundStore = store;
+                        break;
+                    }
+                } catch (_e) {
+                    // Ignore and try next store
+                }
+            }
+
             if (article) {
+                // Determine packId if missing (older content) or just ensure it's set
+                if (!article.packId && foundStore) {
+                    // We might not know the exact packId if we just found it in a store
+                    // but for now let's assume article object has it, if not we can't easily guess
+                }
+
                 this._articleCache.set(articleId, article);
-                
-                // Update last accessed
-                await this._updatePackAccessTime(article.packId);
-                
+
+                // Update last accessed if we have a packId
+                if (article.packId) {
+                    await this._updatePackAccessTime(article.packId);
+                }
+
                 // Track reading start
                 await this._trackReadingProgress(articleId, 0);
             }
@@ -216,21 +247,21 @@ export const ZimContentService = {
     async getArticleByUrl(url, packId) {
         // Normalize URL
         const normalizedUrl = url.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        
+
         // Try to find by normalized URL
         const articles = await this._getArticlesForPack(packId);
         const article = articles.find(a => {
             const articleUrl = (a.url || a.title).toLowerCase().replace(/[^a-z0-9]/g, '_');
             return articleUrl === normalizedUrl;
         });
-        
+
         if (article) {
             return this.getArticle(article.id);
         }
-        
+
         return null;
     },
-    
+
     /**
      * Get related articles based on categories/tags
      * @param {string} articleId
@@ -240,33 +271,33 @@ export const ZimContentService = {
     async getRelatedArticles(articleId, limit = 5) {
         const article = await this.getArticle(articleId);
         if (!article) return [];
-        
+
         const articles = await this._getArticlesForPack(article.packId);
-        
+
         // Score articles by category/tag overlap
         const scored = articles
             .filter(a => a.id !== articleId)
             .map(a => {
                 let score = 0;
-                
+
                 // Category match
                 if (a.category && article.category && a.category === article.category) {
                     score += 10;
                 }
-                
+
                 // Tag overlap
                 const articleTags = new Set(article.tags || []);
                 const overlap = (a.tags || []).filter(tag => articleTags.has(tag)).length;
                 score += overlap * 5;
-                
+
                 return { ...a, score };
             })
             .filter(a => a.score > 0)
             .sort((a, b) => b.score - a.score);
-        
+
         return scored.slice(0, limit);
     },
-    
+
     /**
      * Get alphabetical index of articles
      * @param {string} packId
@@ -275,7 +306,7 @@ export const ZimContentService = {
     async getAlphabeticalIndex(packId) {
         const articles = await this._getArticlesForPack(packId);
         const index = {};
-        
+
         for (const article of articles) {
             const firstChar = (article.title[0] || '#').toUpperCase();
             if (!index[firstChar]) {
@@ -283,15 +314,15 @@ export const ZimContentService = {
             }
             index[firstChar].push(article);
         }
-        
+
         // Sort each section
         for (const char in index) {
             index[char].sort((a, b) => a.title.localeCompare(b.title));
         }
-        
+
         return index;
     },
-    
+
     /**
      * Get recently viewed articles
      * @param {number} limit
@@ -300,25 +331,25 @@ export const ZimContentService = {
     async getRecentlyViewed(limit = 10) {
         try {
             const progress = await db.getAll(READING_PROGRESS_STORE);
-            
+
             // Sort by last viewed
             const sorted = progress
                 .filter(p => p.lastViewed)
                 .sort((a, b) => new Date(b.lastViewed) - new Date(a.lastViewed))
                 .slice(0, limit);
-            
+
             // Get full article data
             const articles = await Promise.all(
                 sorted.map(p => this.getArticle(p.articleId))
             );
-            
+
             return articles.filter(Boolean);
         } catch (error) {
             log.error('Failed to get recently viewed', error);
             return [];
         }
     },
-    
+
     /**
      * Update reading progress
      * @param {string} articleId
@@ -327,7 +358,7 @@ export const ZimContentService = {
     async updateReadingProgress(articleId, progress) {
         await this._trackReadingProgress(articleId, progress);
     },
-    
+
     /**
      * Get reading progress for an article
      * @param {string} articleId
@@ -341,16 +372,11 @@ export const ZimContentService = {
             return 0;
         }
     },
-    
-    /**
-     * Import a new ZIM file (called after download)
-     * @param {Object} zimData - ZIM file data
-     * @returns {Promise<boolean>}
-     */
+
     async importZimFile(zimData) {
         try {
             const { id, name, size, articles, metadata } = zimData;
-            
+
             // Store metadata
             const packMetadata = {
                 id,
@@ -358,7 +384,7 @@ export const ZimContentService = {
                 description: metadata?.description || '',
                 size,
                 articleCount: articles?.length || 0,
-                category: metadata?.category || 'general',
+                category: metadata?.category || 'general', // Default to general
                 language: metadata?.language || 'en',
                 date: metadata?.date || new Date().toISOString(),
                 version: metadata?.version || '1.0',
@@ -366,125 +392,152 @@ export const ZimContentService = {
                 tags: metadata?.tags || [],
                 status: 'ready',
                 coverImage: metadata?.coverImage,
-                importedAt: new Date().toISOString()
+                importedAt: new Date().toISOString(),
+                type: 'zim-manual' // Marker for manual imports
             };
-            
+
             await db.put(ZIM_METADATA_STORE, packMetadata);
             this._zimCache.set(id, packMetadata);
-            
+
+            // Determine target store
+            // For manual imports, we might default to GENERAL or try to map
+            const targetStore = CONTENT_STORES.GENERAL;
+
             // Store articles
             if (articles && articles.length > 0) {
                 for (const article of articles) {
                     article.packId = id;
-                    await db.put(ZIM_ARTICLES_STORE, article);
+                    // Ensure category matches for consistency
+                    article.category = packMetadata.category;
+                    await db.put(targetStore, article);
                 }
             }
-            
-            log.info('ZIM file imported', { 
-                id, 
-                name, 
-                articleCount: articles?.length 
+
+            log.info('ZIM file imported', {
+                id,
+                name,
+                articleCount: articles?.length,
+                store: targetStore
             });
-            
+
             return true;
         } catch (error) {
             log.error('Failed to import ZIM file', error);
             return false;
         }
     },
-    
-    /**
-     * Delete a ZIM pack and all its articles
-     * @param {string} packId
-     * @returns {Promise<boolean>}
-     */
+
     async deletePack(packId) {
         try {
-            // Delete metadata
+            const metadata = this._zimCache.get(packId);
+
+            // Update cache/DB
             await db.delete(ZIM_METADATA_STORE, packId);
             this._zimCache.delete(packId);
-            
-            // Delete articles
-            const articles = await this._getArticlesForPack(packId);
-            for (const article of articles) {
-                await db.delete(ZIM_ARTICLES_STORE, article.id);
-                this._articleCache.delete(article.id);
-                
-                // Delete reading progress
-                await db.delete(READING_PROGRESS_STORE, article.id);
+
+            if (metadata) {
+                // Determine which store this pack lived in
+                const category = metadata.category || 'general';
+                const store = CATEGORY_TO_STORE_MAP[category] || CONTENT_STORES.GENERAL;
+
+                // Get articles for this pack and delete them
+                // Note: filtering all articles in a store by packId might be slow if store is huge
+                // but IDB 'all' + JS filter is often the only way without secondary indices
+                const storeArticles = await db.getAll(store);
+                const packArticles = storeArticles.filter(a => a.packId === packId);
+
+                for (const article of packArticles) {
+                    await db.delete(store, article.id);
+                    this._articleCache.delete(article.id);
+                    await db.delete(READING_PROGRESS_STORE, article.id);
+                }
+
+                log.info('ZIM pack deleted', { packId, articlesDeleted: packArticles.length, store });
+            } else {
+                log.warn('Could not find metadata for pack to delete articles', { packId });
             }
-            
-            log.info('ZIM pack deleted', { packId, articlesDeleted: articles.length });
+
             return true;
         } catch (error) {
             log.error('Failed to delete ZIM pack', error);
             return false;
         }
     },
-    
+
     /**
      * Get total storage used by ZIM content
      * @returns {Promise<{bytes: number, display: string}>}
      */
     async getStorageUsage() {
         let totalBytes = 0;
-        
+
         for (const metadata of this._zimCache.values()) {
             totalBytes += metadata.size || 0;
         }
-        
+
         return {
             bytes: totalBytes,
             display: this._formatSize(totalBytes)
         };
     },
-    
-    /**
-     * Get articles for a specific pack
-     * @private
-     */
+
     async _getArticlesForPack(packId) {
         try {
-            // This is a simplified implementation
-            // In production, you'd want indexed queries
-            const allArticles = await db.getAll(ZIM_ARTICLES_STORE);
-            return allArticles.filter(a => a.packId === packId);
+            const metadata = this._zimCache.get(packId);
+            if (!metadata) return [];
+
+            // Determine store
+            const category = metadata.category || 'general';
+            const store = CATEGORY_TO_STORE_MAP[category] || CONTENT_STORES.GENERAL;
+
+            const allStoreArticles = await db.getAll(store);
+            return allStoreArticles.filter(a => a.packId === packId);
         } catch (error) {
             log.error('Failed to get articles for pack', { packId, error });
             return [];
         }
     },
-    
-    /**
-     * Get all articles (use sparingly)
-     * @private
-     */
+
     async _getAllArticles() {
         try {
-            return await db.getAll(ZIM_ARTICLES_STORE);
+            // Aggregate from all known content stores
+            const allArticles = [];
+
+            for (const store of Object.values(CONTENT_STORES)) {
+                try {
+                    const storeArticles = await db.getAll(store);
+                    if (storeArticles) {
+                        allArticles.push(...storeArticles);
+                    }
+                } catch (_e) {
+                    // Ignore empty/missing stores
+                }
+            }
+
+            return allArticles;
         } catch (error) {
             log.error('Failed to get all articles', error);
             return [];
         }
     },
-    
+
     /**
      * Extract categories from articles
      * @private
      */
     _extractCategories(articles) {
         const categories = new Map();
-        
+
         for (const article of articles) {
             const cat = article.category || 'Uncategorized';
             categories.set(cat, (categories.get(cat) || 0) + 1);
         }
-        
+
         return Array.from(categories.entries())
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count);
     },
-    
+
     /**
      * Get popular articles (mock - would use real analytics)
      * @private
@@ -497,7 +550,7 @@ export const ZimContentService = {
             .sort((a, b) => a.title.localeCompare(b.title))
             .slice(0, 10);
     },
-    
+
     /**
      * Generate search snippet with query highlighting
      * @private
@@ -505,21 +558,21 @@ export const ZimContentService = {
     _generateSnippet(article, query) {
         const content = article.content || article.description || '';
         const index = content.toLowerCase().indexOf(query);
-        
+
         if (index === -1) {
             return content.slice(0, 150) + (content.length > 150 ? '...' : '');
         }
-        
+
         const start = Math.max(0, index - 60);
         const end = Math.min(content.length, index + query.length + 60);
-        
+
         let snippet = content.slice(start, end);
         if (start > 0) snippet = '...' + snippet;
         if (end < content.length) snippet = snippet + '...';
-        
+
         return snippet;
     },
-    
+
     /**
      * Update pack access time
      * @private
@@ -535,7 +588,7 @@ export const ZimContentService = {
             log.debug('Failed to update access time', error);
         }
     },
-    
+
     /**
      * Track reading progress
      * @private
@@ -552,7 +605,7 @@ export const ZimContentService = {
             log.debug('Failed to track progress', error);
         }
     },
-    
+
     /**
      * Format bytes to human readable
      * @private

@@ -1,0 +1,432 @@
+/* =================================================================
+   URBAN-OFFLINE GLOBALS V5.0
+   "Midnight Emergency" — Unified Design Token System
+   
+   Consolidates: colors-v2.css, theme-system.css, design-system.css, colors.css
+   Compliance: DESIGN_SYSTEM.md §2-6
+   ================================================================= */
+
+/* ─── MIDNIGHT EMERGENCY PALETTE ─────────────────────────────────── */
+
+:root {
+  /* Foundation — Deep, desaturated navy */
+  --midnight-0: #02040a;
+  --midnight-50: #0a0f1a;
+  --midnight-100: #0f1629;
+  --midnight-150: #131b33;
+  --midnight-200: #1a2340;
+  --midnight-300: #243352;
+  --midnight-400: #334766;
+  --midnight-500: #4a5e7a;
+  --midnight-600: #6b7d94;
+  --midnight-700: #8b9aad;
+  --midnight-800: #adb8c6;
+  --midnight-900: #d0d7e0;
+  --midnight-950: #f0f4f8;
+
+  /* Amber — Primary accent, warmth, calls-to-action */
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-200: #fde68a;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+  --amber-800: #92400e;
+  --amber-900: #78350f;
+  --amber-950: #451a03;
+
+  /* Olive — Survival, nature, outdoors */
+  --olive-50: #f7f8f0;
+  --olive-100: #eaecda;
+  --olive-200: #d5dab6;
+  --olive-300: #b8c087;
+  --olive-400: #a0aa6e;
+  --olive-500: #8b9658;
+  --olive-600: #6d7644;
+  --olive-700: #545a35;
+  --olive-800: #44492d;
+  --olive-900: #3b3f29;
+  --olive-950: #1e2113;
+
+  /* Teal — Medical, health, calm */
+  --teal-50: #f0fdfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #99f6e4;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+  --teal-950: #042f2e;
+
+  /* Copper — AI, knowledge, warmth */
+  --copper-50: #fdf4ef;
+  --copper-100: #f9e4d5;
+  --copper-200: #f2c6aa;
+  --copper-300: #e9a177;
+  --copper-400: #de7d4e;
+  --copper-500: #c9764e;
+  --copper-600: #a85a35;
+  --copper-700: #8c442b;
+  --copper-800: #733828;
+  --copper-900: #5f3024;
+  --copper-950: #341a12;
+
+  /* Danger — Emergency only, use sparingly */
+  --danger-50: #fef2f2;
+  --danger-100: #fee2e2;
+  --danger-200: #fecaca;
+  --danger-300: #fca5a5;
+  --danger-400: #f87171;
+  --danger-500: #dc2626;
+  --danger-600: #b91c1c;
+  --danger-700: #991b1b;
+  --danger-800: #7f1d1d;
+  --danger-900: #450a0a;
+
+  /* ─── SEMANTIC TOKENS ────────────────────────────────────────────── */
+
+  /* Backgrounds */
+  --bg-primary: var(--midnight-50);
+  --bg-secondary: var(--midnight-100);
+  --bg-elevated: var(--midnight-150);
+  --bg-surface: var(--midnight-200);
+  --bg-input: rgba(255, 255, 255, 0.04);
+
+  /* Text */
+  --text-primary: var(--midnight-950);
+  --text-secondary: var(--midnight-800);
+  --text-muted: var(--midnight-600);
+  --text-disabled: var(--midnight-500);
+  --text-inverse: var(--midnight-50);
+
+  /* Accents */
+  --accent-primary: var(--amber-500);
+  --accent-secondary: #6366f1;
+  --accent-success: #16a34a;
+  --accent-warning: var(--amber-600);
+  --accent-danger: var(--danger-500);
+  --accent-info: #3b82f6;
+
+  /* Borders */
+  --border-primary: rgba(255, 255, 255, 0.08);
+  --border-secondary: rgba(255, 255, 255, 0.12);
+  --border-standard: rgba(255, 255, 255, 0.1);
+  --border-focus: var(--amber-500);
+
+  /* Shadows (dark-mode optimized) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+
+  /* ─── TYPOGRAPHY ─────────────────────────────────────────────────── */
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+
+  --text-hero: 30px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 18px;
+  --text-body: 16px;
+  --text-small: 14px;
+  --text-caption: 12px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ─── SPACING (8px grid) ─────────────────────────────────────────── */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ─── BORDER RADIUS ──────────────────────────────────────────────── */
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* ─── ANIMATION ──────────────────────────────────────────────────── */
+
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --stagger-1: 30ms;
+  --stagger-2: 60ms;
+  --stagger-3: 90ms;
+  --stagger-4: 120ms;
+  --stagger-5: 150ms;
+
+  /* ─── Z-INDEX ────────────────────────────────────────────────────── */
+
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-toast: 500;
+
+  /* ─── PLATFORM ───────────────────────────────────────────────────── */
+
+  --platform-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --platform-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --card-radius: 20px;
+  --button-radius: 12px;
+  --blur-standard: 24px;
+
+  --touch-target-min: 48px;
+
+  /* Safe Areas */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+
+  /* ─── COMPONENT TOKENS ───────────────────────────────────────────── */
+
+  --btn-height-sm: 36px;
+  --btn-height-md: 44px;
+  --btn-height-lg: 52px;
+  --btn-height-xl: 60px;
+  --btn-padding-x: 24px;
+  --btn-font-size: 15px;
+  --btn-font-weight: 600;
+
+  --card-padding-sm: 16px;
+  --card-padding-md: 20px;
+  --card-padding-lg: 24px;
+
+  --input-height: 52px;
+  --input-padding-x: 16px;
+  --input-border-radius: 12px;
+
+  --nav-height: 56px;
+
+  /* Legacy compat (referenced by components.css) */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-card: var(--bg-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-border-focus: var(--border-focus);
+  --color-primary-500: var(--midnight-500);
+  --color-primary-600: var(--midnight-600);
+  --color-primary-700: var(--midnight-700);
+  --color-primary-800: var(--midnight-800);
+  --color-primary-900: var(--midnight-900);
+  --color-secondary-500: var(--accent-secondary);
+  --color-danger: var(--danger-500);
+  --color-success: var(--accent-success);
+  --color-warning: var(--accent-warning);
+  --color-info: var(--accent-info);
+  --font-family-primary: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --card-padding: var(--card-padding-md);
+  --button-height-lg: var(--btn-height-lg);
+  --input-height-lg: var(--input-height);
+  --shadow-modal: var(--shadow-xl);
+  --border-subtle: 1px solid var(--border-primary);
+}
+
+/* ─── PLATFORM ADAPTATIONS ──────────────────────────────────────── */
+
+[data-platform="ios"] {
+  --card-radius: 20px;
+  --button-radius: 12px;
+  --blur-standard: 24px;
+  --platform-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-platform="android"] {
+  --card-radius: 16px;
+  --button-radius: 16px;
+  --blur-standard: 16px;
+  --platform-spring: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-platform="web"] {
+  --card-radius: 16px;
+  --button-radius: 12px;
+  --blur-standard: 20px;
+}
+
+/* ─── GLASS MORPHISM ────────────────────────────────────────────── */
+
+.glass {
+  background: rgba(30, 41, 59, 0.72);
+  backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.glass-card-premium {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.9) 0%,
+    rgba(15, 23, 42, 0.95) 100%
+  );
+  backdrop-filter: blur(var(--blur-standard)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ─── CATEGORY COLORS ───────────────────────────────────────────── */
+
+.category-medical {
+  --cat-primary: var(--teal-500);
+  --cat-bg: rgba(20, 184, 166, 0.15);
+  --cat-border: rgba(20, 184, 166, 0.3);
+  --cat-glow: 0 0 20px rgba(20, 184, 166, 0.2);
+}
+
+.category-survival {
+  --cat-primary: var(--olive-500);
+  --cat-bg: rgba(139, 150, 88, 0.15);
+  --cat-border: rgba(139, 150, 88, 0.3);
+  --cat-glow: 0 0 20px rgba(139, 150, 88, 0.2);
+}
+
+.category-legal {
+  --cat-primary: var(--amber-500);
+  --cat-bg: rgba(245, 158, 11, 0.15);
+  --cat-border: rgba(245, 158, 11, 0.3);
+  --cat-glow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.category-ai {
+  --cat-primary: var(--copper-500);
+  --cat-bg: rgba(201, 118, 78, 0.15);
+  --cat-border: rgba(201, 118, 78, 0.3);
+  --cat-glow: 0 0 20px rgba(201, 118, 78, 0.2);
+}
+
+.category-emergency {
+  --cat-primary: var(--danger-500);
+  --cat-bg: rgba(220, 38, 38, 0.15);
+  --cat-border: rgba(220, 38, 38, 0.3);
+  --cat-glow: 0 0 20px rgba(220, 38, 38, 0.3);
+}
+
+.category-general {
+  --cat-primary: var(--accent-secondary);
+  --cat-bg: rgba(99, 102, 241, 0.15);
+  --cat-border: rgba(99, 102, 241, 0.3);
+  --cat-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+/* ─── ACCESSIBILITY ─────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+/* ─── SAFE AREA UTILITIES ───────────────────────────────────────── */
+
+.safe-top { padding-top: var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+.safe-x { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+.safe-area-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* ─── SCROLLBAR ─────────────────────────────────────────────────── */
+
+.premium-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.premium-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.premium-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+.premium-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ─── REDUCED MOTION ────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── HIGH CONTRAST ─────────────────────────────────────────────── */
+
+@media (prefers-contrast: high) {
+  :root {
+    --border-primary: rgba(255, 255, 255, 0.5);
+    --border-secondary: rgba(255, 255, 255, 0.6);
+    --text-muted: var(--midnight-800);
+  }
+}

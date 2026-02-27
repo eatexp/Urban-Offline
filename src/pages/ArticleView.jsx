@@ -2,7 +2,7 @@ import React, { useMemo, memo } from 'react';
 import { useNavigate, useLoaderData } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, ExternalLink } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
-import AskAIChip from '../components/AskAIChip';
+import AskAIChip from '../components/shared/AskAIChip';
 // import { createLogger } from '../utils/logger';
 import DOMPurify from 'dompurify';
 

@@ -250,7 +250,7 @@ export class ComponentValidator {
     });
     
     // In development, throw for critical violations
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env?.DEV) {
       const critical = this.violations.filter(v => v.type === 'architecture');
       if (critical.length > 0) {
         throw new Error(
@@ -463,7 +463,7 @@ export const PremiumEnforcement = {
 // DEV MODE GUARDRAILS
 // =============================================================================
 
-if (process.env.NODE_ENV === 'development') {
+if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
   // Global error handler for architectural violations
   window.addEventListener('error', (event) => {
     if (event.message.includes('Architectural violation')) {

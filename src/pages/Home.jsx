@@ -3,8 +3,8 @@ import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import { triggerHaptic } from '../utils/haptics';
-import EmergencyCommandBar from '../components/EmergencyCommandBar';
-import EmergencyQuickAccess from '../components/EmergencyQuickAccess';
+import EmergencyCommandBar from '../components/features/emergency/EmergencyCommandBar';
+import EmergencyQuickAccess from '../components/features/emergency/EmergencyQuickAccess';
 
 // TODO: [Performance] HOME_COMPONENT_MEMOIZATION - COMPLETED 2026-02-10
 // Wrapped component with React.memo() and extracted EmergencyQuickAccess to prevent

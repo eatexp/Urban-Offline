@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import TriageScreen from '../components/TriageScreen';
+import TriageScreen from '../components/features/emergency/TriageScreen';
 
 const TriagePage = () => {
     const { '*': storyPath } = useParams();

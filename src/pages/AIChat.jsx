@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
     Bot, BookOpen, Sparkles, X,
     Wifi, WifiOff, Settings, Database,
@@ -8,11 +8,13 @@ import {
 } from 'lucide-react';
 
 // Living Reader components
-import Composer from '../components/Composer';
-import MessageThread from '../components/MessageThread';
-import SourceViewer from '../components/SourceViewer';
-import SessionList from '../components/chat/SessionList';
-import DatasetActivityIndicator from '../components/DatasetActivityIndicator';
+// Living Reader components
+import Composer from '../components/features/ai/Composer';
+import MessageThread from '../components/features/ai/MessageThread';
+import SourceViewer from '../components/features/ai/SourceViewer';
+import SessionList from '../components/features/ai/chat/SessionList';
+import DatasetActivityIndicator from '../components/shared/DatasetActivityIndicator';
+import DatasetSettingsModal from '../components/features/ai/chat/DatasetSettingsModal';
 
 import { useAIGenerating } from '../contexts/AIGeneratingContext';
 import { useChatSession } from '../hooks/useChatSession';
@@ -27,8 +29,8 @@ import {
     RAGPipelineVisualizer,
     DatasetNetworkGraph,
     IntentClassificationViz
-} from '../components/ai-visualizations';
-import AIReadingViz from '../components/ai-visualizations/AIReadingViz';
+} from '../components/features/ai/visualizations';
+import AIReadingViz from '../components/features/ai/visualizations/AIReadingViz';
 
 const log = createLogger('AIChat');
 
@@ -65,7 +67,7 @@ const AIChat = () => {
     // ── UI State ───────────────────────────────────────────────────────
     const [showHistory, setShowHistory] = useState(false);
     const [previewSource, setPreviewSource] = useState(null);
-    const [_showSettings, setShowSettings] = useState(false);
+    const [_showSettings, _setShowSettings] = useState(false);
     const [showVisualizations, setShowVisualizations] = useState(false);
     const [vizTab, setVizTab] = useState('logic'); // 'logic', 'network'
 
@@ -76,12 +78,13 @@ const AIChat = () => {
     // AI & Model State
     const [_isOnline, setIsOnline] = useState(navigator.onLine);
     const [_aiCapabilities, setAiCapabilities] = useState(null);
-    const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback
+    const [modelStatus, setModelStatus] = useState('checking'); // checking, ready, no-model, fallback, low-battery
     const [activeModel, setActiveModel] = useState(null);
     const [availableModels, setAvailableModels] = useState([]);
     const [availableDatasets, setAvailableDatasets] = useState([]);
     const [enabledDatasets, setEnabledDatasets] = useState([]);
     const [_downloadProgress, setDownloadProgress] = useState(null);
+    const [batteryStatus, setBatteryStatus] = useState({ level: 100, charging: true, lowBattery: false });
 
     const [vizStages, setVizStages] = useState([]);
     const [vizActive, setVizActive] = useState(false);
@@ -165,6 +168,63 @@ const AIChat = () => {
             window.removeEventListener('offline', handleOffline);
         };
     }, []);
+
+    // Battery status monitoring
+    useEffect(() => {
+        const checkBattery = async () => {
+            const status = await AIModelManager.getBatteryStatus();
+            setBatteryStatus(status);
+
+            // Update model status if battery is low
+            if (status.lowBattery && modelStatus === 'ready') {
+                setModelStatus('low-battery');
+            } else if (!status.lowBattery && modelStatus === 'low-battery') {
+                setModelStatus('ready');
+            }
+        };
+
+        checkBattery();
+
+        // Set up battery listener if available
+        let batteryRef = null;
+        const setupBatteryListener = async () => {
+            try {
+                if ('getBattery' in navigator) {
+                    batteryRef = await navigator.getBattery();
+
+                    const handleBatteryChange = () => {
+                        const level = batteryRef.level * 100;
+                        const charging = batteryRef.charging;
+                        const lowBattery = level < 20 && !charging;
+
+                        setBatteryStatus({ level, charging, lowBattery });
+
+                        // Update model status based on battery
+                        if (lowBattery && modelStatus === 'ready') {
+                            setModelStatus('low-battery');
+                        } else if (!lowBattery && modelStatus === 'low-battery') {
+                            setModelStatus('ready');
+                        }
+                    };
+
+                    batteryRef.addEventListener('levelchange', handleBatteryChange);
+                    batteryRef.addEventListener('chargingchange', handleBatteryChange);
+
+                    return () => {
+                        batteryRef.removeEventListener('levelchange', handleBatteryChange);
+                        batteryRef.removeEventListener('chargingchange', handleBatteryChange);
+                    };
+                }
+            } catch (error) {
+                log.debug('Battery API not available', error);
+            }
+        };
+
+        const cleanup = setupBatteryListener();
+        return () => {
+            if (cleanup) cleanup.then(fn => fn && fn());
+        };
+    }, [modelStatus]);
 
     // ENHANCED: [Phase 2.5b] Cleanup AbortController on unmount to prevent memory leaks
     useEffect(() => {
@@ -366,6 +426,19 @@ const AIChat = () => {
         setEnabledDatasets(await datasetRegistry.getEnabledDatasets());
     };
 
+    // Dataset settings modal handlers
+    const [showDatasetSettings, setShowDatasetSettings] = useState(false);
+
+    const handleDatasetToggle = async (id, enabled) => {
+        await datasetRegistry.setEnabled(id, enabled);
+        setEnabledDatasets(await datasetRegistry.getEnabledDatasets());
+    };
+
+    const handlePresetSelect = async (id) => {
+        await datasetRegistry.applyPreset(id);
+        setEnabledDatasets(await datasetRegistry.getEnabledDatasets());
+    };
+
     return (
         <div className="flex flex-col h-full animate-fade-in lg:flex-row" style={{ background: 'var(--color-bg-primary)' }}>
 
@@ -385,10 +458,22 @@ const AIChat = () => {
                             <div>
                                 <h1 className="font-bold" style={{ color: 'var(--color-text-primary)' }}>AI Assistant</h1>
                                 <div className="flex items-center gap-2 text-xs">
-                                    <span className="flex items-center gap-1" style={{ color: modelStatus === 'ready' ? 'var(--color-success)' : modelStatus === 'no-model' ? 'var(--color-info)' : 'var(--color-text-muted)' }}>
+                                    <span className="flex items-center gap-1" style={{
+                                        color: modelStatus === 'ready' ? 'var(--color-success)' :
+                                            modelStatus === 'low-battery' ? 'var(--color-warning)' :
+                                                modelStatus === 'no-model' ? 'var(--color-info)' :
+                                                    'var(--color-text-muted)'
+                                    }}>
                                         <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                        {modelStatus === 'ready' ? (activeModel ? TRANSFORMERS_MODELS[activeModel]?.name || 'AI Ready' : 'AI Ready') : modelStatus === 'checking' ? 'Initializing...' : 'Smart Search'}
+                                        {modelStatus === 'ready' ? (activeModel ? TRANSFORMERS_MODELS[activeModel]?.name || 'AI Ready' : 'AI Ready') :
+                                            modelStatus === 'low-battery' ? `Low Battery (${Math.round(batteryStatus.level)}%) - Connect Charger` :
+                                                modelStatus === 'checking' ? 'Initializing...' : 'Smart Search'}
                                     </span>
+                                    {batteryStatus.lowBattery && (
+                                        <span className="flex items-center gap-1" style={{ color: 'var(--color-warning)' }}>
+                                            <Zap className="w-3 h-3" />
+                                        </span>
+                                    )}
                                     <span className="flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
                                         <Database className="w-3 h-3" />
                                         {enabledDatasets.length}/{availableDatasets.length}
@@ -399,7 +484,7 @@ const AIChat = () => {
                         <div className="flex items-center gap-1">
                             <button onClick={() => navigate('/ai-models')} className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Cpu className="w-5 h-5" /></button>
                             <button onClick={() => setShowVisualizations(!showVisualizations)} className={`p-2 rounded-lg transition-colors ${showVisualizations ? 'bg-[var(--color-bg-tertiary)] text-primary-400' : 'text-[var(--color-text-muted)]'}`}><Activity className="w-5 h-5" /></button>
-                            <button onClick={() => setShowSettings(true)} className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Settings className="w-5 h-5" /></button>
+                            <button onClick={() => setShowDatasetSettings(true)} className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Settings className="w-5 h-5" /></button>
                         </div>
                     </div>
                 </header>
@@ -425,6 +510,24 @@ const AIChat = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* Mobile RAG Pipeline Visualizer */}
+                {isGenerating && (
+                    <div className="lg:hidden px-4 py-2">
+                        <RAGPipelineVisualizer
+                            isActive={vizActive || isGenerating}
+                            currentStage={vizStages.length > 0 ? vizStages[vizStages.length - 1]?.stage : null}
+                            stageData={vizStages.reduce((acc, stage) => {
+                                acc[stage.stage] = {
+                                    ...stage.data,
+                                    duration: stage.elapsed
+                                };
+                                return acc;
+                            }, {})}
+                            compact={true}
+                        />
                     </div>
                 )}
 
@@ -523,7 +626,21 @@ const AIChat = () => {
                         />
 
                         {vizTab === 'logic' ? (
-                            <AIReadingViz stages={vizStages} isActive={vizActive} onReplay={() => { setVizStages([]); setTimeout(() => setVizStages(vizStages), 50); }} />
+                            <div className="space-y-4">
+                                <RAGPipelineVisualizer
+                                    isActive={vizActive || isGenerating}
+                                    currentStage={vizStages.length > 0 ? vizStages[vizStages.length - 1]?.stage : null}
+                                    stageData={vizStages.reduce((acc, stage) => {
+                                        acc[stage.stage] = {
+                                            ...stage.data,
+                                            duration: stage.elapsed
+                                        };
+                                        return acc;
+                                    }, {})}
+                                    compact={false}
+                                />
+                                <AIReadingViz stages={vizStages} isActive={vizActive} onReplay={() => { setVizStages([]); setTimeout(() => setVizStages(vizStages), 50); }} />
+                            </div>
                         ) : (
                             <div className="space-y-4">
                                 <DatasetNetworkGraph activeDatasets={enabledDatasets.map(d => d.id)} queryActivity={vizStages.filter(s => s.type === 'tool_start' && s.tool === 'search').map(s => ({ datasetId: s.details?.dataset || 'general', timestamp: Date.now(), hits: 1 }))} size="medium" />
@@ -534,7 +651,15 @@ const AIChat = () => {
             )}
 
             {/* Modals & Sheets */}
-            {/* TODO: SettingsModal component needs to be created */}
+            <DatasetSettingsModal
+                isOpen={showDatasetSettings}
+                onClose={() => setShowDatasetSettings(false)}
+                datasets={availableDatasets}
+                enabledDatasets={enabledDatasets}
+                onToggleDataset={handleDatasetToggle}
+                onApplyPreset={handlePresetSelect}
+            />
+
             {previewSource && (
                 <SourceViewer
                     source={previewSource}

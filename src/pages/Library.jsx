@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BookOpen, Cpu, RefreshCw, Upload, Grid3X3, List } from 'lucide-react';
-import StorageBar from '../components/library/StorageBar';
-import DownloadCard from '../components/library/DownloadCard';
-import CategoryGrid from '../components/CategoryGrid';
+import { BookOpen, Cpu, RefreshCw, Upload, Grid3X3, List, Database, Layers } from 'lucide-react';
+import StorageBar from '../components/features/library/library/StorageBar';
+import DownloadCard from '../components/features/library/library/DownloadCard';
+import CategoryGrid from '../components/shared/CategoryGrid';
+import EmptyState from '../components/shared/EmptyState';
+import ZimImportManagerEnhanced from '../components/features/library/ZimImportManagerEnhanced';
+import { DatasetAIBridge } from '../components/features/bridge';
 import { ContentPackManager } from '../services/contentPacks/ContentPackManager';
 import { AIModelManager } from '../services/ai/AIModelManager';
 import TransformersEngine from '../services/ai/TransformersEngine';
-import HighStakesDeleteModal, { requiresHighStakesDelete } from '../components/HighStakesDeleteModal';
+import HighStakesDeleteModal, { requiresHighStakesDelete } from '../components/features/emergency/HighStakesDeleteModal';
 
 const styles = `
   .library-page {
@@ -166,6 +169,33 @@ const styles = `
     color: #92400e;
     margin-bottom: 12px;
   }
+
+  .library-bridge-toggle {
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+  }
+
+  .library-bridge-toggle__btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: 20px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .library-bridge-toggle__btn:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-primary-500);
+    color: var(--color-primary-500);
+  }
 `;
 
 export default function Library() {
@@ -178,7 +208,8 @@ export default function Library() {
     const [downloadStates, setDownloadStates] = useState(new Map());
     const [activeModelId, setActiveModelId] = useState(null);
     const [capabilities, setCapabilities] = useState(null);
-    
+    const [showBridge, setShowBridge] = useState(false);
+
     // High-stakes delete modal state
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
@@ -251,7 +282,7 @@ export default function Library() {
     const handleDeletePack = useCallback(async (packId) => {
         const pack = contentPacks.find(p => p.id === packId);
         if (!pack) return;
-        
+
         // Check if high-stakes deletion is required
         if (requiresHighStakesDelete(pack)) {
             setItemToDelete(pack);
@@ -259,7 +290,7 @@ export default function Library() {
             setDeleteModalOpen(true);
             return;
         }
-        
+
         // Simple confirmation for smaller packs
         if (!confirm('Remove this content pack?')) return;
         await ContentPackManager.uninstallPack(packId);
@@ -311,7 +342,7 @@ export default function Library() {
     const handleDeleteModel = useCallback(async (modelId) => {
         const model = aiModels.find(m => m.id === modelId);
         if (!model) return;
-        
+
         // Check if high-stakes deletion is required
         if (requiresHighStakesDelete(model)) {
             setItemToDelete(model);
@@ -319,7 +350,7 @@ export default function Library() {
             setDeleteModalOpen(true);
             return;
         }
-        
+
         // Simple confirmation for smaller models
         if (!confirm('Remove this AI model?')) return;
         await AIModelManager.deleteModel(modelId);
@@ -389,6 +420,24 @@ export default function Library() {
                     modelBytes={modelStorageBytes}
                 />
 
+                {/* AI Data Bridge - Visualize dataset-AI connection */}
+                <div className="library-bridge-toggle">
+                    <button
+                        className="library-bridge-toggle__btn"
+                        onClick={() => setShowBridge(!showBridge)}
+                    >
+                        <Layers size={16} />
+                        {showBridge ? 'Hide' : 'Show'} AI Data Bridge
+                    </button>
+                </div>
+
+                {showBridge && (
+                    <DatasetAIBridge
+                        showDetails={true}
+                        onDatasetToggle={() => loadData()}
+                    />
+                )}
+
                 {/* Category Grid - Visual content discovery */}
                 <div className="library-section-header" style={{ marginTop: 20 }}>
                     <span className="library-section-title">Browse by Category</span>
@@ -439,14 +488,36 @@ export default function Library() {
                             </button>
                         </div>
 
+                        {/* ZIM Import Section */}
+                        <div className="library-section-header" style={{ marginTop: 24 }}>
+                            <span className="library-section-title">
+                                <Database size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                                ZIM Imports
+                            </span>
+                        </div>
+                        <ZimImportManagerEnhanced onImportsChange={() => loadData()} />
+
+                        {/* Content Packs */}
+                        <div className="library-section-header" style={{ marginTop: 32 }}>
+                            <span className="library-section-title">Content Packs</span>
+                            <button
+                                className={`library-refresh-btn ${loading ? 'loading' : ''}`}
+                                onClick={loadData}
+                                disabled={loading}
+                            >
+                                <RefreshCw size={12} />
+                                Refresh
+                            </button>
+                        </div>
+
                         {contentPacks.length === 0 && !loading ? (
-                            <div className="library-empty">
-                                <div className="library-empty-icon">
-                                    <BookOpen size={24} color="#94a3b8" />
-                                </div>
-                                <h3>No Content Packs</h3>
-                                <p>Content packs will appear here when available.</p>
-                            </div>
+                            <EmptyState
+                                icon={BookOpen}
+                                title="No Content Packs"
+                                description="Content packs will appear here when available."
+                                variant="card"
+                                size="md"
+                            />
                         ) : (
                             <div className="library-grid">
                                 {contentPacks.map(pack => {
@@ -486,18 +557,36 @@ export default function Library() {
                         {isWindowsNative && (
                             <div className="library-device-warning">
                                 <Cpu size={16} />
-                                AI models require the web version. Desktop app support coming soon.
+                                <div className="flex-1">
+                                    <span className="font-medium">AI models require the web version</span>
+                                    <p className="text-xs mt-0.5 opacity-80">
+                                        The Windows Desktop app uses a native runtime that doesn't support WebAssembly AI inference.
+                                        AI models cannot be downloaded or used in this version.
+                                    </p>
+                                    <p className="text-xs mt-1 font-medium">
+                                        Use the web app at{' '}
+                                        <a
+                                            href="https://urbanoffline.app"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline hover:text-amber-700"
+                                        >
+                                            urbanoffline.app
+                                        </a>{' '}
+                                        for full AI features.
+                                    </p>
+                                </div>
                             </div>
                         )}
 
                         {aiModels.length === 0 && !loading ? (
-                            <div className="library-empty">
-                                <div className="library-empty-icon">
-                                    <Cpu size={24} color="#94a3b8" />
-                                </div>
-                                <h3>No AI Models</h3>
-                                <p>AI models will appear here when available.</p>
-                            </div>
+                            <EmptyState
+                                icon={Cpu}
+                                title="No AI Models"
+                                description="AI models will appear here when available."
+                                variant="card"
+                                size="md"
+                            />
                         ) : (
                             <div className="library-grid">
                                 {aiModels.map(model => {

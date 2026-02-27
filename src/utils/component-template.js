@@ -32,7 +32,7 @@ export function createComponent(name, config = {}) {
     offlineFirst = true,
     features = [],
     render,
-    ...componentProps
+    ..._componentProps
   } = config;
 
   // Validate pillar
@@ -42,7 +42,7 @@ export function createComponent(name, config = {}) {
 
   // Check Ink constraints
   if (pillar === 'triage') {
-    const forbiddenFeatures = features.filter(f => 
+    const forbiddenFeatures = features.filter(f =>
       ['usesAI', 'fetch', 'async'].includes(f)
     );
     if (forbiddenFeatures.length > 0) {
@@ -70,16 +70,16 @@ export function createComponent(name, config = {}) {
   // Create the component with validation
   const Component = (props) => {
     // Development-only validation
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env?.DEV) {
       const validator = new ComponentValidator(name, pillar);
-      
+
       // Validate features against pillar constraints
       validator.validatePillarConstraints({
         usesAI: features.includes('usesAI'),
         instantLoad: pillar === 'triage',
         offlineFirst
       });
-      
+
       // Report any violations
       const result = validator.report();
       if (!result.valid) {
@@ -121,17 +121,17 @@ export function withVisionEnforcement(WrappedComponent, options = {}) {
 
   const EnforcedComponent = (props) => {
     // Validation in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env?.DEV) {
       const validator = new ComponentValidator(
         WrappedComponent.displayName || WrappedComponent.name,
         pillar
       );
-      
+
       validator.validatePillarConstraints({
         usesAI: features.includes('usesAI'),
         instantLoad: pillar === 'triage'
       });
-      
+
       validator.report();
     }
 
@@ -139,7 +139,7 @@ export function withVisionEnforcement(WrappedComponent, options = {}) {
   };
 
   EnforcedComponent.displayName = `WithVision(${WrappedComponent.displayName || WrappedComponent.name})`;
-  
+
   return EnforcedComponent;
 }
 

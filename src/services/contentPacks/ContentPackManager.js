@@ -23,11 +23,13 @@ import { createLogger } from '../../utils/logger';
 
 const log = createLogger('ContentPackManager');
 
+import { PACK_METADATA_STORE, CATEGORY_TO_STORE_MAP, CONTENT_STORES } from '../../constants/ContentConstants';
+
 // Pack registry URL (would be a real server in production)
 const PACK_REGISTRY_URL = '/assets/pack-registry.json';
 
 // IndexedDB store for pack metadata
-const PACKS_STORE = 'content_packs';
+const PACKS_STORE = PACK_METADATA_STORE;
 
 // Checkpoint save interval (bytes)
 const CHECKPOINT_INTERVAL = 1024 * 1024; // 1MB
@@ -117,7 +119,7 @@ export const ContentPackManager = {
         return packs.map(pack => {
             const installedPack = installedMap.get(pack.id);
             const resumeInfo = resumeInfoMap.get(pack.id);
-            
+
             if (installedPack) {
                 return {
                     ...pack,
@@ -258,7 +260,7 @@ export const ContentPackManager = {
             // Check for existing checkpoint
             let checkpoint = await DownloadCheckpoint.getCheckpoint(pack.downloadUrl);
             const canResume = checkpoint && DownloadCheckpoint.canResume(checkpoint);
-            
+
             if (canResume) {
                 log.info('Resuming download from checkpoint', {
                     packId,
@@ -292,7 +294,7 @@ export const ContentPackManager = {
                 if (navigator.storage && navigator.storage.getDirectory) {
                     const root = await navigator.storage.getDirectory();
                     const tempFileName = `temp_pack_${packId}`;
-                    
+
                     // Check if temp file exists (for resume)
                     try {
                         tempFileHandle = await root.getFileHandle(tempFileName);
@@ -301,7 +303,7 @@ export const ContentPackManager = {
                         // File doesn't exist, create new
                         tempFileHandle = await root.getFileHandle(tempFileName, { create: true });
                     }
-                    
+
                     // Open writable - use keepExistingData for resume
                     if (typeof tempFileHandle.createWritable === 'function') {
                         writable = await tempFileHandle.createWritable({ keepExistingData: true });
@@ -313,7 +315,7 @@ export const ContentPackManager = {
                             await writable.seek(receivedLength);
                         }
                     }
-                    
+
                     useOPFS = true;
                     log.debug('Using OPFS for download streaming', { packId });
                 }
@@ -329,7 +331,7 @@ export const ContentPackManager = {
                 {
                     onProgress: (received, total) => {
                         receivedLength = received;
-                        const progress = total 
+                        const progress = total
                             ? Math.round((received / total) * 80) // 0-80% for download
                             : 0;
                         this._downloadProgress.set(packId, progress);
@@ -354,7 +356,7 @@ export const ContentPackManager = {
 
             // Create checksum calculator if pack has checksum
             const hasChecksum = pack.checksum && pack.checksum.length === 64;
-            
+
             if (onProgress) onProgress(0, canResume ? 'Resuming download...' : 'Downloading...');
 
             while (true) {
@@ -383,11 +385,11 @@ export const ContentPackManager = {
             let installSource;
             if (useOPFS && tempFileHandle) {
                 const tempFile = await tempFileHandle.getFile();
-                
+
                 // Verify checksum if available
                 if (hasChecksum) {
                     if (onProgress) onProgress(85, 'Verifying download integrity...');
-                    
+
                     const { hash } = await computeChecksumFromStream(
                         new Response(tempFile),
                         (received, total) => {
@@ -397,10 +399,10 @@ export const ContentPackManager = {
                             }
                         }
                     );
-                    
+
                     // Use the hash for verification
                     const isValid = await verifyChecksum(tempFile, pack.checksum);
-                    
+
                     if (!isValid) {
                         // Delete temp file
                         try {
@@ -409,20 +411,20 @@ export const ContentPackManager = {
                         } catch (_e) {
                             // Ignore cleanup errors
                         }
-                        
+
                         await DownloadCheckpoint.incrementRetry(pack.downloadUrl);
-                        
-                        return { 
-                            success: false, 
+
+                        return {
+                            success: false,
                             error: 'Download verification failed. The file may be corrupted.',
                             checksumFailed: true,
                             canResume: true
                         };
                     }
-                    
+
                     log.info('Checksum verification passed', { packId, hash: hash.slice(0, 16) + '...' });
                 }
-                
+
                 installSource = tempFile;
             } else {
                 // Combine chunks
@@ -437,13 +439,13 @@ export const ContentPackManager = {
                 // Verify checksum for memory-based downloads
                 if (hasChecksum) {
                     if (onProgress) onProgress(85, 'Verifying download integrity...');
-                    
+
                     const isValid = await verifyChecksum(installSource, pack.checksum);
                     if (!isValid) {
                         await DownloadCheckpoint.incrementRetry(pack.downloadUrl);
-                        
-                        return { 
-                            success: false, 
+
+                        return {
+                            success: false,
                             error: 'Download verification failed. The file may be corrupted.',
                             checksumFailed: true,
                             canResume: true
@@ -492,9 +494,9 @@ export const ContentPackManager = {
 
             if (onProgress) onProgress(100, 'Complete!');
 
-            log.info('Pack downloaded and installed successfully', { 
-                packId, 
-                checksumVerified: hasChecksum 
+            log.info('Pack downloaded and installed successfully', {
+                packId,
+                checksumVerified: hasChecksum
             });
 
             return { success: true };
@@ -513,7 +515,7 @@ export const ContentPackManager = {
             // Save progress for resume
             const currentProgress = this._downloadProgress.get(packId) || 0;
             const bytesReceived = Math.round((currentProgress / 100) * (pack.size || 0));
-            
+
             try {
                 await DownloadCheckpoint.updateProgress(pack.downloadUrl, bytesReceived);
             } catch (checkpointError) {
@@ -670,12 +672,7 @@ export const ContentPackManager = {
      */
     async _installArticles(pack, onProgress) {
         // Determine target store based on category
-        const storeMap = {
-            [PACK_CATEGORIES.MEDICAL]: 'health_content',
-            [PACK_CATEGORIES.LEGAL]: 'law_content',
-            [PACK_CATEGORIES.SURVIVAL]: 'survival_content'
-        };
-        const targetStore = storeMap[pack.category] || 'health_content';
+        const targetStore = CATEGORY_TO_STORE_MAP[pack.category] || CONTENT_STORES.MEDICAL;
 
         // In real implementation, would parse pack data
         // For now, we store pack metadata
@@ -697,6 +694,7 @@ export const ContentPackManager = {
 
                 newDocs.push({
                     id: resource.id,
+                    packId: pack.id,
                     slug: resource.id,
                     title: readableTitle,
                     content: '',
@@ -704,6 +702,11 @@ export const ContentPackManager = {
                     category: pack.category
                 });
             }
+        }
+
+        // Store articles in the target content store
+        for (const doc of newDocs) {
+            await db.put(targetStore, doc);
         }
 
         // Index for search

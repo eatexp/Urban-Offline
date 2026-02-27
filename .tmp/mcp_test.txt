@@ -1,0 +1,3 @@
+This is a test file for MCP validation.
+Created at: 2026-02-26 13:19:00
+Purpose: Test Z.AI MCP server integration.

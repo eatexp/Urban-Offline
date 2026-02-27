@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Activity, Thermometer, HeartPulse, Droplets, AlertCircle, ChevronRight, Flame, Brain, BookOpen, Loader2 } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { db } from '../services/db';
-import AskAIChip from '../components/AskAIChip';
+import AskAIChip from '../components/shared/AskAIChip';
 
 const Health = () => {
     const healthStories = TriageRouter.getStoriesByCategory('health');

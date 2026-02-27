@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Loader } from 'lucide-react';
-import ProtocolView from '../components/ProtocolView';
+import ProtocolView from '../components/features/emergency/ProtocolView';
 import { ProtocolGenerator } from '../services/ai/ProtocolGenerator';
 import { getScenario } from '../services/ai/scenarioTemplates';
 import { createLogger } from '../utils/logger';

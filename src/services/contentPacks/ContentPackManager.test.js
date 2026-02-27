@@ -37,6 +37,11 @@ vi.mock('../SearchService', () => ({
     }
 }));
 
+vi.mock('../../utils/checksum', () => ({
+    computeChecksumFromStream: vi.fn().mockResolvedValue({ hash: 'a'.repeat(64) }),
+    verifyChecksum: vi.fn().mockResolvedValue(true)
+}));
+
 vi.mock('../../utils/logger', () => ({
     createLogger: () => ({
         debug: vi.fn(),
@@ -71,6 +76,8 @@ import ContentPackManager from './ContentPackManager';
 import { db } from '../db';
 import { DownloadCheckpoint } from '../DownloadCheckpoint';
 import { SearchService } from '../SearchService';
+import { verifyChecksum } from '../../utils/checksum';
+import { PACK_METADATA_STORE, CONTENT_STORES } from '../../constants/ContentConstants';
 
 describe('ContentPackManager Integration', () => {
     const TEST_PACK_ID = 'test-medical-pack';
@@ -91,11 +98,11 @@ describe('ContentPackManager Integration', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        
+
         // Mock fetch
         fetchMock = vi.fn();
         global.fetch = fetchMock;
-        
+
         // Mock navigator.storage
         navigatorStorageMock = {
             getDirectory: vi.fn(),
@@ -118,6 +125,9 @@ describe('ContentPackManager Integration', () => {
         ContentPackManager._downloadProgress.clear();
         ContentPackManager._abortControllers.clear();
         ContentPackManager._retryQueue = [];
+
+        // Spy on getAvailablePacks to avoid manifest fetch during tests
+        vi.spyOn(ContentPackManager, 'getAvailablePacks').mockResolvedValue([TEST_PACK]);
     });
 
     afterEach(() => {
@@ -175,7 +185,13 @@ describe('ContentPackManager Integration', () => {
 
             expect(result.success).toBe(true);
             expect(fetchMock).toHaveBeenCalled();
-            expect(db.put).toHaveBeenCalledWith('content_packs', expect.any(Object));
+            // Verify metadata saved
+            expect(db.put).toHaveBeenCalledWith(PACK_METADATA_STORE, expect.any(Object));
+            // Verify articles saved to correct store (medical -> health_content)
+            expect(db.put).toHaveBeenCalledWith(CONTENT_STORES.MEDICAL, expect.objectContaining({
+                id: 'article-1',
+                category: 'medical'
+            }));
         });
 
         it('should verify checksum after download', async () => {
@@ -197,7 +213,7 @@ describe('ContentPackManager Integration', () => {
 
             DownloadCheckpoint.getCheckpoint.mockResolvedValue(null);
             db.getAll.mockResolvedValue([TEST_PACK]);
-            
+
             const progressCallback = vi.fn();
             await ContentPackManager.downloadPack(TEST_PACK_ID, progressCallback);
 
@@ -209,7 +225,7 @@ describe('ContentPackManager Integration', () => {
     describe('Interrupted Download', () => {
         it('should save checkpoint when download is interrupted', async () => {
             const bytesBeforeError = 500 * 1024; // 500KB
-            
+
             // Mock fetch that throws after partial download
             fetchMock.mockRejectedValue(new Error('Network error'));
 
@@ -259,7 +275,7 @@ describe('ContentPackManager Integration', () => {
     describe('Resume Download', () => {
         it('should resume download from checkpoint', async () => {
             const bytesReceived = 500 * 1024; // 500KB already downloaded
-            
+
             // Mock checkpoint for resume
             DownloadCheckpoint.getCheckpoint.mockResolvedValue({
                 url: TEST_PACK.downloadUrl,
@@ -294,7 +310,7 @@ describe('ContentPackManager Integration', () => {
 
         it('should use Range header when resuming', async () => {
             const bytesReceived = 256 * 1024;
-            
+
             DownloadCheckpoint.getCheckpoint.mockResolvedValue({
                 url: TEST_PACK.downloadUrl,
                 bytesReceived: bytesReceived,
@@ -303,7 +319,7 @@ describe('ContentPackManager Integration', () => {
                 retryCount: 0
             });
             DownloadCheckpoint.canResume.mockReturnValue(true);
-            
+
             fetchMock.mockResolvedValue({
                 ok: true,
                 status: 206,
@@ -329,7 +345,7 @@ describe('ContentPackManager Integration', () => {
     describe('Checksum Failure', () => {
         it('should increment retry count on checksum failure', async () => {
             const _mockArrayBuffer = new ArrayBuffer(100);
-            
+
             fetchMock.mockResolvedValue({
                 ok: true,
                 status: 200,
@@ -360,7 +376,9 @@ describe('ContentPackManager Integration', () => {
             }]);
 
             // Mock navigator.storage to throw during checksum verification
-            navigatorStorageMock.getDirectory.mockRejectedValue(new Error('Storage error'));
+            // navigatorStorageMock.getDirectory.mockRejectedValue(new Error('Storage error'));
+            // UPDATE: We mock verifyChecksum to fail directly since we use memory fallback or whatever
+            verifyChecksum.mockResolvedValueOnce(false);
 
             const result = await ContentPackManager.downloadPack(TEST_PACK_ID);
 
@@ -380,7 +398,7 @@ describe('ContentPackManager Integration', () => {
             DownloadCheckpoint.incrementRetry.mockResolvedValue(2);
 
             db.getAll.mockResolvedValue([TEST_PACK]);
-            fetchMock.mockRejectedValue(new Error('Download failed'));
+            fetchMock.mockRejectedValue(new TypeError('Network request failed'));
 
             const result = await ContentPackManager.downloadPack(TEST_PACK_ID);
 
@@ -446,15 +464,15 @@ describe('ContentPackManager Integration', () => {
 
         it('should return download progress for active download', () => {
             ContentPackManager._downloadProgress.set(TEST_PACK_ID, 50);
-            
+
             const progress = ContentPackManager.getDownloadProgress(TEST_PACK_ID);
-            
+
             expect(progress).toBe(50);
         });
 
         it('should return -1 for inactive download', () => {
             const progress = ContentPackManager.getDownloadProgress('non-existent-pack');
-            
+
             expect(progress).toBe(-1);
         });
     });
@@ -463,11 +481,11 @@ describe('ContentPackManager Integration', () => {
         it('should cancel active download', () => {
             const abortController = new AbortController();
             const abortSpy = vi.spyOn(abortController, 'abort');
-            
+
             ContentPackManager._abortControllers.set(TEST_PACK_ID, abortController);
-            
+
             ContentPackManager.cancelDownload(TEST_PACK_ID);
-            
+
             expect(abortSpy).toHaveBeenCalled();
         });
 

@@ -1,71 +1,61 @@
 @import "tailwindcss";
 
-/* NEW: Midnight Emergency Color System */
-@import './styles/colors-v2.css';
+/* UNIFIED: Single source of truth for all design tokens */
+@import './styles/globals.css';
 
-/* NEW: Unified Theme System */
-@import './styles/theme-system.css';
-
-/* LEGACY: Keep for transition period (will deprecate) */
-@import './styles/colors.css';
-@import './styles/design-system.css';
+/* COMPONENTS: Legacy component styles (progressive deprecation — use shadcn/ui instead) */
 @import './styles/components.css';
-@import './styles/premium-theme.css';
 
-/* NEW: Premium Polish */
+/* POLISH: Premium micro-interactions (kept for existing animation patterns) */
 @import './styles/premium-polish.css';
 
 @theme {
-  --color-slate-50: var(--color-slate-50);
-  --color-slate-100: var(--color-slate-100);
-  --color-slate-200: var(--color-slate-200);
-  --color-slate-300: var(--color-slate-300);
-  --color-slate-400: var(--color-slate-400);
-  --color-slate-500: var(--color-slate-500);
-  --color-slate-600: var(--color-slate-600);
-  --color-slate-700: var(--color-slate-700);
-  --color-slate-800: var(--color-slate-800);
-  --color-slate-900: var(--color-slate-900);
-  --color-slate-950: var(--color-slate-950);
+  /* Midnight palette for Tailwind utilities (bg-midnight-*, text-midnight-*, etc.) */
+  --color-midnight-50: var(--midnight-50);
+  --color-midnight-100: var(--midnight-100);
+  --color-midnight-200: var(--midnight-200);
+  --color-midnight-300: var(--midnight-300);
+  --color-midnight-400: var(--midnight-400);
+  --color-midnight-500: var(--midnight-500);
 
-  --color-primary: var(--color-primary-500);
-  --color-primary-50: var(--color-primary-50);
-  --color-primary-100: var(--color-primary-100);
-  --color-primary-200: var(--color-primary-200);
-  --color-primary-300: var(--color-primary-300);
-  --color-primary-400: var(--color-primary-400);
-  --color-primary-500: var(--color-primary-500);
-  --color-primary-600: var(--color-primary-600);
-  --color-primary-700: var(--color-primary-700);
-  --color-primary-800: var(--color-primary-800);
-  --color-primary-900: var(--color-primary-900);
-  --color-primary-950: var(--color-primary-950);
+  /* Semantic colors for Tailwind */
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--bg-elevated);
+  --color-card-foreground: var(--text-primary);
+  --color-border: var(--border-standard);
+  --color-ring: var(--amber-500);
+  --color-accent: var(--accent-primary);
+  --color-accent-foreground: var(--midnight-0);
+  --color-muted: var(--bg-surface);
+  --color-muted-foreground: var(--text-muted);
+  --color-destructive: var(--danger-500);
 
-  --color-emergency-red: var(--color-emergency-red);
-  --color-emergency-orange: var(--color-emergency-orange);
-  --color-emergency-yellow: var(--color-emergency-yellow);
-  --color-emergency-green: var(--color-emergency-green);
-  --color-emergency-blue: var(--color-emergency-blue);
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 
-  --font-sans: var(--font-family-primary);
-  --font-mono: var(--font-family-mono);
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-  --radius-2xl: var(--radius-2xl);
-
-  --animate-emergency-pulse: emergency-pulse 1s var(--ease-in-out) infinite;
-  
-  /* Scanline animation for tactical map cards */
+  /* Animations */
+  --animate-emergency-pulse: emergency-pulse 1s var(--ease-smooth) infinite;
   --animate-scan: scan 2s linear infinite;
 }
 
 /* Scanline animation keyframes */
 @keyframes scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 /* View Transitions */

@@ -59,6 +59,7 @@ export function useChatSession() {
         } finally {
             setIsLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- createNewSession/switchSession are defined below; circular dep if included
     }, []);
 
     useEffect(() => {

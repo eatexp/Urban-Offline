@@ -1,4 +1,4 @@
-import OfflineMap from '../components/map/OfflineMap';
+import OfflineMap from '../components/features/map/OfflineMap';
 
 const Map = () => {
     return (

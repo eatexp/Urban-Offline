@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Context + hook must coexist in this file */
 /**
  * AIGeneratingContext.jsx — Cross-page AI streaming signal
  *

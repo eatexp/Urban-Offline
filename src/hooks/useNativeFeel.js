@@ -17,21 +17,8 @@ import { HapticsService } from '../services/HapticsService';
  * Hook for applying native platform feel
  */
 export const useNativeFeel = () => {
-    useEffect(() => {
-        if (!isNativeMobile()) return;
-
-        // Apply platform-specific optimizations
-        if (isIOSNative()) {
-            applyIOSFeel();
-        } else if (isAndroidNative()) {
-            applyAndroidFeel();
-        }
-
-        // Common native optimizations
-        applyCommonNativeFeel();
-    }, []);
-
-    const applyIOSFeel = () => {
+    // Define functions first (before useEffect)
+    const applyIOSFeel = useCallback(() => {
         // Enable rubber-band scrolling (iOS signature feel)
         document.body.style.overscrollBehavior = 'auto';
         document.documentElement.style.overscrollBehavior = 'auto';
@@ -66,9 +53,9 @@ export const useNativeFeel = () => {
 
         // iOS-style tap highlight (subtle)
         document.documentElement.style.webkitTapHighlightColor = 'rgba(255,255,255,0.05)';
-    };
+    }, []);
 
-    const applyAndroidFeel = () => {
+    const applyAndroidFeel = useCallback(() => {
         // Enable edge-to-edge on Android
         document.body.style.margin = '0';
         document.body.style.padding = '0';
@@ -87,9 +74,9 @@ export const useNativeFeel = () => {
 
         // Enable momentum scrolling
         document.body.style.overscrollBehavior = 'auto';
-    };
+    }, []);
 
-    const applyCommonNativeFeel = () => {
+    const applyCommonNativeFeel = useCallback(() => {
         // Prevent zoom on double-tap (300ms delay elimination)
         const viewportMeta = document.querySelector('meta[name="viewport"]');
         if (viewportMeta) {
@@ -118,7 +105,21 @@ export const useNativeFeel = () => {
         } else if (isAndroidNative()) {
             document.documentElement.classList.add('android-native');
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!isNativeMobile()) return;
+
+        // Apply platform-specific optimizations
+        if (isIOSNative()) {
+            applyIOSFeel();
+        } else if (isAndroidNative()) {
+            applyAndroidFeel();
+        }
+
+        // Common native optimizations
+        applyCommonNativeFeel();
+    }, [applyIOSFeel, applyAndroidFeel, applyCommonNativeFeel]);
 };
 
 /**

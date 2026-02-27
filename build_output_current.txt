@@ -1,0 +1,534 @@
+﻿
+> urban-offline@1.0.0 prebuild
+> npm run extract-wasm && npm run fetch-content && npm run generate-manifest
+
+
+> urban-offline@1.0.0 extract-wasm
+> node scripts/extract-wasm.cjs
+
+Script started
+Current directory: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline
+__dirname: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\scripts
+Public WASM dir: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\public\wasm
+Node modules dir: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\node_modules
+Directory exists: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\public\wasm
+Starting WASM extraction...
+Extracting ZSTD...
+Checking zstddec path: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\node_modules\zstddec\dist\zstddec.esm.js
+Read zstddec file, size: 76385
+Found WASM string, decoding...
+Extracted zstddec.wasm to C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\public\wasm\zstddec.wasm (54394 bytes)
+Extracting XZ...
+Checking xz-decompress path: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\node_modules\xz-decompress\dist\package\xz-decompress.js
+Read xz-decompress file, size: 26506
+Found WASM string, decoding...
+Extracted xz-decompress.wasm to C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\public\wasm\xz-decompress.wasm (12558 bytes)
+WASM extraction complete.
+
+> urban-offline@1.0.0 fetch-content
+> node scripts/fetch-content.js content.db
+
+=== Urban-Offline MVP Content Pipeline ===
+
+Initializing database...
+Creating categories...
+Created 8 categories
+
+Fetching articles from Wikipedia...
+
+[1/89] Fetching: Hypothermia                             ... OK (46.6k chars)
+[2/89] Fetching: Hyperthermia                            ... OK (35.9k chars)
+[3/89] Fetching: Heat_stroke                             ... OK (21.9k chars)
+[4/89] Fetching: Frostbite                               ... OK (26.4k chars)
+[5/89] Fetching: Dehydration                             ... OK (24.1k chars)
+[6/89] Fetching: Drowning                                ... OK (92.2k chars)
+[7/89] Fetching: Altitude_sickness                       ... OK (36.5k chars)
+[8/89] Fetching: Lightning_strike                        ... OK (38.0k chars)
+[9/89] Fetching: Radiation_poisoning                     ... OK (49.5k chars)
+[10/89] Fetching: Bleeding                                ... OK (17.0k chars)
+[11/89] Fetching: Wound                                   ... OK (40.8k chars)
+[12/89] Fetching: Bone_fracture                           ... OK (36.5k chars)
+[13/89] Fetching: Dislocation                             ... OK (38.9k chars)
+[14/89] Fetching: Sprain                                  ... OK (20.2k chars)
+[15/89] Fetching: Concussion                              ... OK (84.5k chars)
+[16/89] Fetching: Traumatic_brain_injury                  ... OK (109.1k chars)
+[17/89] Fetching: Burns                                   ... OK (1.2k chars)
+[18/89] Fetching: Chemical_burn                           ... OK (4.4k chars)
+[19/89] Fetching: Electrical_injury                       ... OK (39.7k chars)
+[20/89] Fetching: Crush_syndrome                          ... OK (9.3k chars)
+[21/89] Fetching: Pneumothorax                            ... OK (51.8k chars)
+[22/89] Fetching: Tourniquet                              ... OK (36.5k chars)
+[23/89] Fetching: Splint_(medicine)                       ... OK (7.0k chars)
+[24/89] Fetching: Suture                                  ... OK (1.1k chars)
+[25/89] Fetching: Cardiac_arrest                          ... OK (94.3k chars)
+[26/89] Fetching: Cardiopulmonary_resuscitation           ... OK (93.5k chars)
+[27/89] Fetching: Choking                                 ... OK (65.5k chars)
+[28/89] Fetching: Heimlich_maneuver                       ... OK (10.7k chars)
+[29/89] Fetching: Anaphylaxis                             ... OK (48.7k chars)
+[30/89] Fetching: Shock_(circulatory)                     ... OK (38.4k chars)
+[31/89] Fetching: Stroke                                  ... OK (139.2k chars)
+[32/89] Fetching: Myocardial_infarction                   ... OK (91.5k chars)
+[33/89] Fetching: Seizure                                 ... OK (53.5k chars)
+[34/89] Fetching: Status_epilepticus                      ... OK (25.2k chars)
+[35/89] Fetching: Diabetic_ketoacidosis                   ... OK (34.1k chars)
+[36/89] Fetching: Hypoglycemia                            ... OK (44.4k chars)
+[37/89] Fetching: Asthma                                  ... OK (68.9k chars)
+[38/89] Fetching: Pulmonary_embolism                      ... OK (64.4k chars)
+[39/89] Fetching: Sepsis                                  ... OK (94.5k chars)
+[40/89] Fetching: Meningitis                              ... OK (67.4k chars)
+[41/89] Fetching: Appendicitis                            ... OK (63.4k chars)
+[42/89] Fetching: Food_poisoning                          ... OK (66.5k chars)
+[43/89] Fetching: Poisoning                               ... OK (11.3k chars)
+[44/89] Fetching: Drug_overdose                           ... OK (20.9k chars)
+[45/89] Fetching: Alcohol_intoxication                    ... OK (34.3k chars)
+[46/89] Fetching: Recovery_position                       ... OK (7.0k chars)
+[47/89] Fetching: Automated_external_defibrillator        ... OK (23.5k chars)
+[48/89] Fetching: Infection                               ... OK (89.7k chars)
+[49/89] Fetching: Tetanus                                 ... OK (37.0k chars)
+[50/89] Fetching: Rabies                                  ... OK (63.1k chars)
+[51/89] Fetching: Cellulitis                              ... OK (22.4k chars)
+[52/89] Fetching: Gastroenteritis                         ... OK (44.9k chars)
+[53/89] Fetching: Pneumonia                               ... OK (89.1k chars)
+[54/89] Fetching: Panic_attack                            ... OK (50.2k chars)
+[55/89] Fetching: Psychosis                               ... OK (119.4k chars)
+[56/89] Fetching: Suicide_prevention                      ... OK (60.3k chars)
+[57/89] Fetching: Childbirth                              ... OK (121.4k chars)
+[58/89] Fetching: Obstetric_hemorrhage                    ... OK (9.8k chars)
+[59/89] Fetching: NHS_111                                 ... OK (19.1k chars)
+[60/89] Fetching: 999_(emergency_telephone_number)        ... OK (30.5k chars)
+[61/89] Fetching: Paracetamol                             ... OK (81.4k chars)
+[62/89] Fetching: Ibuprofen                               ... OK (43.7k chars)
+[63/89] Fetching: Aspirin                                 ... OK (124.9k chars)
+[64/89] Fetching: Epinephrine_autoinjector                ... OK (38.7k chars)
+[65/89] Fetching: Antihistamine                           ... OK (25.4k chars)
+[66/89] Fetching: Oral_rehydration_therapy                ... OK (34.9k chars)
+[67/89] Fetching: Activated_charcoal                      ... OK (60.2k chars)
+[68/89] Fetching: Naloxone                                ... OK (58.4k chars)
+[69/89] Fetching: Glucose                                 ... OK (88.4k chars)
+[70/89] Fetching: Circulatory_system                      ... OK (39.4k chars)
+[71/89] Fetching: Respiratory_system                      ... OK (77.6k chars)
+[72/89] Fetching: Airway                                  ... OK (21.1k chars)
+[73/89] Fetching: Femoral_artery                          ... OK (13.2k chars)
+[74/89] Fetching: Carotid_artery                          ... OK (0.7k chars)
+[75/89] Fetching: Radial_artery                           ... OK (8.2k chars)
+[76/89] Fetching: Police_and_Criminal_Evidence_Act_1984   ... OK (27.5k chars)
+[77/89] Fetching: Right_to_silence                        ... OK (78.0k chars)
+[78/89] Fetching: Stop_and_search                         ... OK (0.7k chars)
+[79/89] Fetching: Arrest                                  ... OK (17.5k chars)
+[80/89] Fetching: Human_Rights_Act_1998                   ... OK (37.5k chars)
+[81/89] Fetching: Public_Order_Act_1986                   ... OK (11.7k chars)
+[82/89] Fetching: Duty_solicitor                          ... OK (8.0k chars)
+[83/89] Fetching: Habeas_corpus                           ... OK (52.0k chars)
+[84/89] Fetching: Water_purification                      ... OK (57.0k chars)
+[85/89] Fetching: Fire_making                             ... OK (15.5k chars)
+[86/89] Fetching: Survival_shelter                        ... OK (16.9k chars)
+[87/89] Fetching: Distress_signal                         ... OK (14.6k chars)
+[88/89] Fetching: Survival_kit                            ... OK (23.0k chars)
+[89/89] Fetching: Emergency_blanket                       ... OK (6.3k chars)
+
+Rebuilding FTS index...
+Adding attribution record...
+
+=== COMPLETE ===
+
+Articles indexed: 89
+Database size: 29.16 MB
+Success: 89, Failed: 0
+
+Testing FTS search for "hypothermia"...
+Found 3 results:
+  - Hypothermia
+  - Hyperthermia
+  - Frostbite
+
+Database saved to: content.db
+
+> urban-offline@1.0.0 generate-manifest
+> node scripts/generate-manifest.js
+
+Reading content.db from: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\content.db
+Found 89 articles
+  medical-core: 75 articles, 18.8 MB
+  legal-uk: 8 articles, 0.8 MB
+  survival-core: 6 articles, 0.5 MB
+
+Manifest written to: C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\public\assets\content-manifest.json
+Total: 89 articles in 3 packs
+Total size: 20.2 MB
+
+> urban-offline@1.0.0 build
+> vite build
+
+node.exe : [33mplugin-legacy overrode 'build.target'. You should 
+pass 'targets' as an option to this plugin with the list of legacy 
+browsers to support instead.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mplugin-leg...t ins 
+   tead.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[36mvite v7.2.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[33mnode_modules/onnxruntime-web/dist/ort-web.min.js (6:62546): Use 
+of eval in "node_modules/onnxruntime-web/dist/ort-web.min.js" is 
+strongly discouraged as it poses security risks and may cause issues 
+with minification.[39m
+[32mÔ£ô[39m 2568 modules transformed.
+[33mnode_modules/onnxruntime-web/dist/ort-web.min.js (6:62546): Use 
+of eval in "node_modules/onnxruntime-web/dist/ort-web.min.js" is 
+strongly discouraged as it poses security risks and may cause issues 
+with minification.[39m
+rendering chunks...
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/haptics/dist/esm/index.js is dynamically imported by C:/U
+sers/ieatexp/Desktop/Projects/247s/Urban-Offline/src/utils/haptics.js
+ but also statically imported by C:/Users/ieatexp/Desktop/Projects/24
+7s/Urban-Offline/src/services/HapticsService.js, dynamic import will 
+not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/search/HybridSearch.js is dynamically imported by C:/Users/ieatexp/D
+esktop/Projects/247s/Urban-Offline/src/services/clawdBot/DevToolRegis
+try.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/serv
+ices/clawdBot/DevToolRegistry.js, C:/Users/ieatexp/Desktop/Projects/2
+47s/Urban-Offline/src/services/clawdBot/DevToolRegistry.js, C:/Users/
+ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/clawdBot/Too
+lRegistry.js but also statically imported by C:/Users/ieatexp/Desktop
+/Projects/247s/Urban-Offline/src/components/Search.jsx, dynamic 
+import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/dataManager.js is dynamically imported by C:/Users/ieatexp/Desktop/P
+rojects/247s/Urban-Offline/src/services/clawdBot/DevToolRegistry.js, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/cla
+wdBot/DevToolRegistry.js, C:/Users/ieatexp/Desktop/Projects/247s/Urba
+n-Offline/src/services/clawdBot/DevToolRegistry.js, C:/Users/ieatexp/
+Desktop/Projects/247s/Urban-Offline/src/services/clawdBot/ToolRegistr
+y.js but also statically imported by 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/loaders.js, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/pages/Resour
+ces.jsx, dynamic import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/articleService.js is dynamically imported by C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/services/clawdBot/DevToolRegistry.j
+s but also statically imported by 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/loaders.js, 
+dynamic import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/core/dist/index.js is dynamically imported by C:/Users/ie
+atexp/Desktop/Projects/247s/Urban-Offline/src/services/ai/PurchaseMan
+ager.js but also statically imported by C:/Users/ieatexp/Desktop/Proj
+ects/247s/Urban-Offline/node_modules/@capacitor-community/sqlite/dist
+/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/n
+ode_modules/@capacitor-community/sqlite/dist/esm/web.js, C:/Users/iea
+texp/Desktop/Projects/247s/Urban-Offline/node_modules/@capacitor/app/
+dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offli
+ne/node_modules/@capacitor/app/dist/esm/web.js, C:/Users/ieatexp/Desk
+top/Projects/247s/Urban-Offline/node_modules/@capacitor/device/dist/e
+sm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/nod
+e_modules/@capacitor/device/dist/esm/web.js, C:/Users/ieatexp/Desktop
+/Projects/247s/Urban-Offline/node_modules/@capacitor/filesystem/dist/
+esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/no
+de_modules/@capacitor/filesystem/dist/esm/web.js, C:/Users/ieatexp/De
+sktop/Projects/247s/Urban-Offline/node_modules/@capacitor/haptics/dis
+t/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/
+node_modules/@capacitor/haptics/dist/esm/web.js, C:/Users/ieatexp/Des
+ktop/Projects/247s/Urban-Offline/node_modules/@capacitor/preferences/
+dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offli
+ne/node_modules/@capacitor/preferences/dist/esm/web.js, C:/Users/ieat
+exp/Desktop/Projects/247s/Urban-Offline/node_modules/@capacitor/statu
+s-bar/dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban
+-Offline/node_modules/@capgo/native-purchases/dist/esm/index.js, C:/U
+sers/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules/@capgo/
+native-purchases/dist/esm/web.js, C:/Users/ieatexp/Desktop/Projects/2
+47s/Urban-Offline/src/components/library/StorageBar.jsx, C:/Users/iea
+texp/Desktop/Projects/247s/Urban-Offline/src/components/map/OfflineMa
+p.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/conte
+xt/AppProvider.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offl
+ine/src/contexts/ThemeContext.jsx, C:/Users/ieatexp/Desktop/Projects/
+247s/Urban-Offline/src/services/HapticsService.js, C:/Users/ieatexp/D
+esktop/Projects/247s/Urban-Offline/src/services/SearchService.js, C:/
+Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/ai/Dev
+iceCapabilityProfiler.js, C:/Users/ieatexp/Desktop/Projects/247s/Urba
+n-Offline/src/services/articleService.js, C:/Users/ieatexp/Desktop/Pr
+ojects/247s/Urban-Offline/src/services/db.js, C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/services/maps/CapacitorPMTilesSourc
+e.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/servic
+es/maps/MapService.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-O
+ffline/src/services/storage/NativeStorage.js, C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/utils/platform.js, dynamic import 
+will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/context/ContextManager.js is dynamically imported by C:/Users/ieatex
+p/Desktop/Projects/247s/Urban-Offline/src/services/ai/RAGPipeline.js,
+ C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/ai
+/RAGPipeline.js but also statically imported by C:/Users/ieatexp/Desk
+top/Projects/247s/Urban-Offline/src/components/AmbientStatusBar.jsx, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/components/L
+ayout.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/c
+omponents/SurvivalModeOverlay.jsx, C:/Users/ieatexp/Desktop/Projects/
+247s/Urban-Offline/src/components/map/OfflineMap.jsx, C:/Users/ieatex
+p/Desktop/Projects/247s/Urban-Offline/src/services/ai/TransformersEng
+ine.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/serv
+ices/power/BatteryManager.js, C:/Users/ieatexp/Desktop/Projects/247s/
+Urban-Offline/src/services/power/SurvivalModeService.js, dynamic 
+import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/filesystem/dist/esm/index.js is dynamically imported by C
+:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/utils/platfor
+m.js but also statically imported by C:/Users/ieatexp/Desktop/Project
+s/247s/Urban-Offline/src/components/map/OfflineMap.jsx, C:/Users/ieat
+exp/Desktop/Projects/247s/Urban-Offline/src/services/storage/NativeSt
+orage.js, dynamic import will not move module into another chunk.
+[39m
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js                                    [39m[1m[2m    0.13 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest                             [39m[1m[2m    0.65 kB[22m[1m[22m
+[2mdist/[22m[36massets/map-module-legacy-CT9Zto4h.js             [39m[1m[2m    0.13 kB[22m[1m[22m[2m Ôöé gzip:   0.13 kB[22m
+[2mdist/[22m[36massets/index-legacy-CMG5dWAi.js                  [39m[1m[2m    0.34 kB[22m[1m[22m[2m Ôöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/index-legacy-DNayjIOu.js                  [39m[1m[2m    0.37 kB[22m[1m[22m[2m Ôöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/ContentConstants-legacy-B7mT1_o0.js       [39m[1m[2m    0.38 kB[22m[1m[22m[2m Ôöé gzip:   0.26 kB[22m
+[2mdist/[22m[36massets/index-legacy-B5DPFIFf.js                  [39m[1m[2m    0.42 kB[22m[1m[22m[2m Ôöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/ArticleView-legacy-Cn7TLXy1.js            [39m[1m[2m    2.75 kB[22m[1m[22m[2m Ôöé gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/DatasetNetworkGraph-legacy-B1MQVnla.js    [39m[1m[2m    3.22 kB[22m[1m[22m[2m Ôöé gzip:   1.36 kB[22m
+[2mdist/[22m[36massets/categories-legacy-BCdI-D6X.js             [39m[1m[2m    4.26 kB[22m[1m[22m[2m Ôöé gzip:   1.76 kB[22m
+[2mdist/[22m[36massets/web-legacy-CkgrHL-O.js                    [39m[1m[2m    5.97 kB[22m[1m[22m[2m Ôöé gzip:   2.40 kB[22m
+[2mdist/[22m[36massets/web-legacy-WJjd-yji.js                    [39m[1m[2m    6.87 kB[22m[1m[22m[2m Ôöé gzip:   2.61 kB[22m
+[2mdist/[22m[36massets/web-legacy-CWMhN4N-.js                    [39m[1m[2m    7.60 kB[22m[1m[22m[2m Ôöé gzip:   2.64 kB[22m
+[2mdist/[22m[36massets/scenarioTemplates-legacy-D-llDfnj.js      [39m[1m[2m    8.25 kB[22m[1m[22m[2m Ôöé gzip:   2.82 kB[22m
+[2mdist/[22m[36massets/web-legacy-CkB6Kp_D.js                    [39m[1m[2m    8.75 kB[22m[1m[22m[2m Ôöé gzip:   3.31 kB[22m
+[2mdist/[22m[36massets/Health-legacy-B9VYsqrv.js                 [39m[1m[2m    8.81 kB[22m[1m[22m[2m Ôöé gzip:   3.42 kB[22m
+[2mdist/[22m[36massets/web-legacy-Yb9ftMDf.js                    [39m[1m[2m    9.12 kB[22m[1m[22m[2m Ôöé gzip:   3.66 kB[22m
+[2mdist/[22m[36massets/index-legacy-q3eFjOAk.js                  [39m[1m[2m    9.53 kB[22m[1m[22m[2m Ôöé gzip:   3.67 kB[22m
+[2mdist/[22m[36massets/Guides-legacy-3sstFO7I.js                 [39m[1m[2m   10.39 kB[22m[1m[22m[2m Ôöé gzip:   4.31 kB[22m
+[2mdist/[22m[36massets/AskAIChip-legacy-CRqjvjjN.js              [39m[1m[2m   10.47 kB[22m[1m[22m[2m Ôöé gzip:   3.96 kB[22m
+[2mdist/[22m[36massets/TacticalAudioService-legacy-PSALUsxQ.js   [39m[1m[2m   10.47 kB[22m[1m[22m[2m Ôöé gzip:   3.59 kB[22m
+[2mdist/[22m[36massets/TriagePage-legacy-NJ6Y1uiI.js             [39m[1m[2m   10.51 kB[22m[1m[22m[2m Ôöé gzip:   4.09 kB[22m
+[2mdist/[22m[36massets/ProtocolGenerator-legacy-DwprcvGT.js      [39m[1m[2m   10.56 kB[22m[1m[22m[2m Ôöé gzip:   4.31 kB[22m
+[2mdist/[22m[36massets/HighStakesDeleteModal-legacy-Cvkjc6lU.js  [39m[1m[2m   10.67 kB[22m[1m[22m[2m Ôöé gzip:   4.34 kB[22m
+[2mdist/[22m[36massets/Law-legacy-BZQDbH3f.js                    [39m[1m[2m   10.73 kB[22m[1m[22m[2m Ôöé gzip:   3.67 kB[22m
+[2mdist/[22m[36massets/tileManager-legacy-Bsu2I6K6.js            [39m[1m[2m   11.10 kB[22m[1m[22m[2m Ôöé gzip:   4.48 kB[22m
+[2mdist/[22m[36massets/ProtocolPage-legacy-DeyiFO98.js           [39m[1m[2m   13.21 kB[22m[1m[22m[2m Ôöé gzip:   4.91 kB[22m
+[2mdist/[22m[36massets/UserContextManager-legacy-VEmTOxfv.js     [39m[1m[2m   13.49 kB[22m[1m[22m[2m Ôöé gzip:   4.00 kB[22m
+[2mdist/[22m[36massets/Resources-legacy-BVY88cYO.js              [39m[1m[2m   16.14 kB[22m[1m[22m[2m Ôöé gzip:   5.54 kB[22m
+[2mdist/[22m[36massets/ZimContentService-legacy-BxrlITMq.js      [39m[1m[2m   17.44 kB[22m[1m[22m[2m Ôöé gzip:   5.89 kB[22m
+[2mdist/[22m[36massets/Grokopedia-legacy-BTa38msH.js             [39m[1m[2m   18.04 kB[22m[1m[22m[2m Ôöé gzip:   5.77 kB[22m
+[2mdist/[22m[36massets/Survival-legacy-Dmc_qOHk.js               [39m[1m[2m   19.75 kB[22m[1m[22m[2m Ôöé gzip:   5.27 kB[22m
+[2mdist/[22m[36massets/web-legacy-B19Y01cC.js                    [39m[1m[2m   20.51 kB[22m[1m[22m[2m Ôöé gzip:   6.32 kB[22m
+[2mdist/[22m[36massets/DevDashboard-legacy-CKELn9aq.js           [39m[1m[2m   24.93 kB[22m[1m[22m[2m Ôöé gzip:   7.02 kB[22m
+[2mdist/[22m[36massets/web-legacy-DaUZHihF.js                    [39m[1m[2m   25.32 kB[22m[1m[22m[2m Ôöé gzip:   4.00 kB[22m
+[2mdist/[22m[36massets/ui-vendor-legacy-BIoqKaMg.js              [39m[1m[2m   25.50 kB[22m[1m[22m[2m Ôöé gzip:   8.71 kB[22m
+[2mdist/[22m[36massets/GrokopediaArticle-legacy-mVF3-N_F.js      [39m[1m[2m   27.02 kB[22m[1m[22m[2m Ôöé gzip:   9.45 kB[22m
+[2mdist/[22m[36massets/ContentBrowser-legacy-sxioqh9C.js         [39m[1m[2m   31.94 kB[22m[1m[22m[2m Ôöé gzip:   9.36 kB[22m
+[2mdist/[22m[36massets/Map-legacy-BY--qGWs.js                    [39m[1m[2m   42.75 kB[22m[1m[22m[2m Ôöé gzip:  15.13 kB[22m
+[2mdist/[22m[36massets/AIModels-legacy-CdKdxtxx.js               [39m[1m[2m   47.98 kB[22m[1m[22m[2m Ôöé gzip:  13.93 kB[22m
+[2mdist/[22m[36massets/react-vendor-legacy-Fml1ZZn-.js           [39m[1m[2m  124.68 kB[22m[1m[22m[2m Ôöé gzip:  39.04 kB[22m
+[2mdist/[22m[36massets/proxy-legacy-C0b9y3CY.js                  [39m[1m[2m  147.15 kB[22m[1m[22m[2m Ôöé gzip:  43.66 kB[22m
+[2mdist/[22m[36massets/polyfills-legacy-B-dl5nIi.js              [39m[1m[2m  179.59 kB[22m[1m[22m[2m Ôöé gzip:  66.11 kB[22m
+[2mdist/[22m[36massets/Library-legacy-Dyu9Z6zp.js                [39m[1m[2m  222.67 kB[22m[1m[22m[2m Ôöé gzip:  71.80 kB[22m
+[2mdist/[22m[36massets/AIChat-legacy-D6d3KhWu.js                 [39m[1m[2m  324.05 kB[22m[1m[22m[2m Ôöé gzip:  87.68 kB[22m
+[2mdist/[22m[36massets/index-legacy-DyvWhme9.js                  [39m[1m[33m  780.12 kB[39m[22m[2m Ôöé gzip: 188.86 kB[22m
+[2mdist/[22m[36massets/maplibre-gl-legacy-D--HK1vt.js            [39m[1m[33m1,154.64 kB[39m[22m[2m Ôöé gzip: 295.06 kB[22m
+[2mdist/[22m[36massets/ai-module-legacy-CFbuPRNj.js              [39m[1m[33m1,319.42 kB[39m[22m[2m Ôöé gzip: 294.91 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: 
+https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/core/dist/index.js is dynamically imported by C:/Users/ie
+atexp/Desktop/Projects/247s/Urban-Offline/src/services/ai/PurchaseMan
+ager.js but also statically imported by C:/Users/ieatexp/Desktop/Proj
+ects/247s/Urban-Offline/node_modules/@capacitor-community/sqlite/dist
+/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/n
+ode_modules/@capacitor-community/sqlite/dist/esm/web.js, C:/Users/iea
+texp/Desktop/Projects/247s/Urban-Offline/node_modules/@capacitor/app/
+dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offli
+ne/node_modules/@capacitor/app/dist/esm/web.js, C:/Users/ieatexp/Desk
+top/Projects/247s/Urban-Offline/node_modules/@capacitor/device/dist/e
+sm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/nod
+e_modules/@capacitor/device/dist/esm/web.js, C:/Users/ieatexp/Desktop
+/Projects/247s/Urban-Offline/node_modules/@capacitor/filesystem/dist/
+esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/no
+de_modules/@capacitor/filesystem/dist/esm/web.js, C:/Users/ieatexp/De
+sktop/Projects/247s/Urban-Offline/node_modules/@capacitor/haptics/dis
+t/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/
+node_modules/@capacitor/haptics/dist/esm/web.js, C:/Users/ieatexp/Des
+ktop/Projects/247s/Urban-Offline/node_modules/@capacitor/preferences/
+dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offli
+ne/node_modules/@capacitor/preferences/dist/esm/web.js, C:/Users/ieat
+exp/Desktop/Projects/247s/Urban-Offline/node_modules/@capacitor/statu
+s-bar/dist/esm/index.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban
+-Offline/node_modules/@capgo/native-purchases/dist/esm/index.js, C:/U
+sers/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules/@capgo/
+native-purchases/dist/esm/web.js, C:/Users/ieatexp/Desktop/Projects/2
+47s/Urban-Offline/src/components/library/StorageBar.jsx, C:/Users/iea
+texp/Desktop/Projects/247s/Urban-Offline/src/components/map/OfflineMa
+p.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/conte
+xt/AppProvider.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offl
+ine/src/contexts/ThemeContext.jsx, C:/Users/ieatexp/Desktop/Projects/
+247s/Urban-Offline/src/services/HapticsService.js, C:/Users/ieatexp/D
+esktop/Projects/247s/Urban-Offline/src/services/SearchService.js, C:/
+Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/ai/Dev
+iceCapabilityProfiler.js, C:/Users/ieatexp/Desktop/Projects/247s/Urba
+n-Offline/src/services/articleService.js, C:/Users/ieatexp/Desktop/Pr
+ojects/247s/Urban-Offline/src/services/db.js, C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/services/maps/CapacitorPMTilesSourc
+e.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/servic
+es/maps/MapService.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-O
+ffline/src/services/storage/NativeStorage.js, C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/utils/platform.js, dynamic import 
+will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/context/ContextManager.js is dynamically imported by C:/Users/ieatex
+p/Desktop/Projects/247s/Urban-Offline/src/services/ai/RAGPipeline.js,
+ C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/ai
+/RAGPipeline.js but also statically imported by C:/Users/ieatexp/Desk
+top/Projects/247s/Urban-Offline/src/components/AmbientStatusBar.jsx, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/components/L
+ayout.jsx, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/c
+omponents/SurvivalModeOverlay.jsx, C:/Users/ieatexp/Desktop/Projects/
+247s/Urban-Offline/src/components/map/OfflineMap.jsx, C:/Users/ieatex
+p/Desktop/Projects/247s/Urban-Offline/src/services/ai/TransformersEng
+ine.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/serv
+ices/power/BatteryManager.js, C:/Users/ieatexp/Desktop/Projects/247s/
+Urban-Offline/src/services/power/SurvivalModeService.js, dynamic 
+import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/filesystem/dist/esm/index.js is dynamically imported by C
+:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/utils/platfor
+m.js but also statically imported by C:/Users/ieatexp/Desktop/Project
+s/247s/Urban-Offline/src/components/map/OfflineMap.jsx, C:/Users/ieat
+exp/Desktop/Projects/247s/Urban-Offline/src/services/storage/NativeSt
+orage.js, dynamic import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/node_modules
+/@capacitor/haptics/dist/esm/index.js is dynamically imported by C:/U
+sers/ieatexp/Desktop/Projects/247s/Urban-Offline/src/utils/haptics.js
+ but also statically imported by C:/Users/ieatexp/Desktop/Projects/24
+7s/Urban-Offline/src/services/HapticsService.js, dynamic import will 
+not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/search/HybridSearch.js is dynamically imported by C:/Users/ieatexp/D
+esktop/Projects/247s/Urban-Offline/src/services/clawdBot/DevToolRegis
+try.js, C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/serv
+ices/clawdBot/DevToolRegistry.js, C:/Users/ieatexp/Desktop/Projects/2
+47s/Urban-Offline/src/services/clawdBot/DevToolRegistry.js, C:/Users/
+ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/clawdBot/Too
+lRegistry.js but also statically imported by C:/Users/ieatexp/Desktop
+/Projects/247s/Urban-Offline/src/components/Search.jsx, dynamic 
+import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/dataManager.js is dynamically imported by C:/Users/ieatexp/Desktop/P
+rojects/247s/Urban-Offline/src/services/clawdBot/DevToolRegistry.js, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services/cla
+wdBot/DevToolRegistry.js, C:/Users/ieatexp/Desktop/Projects/247s/Urba
+n-Offline/src/services/clawdBot/DevToolRegistry.js, C:/Users/ieatexp/
+Desktop/Projects/247s/Urban-Offline/src/services/clawdBot/ToolRegistr
+y.js but also statically imported by 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/loaders.js, 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/pages/Resour
+ces.jsx, dynamic import will not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/services
+/articleService.js is dynamically imported by C:/Users/ieatexp/Deskto
+p/Projects/247s/Urban-Offline/src/services/clawdBot/DevToolRegistry.j
+s but also statically imported by 
+C:/Users/ieatexp/Desktop/Projects/247s/Urban-Offline/src/loaders.js, 
+dynamic import will not move module into another chunk.
+[39m
+[2mdist/[22m[32mregisterSW.js                             [39m[1m[2m    0.13 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest                      [39m[1m[2m    0.65 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                                [39m[1m[2m    2.77 kB[22m[1m[22m[2m Ôöé gzip:   1.20 kB[22m
+[2mdist/[22m[32massets/classifier.worker-gQAK9Imh.js      [39m[1m[2m  814.40 kB[22m[1m[22m
+[2mdist/[22m[35massets/AIChat-D3WYRyiE.css                [39m[1m[2m   19.47 kB[22m[1m[22m[2m Ôöé gzip:   4.15 kB[22m
+[2mdist/[22m[35massets/Library-CcWlrUfD.css               [39m[1m[2m   22.68 kB[22m[1m[22m[2m Ôöé gzip:   4.10 kB[22m
+[2mdist/[22m[35massets/index-LoVNbfYF.css                 [39m[1m[2m  189.54 kB[22m[1m[22m[2m Ôöé gzip:  25.81 kB[22m
+[2mdist/[22m[36massets/map-module-BkgZ3YrT.js             [39m[1m[2m    0.04 kB[22m[1m[22m[2m Ôöé gzip:   0.06 kB[22m
+[2mdist/[22m[36massets/index-Jw9tsu72.js                  [39m[1m[2m    0.31 kB[22m[1m[22m[2m Ôöé gzip:   0.24 kB[22m
+[2mdist/[22m[36massets/ContentConstants-BPNkq_h7.js       [39m[1m[2m    0.31 kB[22m[1m[22m[2m Ôöé gzip:   0.21 kB[22m
+[2mdist/[22m[36massets/index-DsAplYyY.js                  [39m[1m[2m    0.52 kB[22m[1m[22m[2m Ôöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/index-CgYWiEd1.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m Ôöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/web-IbcbDiLM.js                    [39m[1m[2m    0.71 kB[22m[1m[22m[2m Ôöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/web-4383yPle.js                    [39m[1m[2m    1.04 kB[22m[1m[22m[2m Ôöé gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/web-0S8UohQ7.js                    [39m[1m[2m    1.29 kB[22m[1m[22m[2m Ôöé gzip:   0.62 kB[22m
+[2mdist/[22m[36massets/web-CLbwJnie.js                    [39m[1m[2m    1.39 kB[22m[1m[22m[2m Ôöé gzip:   0.51 kB[22m
+[2mdist/[22m[36massets/web-CcAHPwlo.js                    [39m[1m[2m    2.48 kB[22m[1m[22m[2m Ôöé gzip:   1.11 kB[22m
+[2mdist/[22m[36massets/ArticleView-Ce21bVEf.js            [39m[1m[2m    2.57 kB[22m[1m[22m[2m Ôöé gzip:   1.13 kB[22m
+[2mdist/[22m[36massets/categories-BwSwWcL6.js             [39m[1m[2m    3.00 kB[22m[1m[22m[2m Ôöé gzip:   1.12 kB[22m
+[2mdist/[22m[36massets/DatasetNetworkGraph-C3Cgx18p.js    [39m[1m[2m    3.03 kB[22m[1m[22m[2m Ôöé gzip:   1.29 kB[22m
+[2mdist/[22m[36massets/ProtocolGenerator-BwXZ4tOO.js      [39m[1m[2m    3.28 kB[22m[1m[22m[2m Ôöé gzip:   1.54 kB[22m
+[2mdist/[22m[36massets/index-DnzH_dI6.js                  [39m[1m[2m    4.02 kB[22m[1m[22m[2m Ôöé gzip:   1.87 kB[22m
+[2mdist/[22m[36massets/TacticalAudioService-C1NnqkH9.js   [39m[1m[2m    4.57 kB[22m[1m[22m[2m Ôöé gzip:   1.31 kB[22m
+[2mdist/[22m[36massets/Health-SJBBtDLu.js                 [39m[1m[2m    4.83 kB[22m[1m[22m[2m Ôöé gzip:   1.54 kB[22m
+[2mdist/[22m[36massets/tileManager-D-kKGQi0.js            [39m[1m[2m    5.13 kB[22m[1m[22m[2m Ôöé gzip:   2.16 kB[22m
+[2mdist/[22m[36massets/Guides-BHCSNvkw.js                 [39m[1m[2m    5.23 kB[22m[1m[22m[2m Ôöé gzip:   2.31 kB[22m
+[2mdist/[22m[36massets/UserContextManager-CNQSSBxn.js     [39m[1m[2m    5.55 kB[22m[1m[22m[2m Ôöé gzip:   1.65 kB[22m
+[2mdist/[22m[36massets/AskAIChip-Cy2FuFaA.js              [39m[1m[2m    5.77 kB[22m[1m[22m[2m Ôöé gzip:   1.92 kB[22m
+[2mdist/[22m[36massets/TriagePage-CmaE7ajm.js             [39m[1m[2m    5.88 kB[22m[1m[22m[2m Ôöé gzip:   2.14 kB[22m
+[2mdist/[22m[36massets/HighStakesDeleteModal-4PjYCTpS.js  [39m[1m[2m    6.51 kB[22m[1m[22m[2m Ôöé gzip:   2.40 kB[22m
+[2mdist/[22m[36massets/Law-BMJ6QeEM.js                    [39m[1m[2m    6.75 kB[22m[1m[22m[2m Ôöé gzip:   1.79 kB[22m
+[2mdist/[22m[36massets/ZimContentService-VwNpXBu3.js      [39m[1m[2m    6.92 kB[22m[1m[22m[2m Ôöé gzip:   2.56 kB[22m
+[2mdist/[22m[36massets/scenarioTemplates-wSnkHVEp.js      [39m[1m[2m    8.08 kB[22m[1m[22m[2m Ôöé gzip:   2.77 kB[22m
+[2mdist/[22m[36massets/ProtocolPage-nJg3Fiad.js           [39m[1m[2m    8.37 kB[22m[1m[22m[2m Ôöé gzip:   2.87 kB[22m
+[2mdist/[22m[36massets/web-BuPzRnnh.js                    [39m[1m[2m    8.83 kB[22m[1m[22m[2m Ôöé gzip:   2.99 kB[22m
+[2mdist/[22m[36massets/Resources-xgXM-4nN.js              [39m[1m[2m    9.41 kB[22m[1m[22m[2m Ôöé gzip:   3.07 kB[22m
+[2mdist/[22m[36massets/web-B6yc70C3.js                    [39m[1m[2m    9.87 kB[22m[1m[22m[2m Ôöé gzip:   1.36 kB[22m
+[2mdist/[22m[36massets/Grokopedia-Ccjmq5VJ.js             [39m[1m[2m   13.08 kB[22m[1m[22m[2m Ôöé gzip:   3.76 kB[22m
+[2mdist/[22m[36massets/Survival-CaN6aUIs.js               [39m[1m[2m   15.73 kB[22m[1m[22m[2m Ôöé gzip:   3.33 kB[22m
+[2mdist/[22m[36massets/GrokopediaArticle-D_qwmA9j.js      [39m[1m[2m   17.88 kB[22m[1m[22m[2m Ôöé gzip:   6.49 kB[22m
+[2mdist/[22m[36massets/DevDashboard-BS5prjrG.js           [39m[1m[2m   19.89 kB[22m[1m[22m[2m Ôöé gzip:   4.96 kB[22m
+[2mdist/[22m[36massets/ContentBrowser-mOuyz3mo.js         [39m[1m[2m   21.63 kB[22m[1m[22m[2m Ôöé gzip:   6.28 kB[22m
+[2mdist/[22m[36massets/ui-vendor-DkIVWx4K.js              [39m[1m[2m   22.65 kB[22m[1m[22m[2m Ôöé gzip:   8.08 kB[22m
+[2mdist/[22m[36massets/Map-B_gR4K3S.js                    [39m[1m[2m   30.59 kB[22m[1m[22m[2m Ôöé gzip:  11.59 kB[22m
+[2mdist/[22m[36massets/AIModels-CZFI-AnB.js               [39m[1m[2m   36.88 kB[22m[1m[22m[2m Ôöé gzip:  10.64 kB[22m
+[2mdist/[22m[36massets/react-vendor-DohaM0c3.js           [39m[1m[2m   97.04 kB[22m[1m[22m[2m Ôöé gzip:  32.73 kB[22m
+[2mdist/[22m[36massets/proxy-BFZcP4rd.js                  [39m[1m[2m  121.22 kB[22m[1m[22m[2m Ôöé gzip:  39.63 kB[22m
+[2mdist/[22m[36massets/Library-CryPpd29.js                [39m[1m[2m  168.71 kB[22m[1m[22m[2m Ôöé gzip:  60.09 kB[22m
+[2mdist/[22m[36massets/AIChat-Cyq1Se9s.js                 [39m[1m[2m  240.53 kB[22m[1m[22m[2m Ôöé gzip:  69.05 kB[22m
+[2mdist/[22m[36massets/index-DrezVFEs.js                  [39m[1m[33m  522.05 kB[39m[22m[2m Ôöé gzip: 152.11 kB[22m
+[2mdist/[22m[36massets/ai-module-yaD1viUk.js              [39m[1m[33m1,014.68 kB[39m[22m[2m Ôöé gzip: 256.23 kB[22m
+[2mdist/[22m[36massets/maplibre-gl-kblWiuWM.js            [39m[1m[33m1,029.75 kB[39m[22m[2m Ôöé gzip: 276.85 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: 
+https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.[39m
+[32mÔ£ô built in 1m 11s[39m
+
+PWA v1.2.0
+mode      generateSW
+precache  101 entries (9152.76 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-1d305bb8.js

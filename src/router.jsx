@@ -1,7 +1,10 @@
+/* eslint-disable react-refresh/only-export-components -- Router config + RouteWrapper component must coexist */
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy } from 'react';
-import Layout from './components/Layout';
+import Layout from './components/layout/Layout';
 import Home from './pages/Home';
+import { RouteErrorBoundary } from './components/shared/RouteErrorBoundary';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 
 // Lazy Components
 const Guides = lazy(() => import('./pages/Guides'));
@@ -19,17 +22,28 @@ const ProtocolPage = lazy(() => import('./pages/ProtocolPage'));
 const AIModels = lazy(() => import('./pages/AIModels'));
 const Grokopedia = lazy(() => import('./pages/Grokopedia'));
 const GrokopediaArticle = lazy(() => import('./pages/GrokopediaArticle'));
-const DevDashboard = lazy(() => import('./components/clawdBot/DevDashboard'));
+const DevDashboard = lazy(() => import('./components/features/clawdBot/DevDashboard'));
 
 // Loaders
 import { homeLoader, articleLoader } from './loaders';
 
-import SuspenseWrapper from './components/SuspenseWrapper';
+import SuspenseWrapper from './components/layout/SuspenseWrapper';
+
+/**
+ * Wrapper component that combines SuspenseWrapper with ErrorBoundary
+ * for consistent error handling across all routes
+ */
+const RouteWrapper = ({ children }) => (
+    <ErrorBoundary>
+        <SuspenseWrapper>{children}</SuspenseWrapper>
+    </ErrorBoundary>
+);
 
 export const router = createBrowserRouter([
     {
         path: "/",
         element: <Layout />,
+        errorElement: <RouteErrorBoundary />,
         children: [
             {
                 index: true,
@@ -42,11 +56,11 @@ export const router = createBrowserRouter([
             },
             {
                 path: "map",
-                element: <SuspenseWrapper><Map /></SuspenseWrapper>
+                element: <RouteWrapper><Map /></RouteWrapper>
             },
             {
                 path: "library",
-                element: <SuspenseWrapper><Library /></SuspenseWrapper>
+                element: <RouteWrapper><Library /></RouteWrapper>
             },
             {
                 path: "resources",
@@ -54,52 +68,52 @@ export const router = createBrowserRouter([
             },
             {
                 path: "browse",
-                element: <SuspenseWrapper><ContentBrowser /></SuspenseWrapper>
+                element: <RouteWrapper><ContentBrowser /></RouteWrapper>
             },
             {
                 path: "ai",
-                element: <SuspenseWrapper><AIChat /></SuspenseWrapper>
+                element: <RouteWrapper><AIChat /></RouteWrapper>
             },
             {
                 path: "ai-models",
-                element: <SuspenseWrapper><AIModels /></SuspenseWrapper>
+                element: <RouteWrapper><AIModels /></RouteWrapper>
             },
             {
                 path: "article/:slug",
-                element: <SuspenseWrapper><ArticleView /></SuspenseWrapper>,
+                element: <RouteWrapper><ArticleView /></RouteWrapper>,
                 loader: articleLoader
             },
             {
                 path: "health",
-                element: <SuspenseWrapper><Health /></SuspenseWrapper>
+                element: <RouteWrapper><Health /></RouteWrapper>
             },
             {
                 path: "triage/*",
-                element: <SuspenseWrapper><TriagePage /></SuspenseWrapper>
+                element: <RouteWrapper><TriagePage /></RouteWrapper>
             },
             {
                 path: "survival",
-                element: <SuspenseWrapper><Survival /></SuspenseWrapper>
+                element: <RouteWrapper><Survival /></RouteWrapper>
             },
             {
                 path: "law",
-                element: <SuspenseWrapper><Law /></SuspenseWrapper>
+                element: <RouteWrapper><Law /></RouteWrapper>
             },
             {
                 path: "protocol/:scenarioId",
-                element: <SuspenseWrapper><ProtocolPage /></SuspenseWrapper>
+                element: <RouteWrapper><ProtocolPage /></RouteWrapper>
             },
             {
                 path: "grokopedia",
-                element: <SuspenseWrapper><Grokopedia /></SuspenseWrapper>
+                element: <RouteWrapper><Grokopedia /></RouteWrapper>
             },
             {
                 path: "grokopedia/article/:articleId",
-                element: <SuspenseWrapper><GrokopediaArticle /></SuspenseWrapper>
+                element: <RouteWrapper><GrokopediaArticle /></RouteWrapper>
             },
             {
                 path: "dev",
-                element: <SuspenseWrapper><DevDashboard /></SuspenseWrapper>
+                element: <RouteWrapper><DevDashboard /></RouteWrapper>
             }
         ]
     }

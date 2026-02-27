@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Context + hooks coexist intentionally */
 /**
  * ThemeContext - Platform-Aware Theme Provider
  * 
@@ -24,8 +25,8 @@ const ThemeContext = createContext({
   isAndroid: false,
   animationsEnabled: true,
   reducedMotion: false,
-  setTheme: () => {},
-  toggleTheme: () => {},
+  setTheme: () => { },
+  toggleTheme: () => { },
   getCategoryColor: () => ({}),
   getPlatformClass: () => '',
   getAnimationConfig: () => ({}),
@@ -145,7 +146,7 @@ export function ThemeProvider({ children }) {
 
       // Set data-platform attribute on html element
       document.documentElement.setAttribute('data-platform', platformName);
-      
+
       log.info('Platform detected', { platform: platformName, native, ios, android });
     };
 
@@ -162,6 +163,7 @@ export function ThemeProvider({ children }) {
 
     // Check for reduced motion preference
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReducedMotion(motionQuery.matches);
     setAnimationsEnabled(!motionQuery.matches);
 
@@ -183,6 +185,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setThemeState(savedTheme);
     } else {
       // Default to dark mode (emergency app aesthetic)
@@ -279,7 +282,7 @@ export function useCategoryColor(category) {
 export function useAnimationConfig() {
   const { getAnimationConfig, animationsEnabled } = useTheme();
   const config = getAnimationConfig();
-  
+
   return {
     ...config,
     enabled: animationsEnabled,

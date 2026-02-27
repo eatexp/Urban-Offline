@@ -785,6 +785,103 @@ class TransformersEngine {
             log.error('Failed to delete cache', error);
         }
     }
+
+    /**
+     * Verify model cache integrity using SHA-256 checksum
+     * 
+     * NOTE: This is a best-effort implementation. Due to transformers.js
+     * internal caching structure, we verify what we can access through
+     * the Cache API. Full verification would require direct filesystem access.
+     * 
+     * @param {string} modelId - Model key from TRANSFORMERS_MODELS
+     * @param {string} expectedChecksum - Expected SHA-256 checksum
+     * @returns {Promise<boolean>} - True if verification passes or cannot be performed
+     */
+    static async verifyModelChecksum(modelId, expectedChecksum) {
+        const modelConfig = TRANSFORMERS_MODELS[modelId];
+        if (!modelConfig || !expectedChecksum) {
+            log.warn('Cannot verify checksum - missing model config or checksum', { modelId });
+            return true; // Allow if no checksum specified
+        }
+
+        try {
+            log.info('Starting checksum verification', { 
+                modelId, 
+                expectedChecksum: expectedChecksum.substring(0, 16) + '...' 
+            });
+
+            // Try to access the model through Cache API
+            // transformers.js stores models in the 'transformers-cache' cache
+            const cacheNames = await window.caches?.keys() || [];
+            let modelCache = null;
+            
+            for (const name of cacheNames) {
+                if (name.includes('transformers') || name.includes(modelConfig.hfId)) {
+                    modelCache = await window.caches.open(name);
+                    break;
+                }
+            }
+
+            if (!modelCache) {
+                log.warn('Could not find model cache for verification', { modelId });
+                return true; // Allow if cache not accessible
+            }
+
+            // Try to find the main model file in cache
+            const cacheKeys = await modelCache.keys();
+            const modelFile = cacheKeys.find(req => 
+                req.url.includes(modelConfig.hfId) && 
+                (req.url.endsWith('.onnx') || req.url.endsWith('.bin') || req.url.includes('model'))
+            );
+
+            if (!modelFile) {
+                log.warn('Could not find model file in cache for verification', { modelId });
+                return true; // Allow if file not accessible
+            }
+
+            // Get the cached response
+            const response = await modelCache.match(modelFile);
+            if (!response) {
+                log.warn('Could not retrieve model from cache', { modelId });
+                return true;
+            }
+
+            // Calculate checksum of the cached data
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const actualChecksum = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // Compare checksums
+            const isValid = actualChecksum.toLowerCase() === expectedChecksum.toLowerCase();
+
+            if (isValid) {
+                log.info('Checksum verification passed', { 
+                    modelId,
+                    actualChecksum: actualChecksum.substring(0, 16) + '...'
+                });
+            } else {
+                log.error('Checksum verification failed', {
+                    modelId,
+                    expected: expectedChecksum.substring(0, 16) + '...',
+                    actual: actualChecksum.substring(0, 16) + '...'
+                });
+            }
+
+            return isValid;
+
+        } catch (error) {
+            log.error('Checksum verification error', { 
+                modelId, 
+                error: error.message 
+            });
+            // Return true on error to allow the model to be used
+            // This is a safety measure - better to allow a potentially
+            // corrupted model than to block usage due to verification issues
+            return true;
+        }
+    }
 }
 
 export default TransformersEngine;

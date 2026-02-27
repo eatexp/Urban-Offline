@@ -1,0 +1,130 @@
+﻿
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\HighStakesDeleteModal.jsx
+  107:9  warning  The 'handleConfirm' function makes the dependencies of useEffect Hook (at line 156) change on every render. To fix this, wrap the definition of 'handleConfirm' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\RouteErrorBoundary.jsx
+  183:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\bridge\DatasetAIBridge.jsx
+  320:45  warning  'i' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\chat\DatasetSettingsModal.jsx
+  73:9  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  71 |     // Sync local state with props
+  72 |     useEffect(() => {
+> 73 |         setLocalEnabled(new Set(enabledDatasets.map(d => d.id)));
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  74 |     }, [enabledDatasets, isOpen]);
+  75 |
+  76 |     if (!isOpen) return null;  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\library\ZimImportManagerEnhanced.jsx
+  82:8  warning  React Hook useCallback has a missing dependency: 'handleImport'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\context\AppProvider.jsx
+  10:14  warning  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file  react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\contexts\AIGeneratingContext.jsx
+  19:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\contexts\ThemeContext.jsx
+  165:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  163 |     // Check for reduced motion preference
+  164 |     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+> 165 |     setReducedMotion(motionQuery.matches);
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  166 |     setAnimationsEnabled(!motionQuery.matches);
+  167 |
+  168 |     const handleMotionChange = (e) => {  react-hooks/set-state-in-effect
+  186:7   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  184 |     const savedTheme = localStorage.getItem('theme');
+  185 |     if (savedTheme) {
+> 186 |       setThemeState(savedTheme);
+      |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  187 |     } else {
+  188 |       // Default to dark mode (emergency app aesthetic)
+  189 |       setThemeState('dark');                                                 react-hooks/set-state-in-effect
+  260:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-refresh/only-export-components
+  271:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-refresh/only-export-components
+  279:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\hooks\useChatSession.js
+  62:8  warning  React Hook useCallback has a missing dependency: 'switchSession'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\hooks\useModelMarketplace.js
+   69:8   warning  React Hook useEffect has a missing dependency: 'refreshModels'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  149:54  warning  'progress' is defined but never used. Allowed unused args must match /^_/u                                        no-unused-vars
+  149:64  warning  'status' is defined but never used. Allowed unused args must match /^_/u                                          no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\AIChat.jsx
+  69:27  warning  'setShowSettings' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\pages\GrokopediaArticle.jsx
+   24:10  warning  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u           no-unused-vars
+  197:11  warning  'scaleX' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\router.jsx
+  35:7  warning  Fast refresh only works when a file only exports components. Move your component(s) to a separate file  react-refresh/only-export-components
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\ai\AIModelManager.js
+  628:18  warning  'error' is defined but never used. Allowed unused caught errors must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\ai\AISystemInstructions.js
+   13:7  warning  'log' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+  624:9  warning  'userPreferences' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\ai\DeviceCapabilityProfiler.js
+  15:26  warning  'isIOSNative' is defined but never used. Allowed unused vars must match /^[A-Z_]/u      no-unused-vars
+  15:39  warning  'isAndroidNative' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\grokopedia\Integration_Content_Grokopedia.test.js
+  8:48  warning  'afterEach' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\services\grokopedia\ZimContentService.js
+  213:26  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  no-unused-vars
+  512:26  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\utils\component-template.js
+  35:8  warning  'componentProps' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\utils\errorRecovery.js
+   16:10  warning  'isNativeMobile' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  566:33  warning  'error' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+  566:40  warning  'context' is defined but never used. Allowed unused args must match /^_/u              no-unused-vars
+  581:33  warning  'error' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+  581:40  warning  'context' is defined but never used. Allowed unused args must match /^_/u              no-unused-vars
+  594:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u           no-unused-vars
+  602:28  warning  'error' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+  602:35  warning  'context' is defined but never used. Allowed unused args must match /^_/u              no-unused-vars
+  608:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u           no-unused-vars
+  616:33  warning  'error' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+  616:40  warning  'context' is defined but never used. Allowed unused args must match /^_/u              no-unused-vars
+  622:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u           no-unused-vars
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\utils\platformParity.js
+   78:20  warning  'isAndroid' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u   no-unused-vars
+  124:13  warning  'deviceInfo' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+Ô£û 43 problems (0 errors, 43 warnings)
+

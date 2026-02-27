@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import GrokopediaEnhanced from '../components/GrokopediaEnhanced';
+import GrokopediaEnhanced from '../components/features/grokopedia/GrokopediaEnhanced';
 
 const Grokopedia = () => {
     return <GrokopediaEnhanced />;

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Scale, BookOpen, Gavel, Shield, ChevronRight, Search, Loader2 } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { db } from '../services/db';
-import AskAIChip from '../components/AskAIChip';
+import AskAIChip from '../components/shared/AskAIChip';
 
 const Law = () => {
     const legalStories = TriageRouter.getStoriesByCategory('legal');

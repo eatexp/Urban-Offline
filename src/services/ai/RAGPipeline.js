@@ -751,11 +751,25 @@ Response:`;
                 };
             });
 
+            const totalTokensEstimate = chunks.reduce((sum, c) => sum + Math.ceil(c.length / 4), 0);
+
             emit('context', {
                 chunks,
                 scores: chunks.map(c => c.score),
-                totalTokensEstimate: chunks.reduce((sum, c) => sum + Math.ceil(c.length / 4), 0)
+                totalTokensEstimate
             }, 100);
+
+            // Emit context update event for DatasetAIBridge
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('rag-context-update', {
+                    detail: {
+                        tokensUsed: totalTokensEstimate,
+                        maxTokens: AI_CONFIG.generation.maxTokens || 2048,
+                        chunks: chunks.length,
+                        timestamp: Date.now()
+                    }
+                }));
+            }
 
             // Check if AI model is available
             const modelLoaded = AIModelManager.isModelLoaded();

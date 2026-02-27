@@ -226,6 +226,210 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 ---
 
+## 6. Offline-First Architecture (NEW)
+
+**Expertise Domain:** Building apps that work without network connectivity
+
+**Capabilities:**
+- Cache strategies (Cache-First, Network-Falling-Back-to-Cache, Stale-While-Revalidate)
+- Sync queues for offline mutations
+- Conflict resolution for concurrent edits
+- Service Worker lifecycle management
+- Background sync and periodic sync APIs
+- Data persistence patterns for offline state
+
+**Key APIs & Patterns:**
+```javascript
+// Service Worker cache strategy
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
+});
+
+// Offline mutation queue
+class SyncQueue {
+  async add(mutation) {
+    await db.add('syncQueue', {
+      ...mutation,
+      timestamp: Date.now(),
+      retries: 0
+    });
+    if (navigator.onLine) this.process();
+  }
+  
+  async process() {
+    const pending = await db.getAll('syncQueue');
+    for (const item of pending) {
+      try {
+        await api.sync(item);
+        await db.delete('syncQueue', item.id);
+      } catch (e) {
+        await this.retry(item);
+      }
+    }
+  }
+}
+```
+
+**Conflict Resolution:**
+```javascript
+// Last-write-wins with versioning
+function resolveConflict(local, remote) {
+  if (local.version > remote.version) return local;
+  if (remote.version > local.version) return remote;
+  // Versions equal: merge or prompt user
+  return mergeObjects(local, remote);
+}
+```
+
+**Apply To:**
+- `public/sw.js` - Service Worker
+- `src/services/SyncQueue.js` - Offline mutations
+- `src/hooks/useNetworkStatus.js` - Connectivity detection
+- `src/services/db.js` - Local data layer
+
+**Troubleshooting:**
+- Stale content → Implement background sync
+- Sync conflicts → Use versioning + timestamps
+- Cache too large → LRU eviction with size quotas
+
+---
+
+## 7. Capacitor Plugin Integration (NEW)
+
+**Expertise Domain:** Bridging native device capabilities to JavaScript
+
+**Capabilities:**
+- Custom plugin development for missing native features
+- Plugin configuration and permission handling
+- Native-to-JS event communication
+- Plugin fallback strategies for web/PWA
+- iOS/Android plugin parity verification
+
+**Key APIs & Patterns:**
+```javascript
+// Plugin with fallback
+export async function getNativeFeature() {
+  if (Capacitor.isNativePlatform()) {
+    const { NativeFeature } = await import('@capacitor/native-feature');
+    return NativeFeature.getValue();
+  }
+  // Web fallback
+  return localStorage.getItem('feature');
+}
+
+// Native event listeners
+import { App } from '@capacitor/app';
+
+App.addListener('appStateChange', ({ isActive }) => {
+  if (!isActive) saveState();
+});
+
+// Permission handling
+import { Camera } from '@capacitor/camera';
+
+async function checkPermission() {
+  const status = await Camera.checkPermissions();
+  if (status.camera !== 'granted') {
+    const result = await Camera.requestPermissions();
+    return result.camera === 'granted';
+  }
+  return true;
+}
+```
+
+**Plugin Development Structure:**
+```
+src/
+├── plugins/
+│   └── CustomPlugin/
+│       ├── index.ts          # TypeScript interface
+│       ├── web.ts            # Web implementation
+│       └── native.ts         # Native bridge
+```
+
+**Apply To:**
+- Custom plugins in `src/plugins/`
+- Permission handling in `src/services/permissions/`
+- Native feature wrappers
+
+**Troubleshooting:**
+- Plugin not found → Check `capacitor.config.json` registration
+- Permission denied → Add to `AndroidManifest.xml` / `Info.plist`
+- Web fallback not working → Check feature detection logic
+
+---
+
+## 8. PWA-Capacitor Hybrid (NEW)
+
+**Expertise Domain:** Managing web and native mobile as single codebase
+
+**Capabilities:**
+- Shared codebase strategies
+- Conditional native-only features
+- Deeplink handling (web vs native)
+- Storage synchronization between web and native layers
+- Service Worker + Capacitor coexistence
+- Build configuration for dual deployment
+
+**Key APIs & Patterns:**
+```javascript
+// Platform-aware imports
+const storage = Capacitor.isNativePlatform()
+  ? await import('./NativeStorage')
+  : await import('./WebStorage');
+
+// Feature flags by platform
+const FEATURES = {
+  offlineMaps: true,
+  aiInference: true,
+  nativeHaptics: Capacitor.isNativePlatform(),
+  pushNotifications: Capacitor.isNativePlatform()
+};
+
+// Deeplink handling
+const setupDeeplinks = () => {
+  if (Capacitor.isNativePlatform()) {
+    App.addListener('appUrlOpen', (event) => {
+      const slug = event.url.split('.app/').pop();
+      router.push(`/${slug}`);
+    });
+  } else {
+    // Web: use standard URL routing
+    window.addEventListener('popstate', handleRoute);
+  }
+};
+```
+
+**Build Configuration:**
+```javascript
+// vite.config.js - different builds
+export default defineConfig(({ mode }) => ({
+  build: {
+    outDir: mode === 'native' ? 'dist-native' : 'dist-web',
+    rollupOptions: {
+      external: mode === 'web' ? ['@capacitor/*'] : []
+    }
+  }
+}));
+```
+
+**Apply To:**
+- `vite.config.js` - Build configuration
+- `capacitor.config.json` - Native settings
+- `src/utils/platform.js` - Platform detection
+- `src/App.jsx` - Platform initialization
+
+**Troubleshooting:**
+- Native code in web build → Use dynamic imports with platform checks
+- Service Worker conflicts → Exclude Capacitor routes from SW
+- Deeplinks not working → Verify URL scheme registration
+
+---
+
 ## Quick Reference: When to Apply Each Skill
 
 | Task | Primary Skill | Secondary Skills |
@@ -236,3 +440,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 | Design emergency flow | Emergency UX | Ink.js narrative |
 | Optimize performance | Offline Storage | Transformers.js AI |
 | Fix cross-platform bug | Capacitor Native | Platform Detection |
+| Offline sync issues | Offline-First Architecture | Sync Queue |
+| Custom native plugin | Capacitor Plugin Integration | Native Bridge |
+| Web/Native parity | PWA-Capacitor Hybrid | Platform Detection |

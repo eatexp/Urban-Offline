@@ -1,6 +1,6 @@
 import { RouterProvider } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 import { AIGeneratingProvider } from './contexts/AIGeneratingContext';
 import { router } from './router';
 import { isNativeMobile } from './utils/platform';

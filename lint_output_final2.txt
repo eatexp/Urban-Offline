@@ -1,0 +1,55 @@
+﻿
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\HighStakesDeleteModal.jsx
+  87:9  warning  The 'clearTimers' function makes the dependencies of useCallback Hook (at line 105) change on every render. To fix this, wrap the definition of 'clearTimers' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\chat\DatasetSettingsModal.jsx
+  73:9  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  71 |     // Sync local state with props
+  72 |     useEffect(() => {
+> 73 |         setLocalEnabled(new Set(enabledDatasets.map(d => d.id)));
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  74 |     }, [enabledDatasets, isOpen]);
+  75 |
+  76 |     if (!isOpen) return null;  react-hooks/set-state-in-effect
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\contexts\ThemeContext.jsx
+  166:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  164 |     // Check for reduced motion preference
+  165 |     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+> 166 |     setReducedMotion(motionQuery.matches);
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  167 |     setAnimationsEnabled(!motionQuery.matches);
+  168 |
+  169 |     const handleMotionChange = (e) => {  react-hooks/set-state-in-effect
+  187:7  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  185 |     const savedTheme = localStorage.getItem('theme');
+  186 |     if (savedTheme) {
+> 187 |       setThemeState(savedTheme);
+      |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  188 |     } else {
+  189 |       // Default to dark mode (emergency app aesthetic)
+  190 |       setThemeState('dark');                                                 react-hooks/set-state-in-effect
+
+Ô£û 4 problems (0 errors, 4 warnings)
+

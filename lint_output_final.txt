@@ -1,0 +1,21 @@
+﻿
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\HighStakesDeleteModal.jsx
+  98:9  warning  The 'handleClose' function makes the dependencies of useCallback Hook (at line 122) change on every render. To fix this, wrap the definition of 'handleClose' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\components\library\ZimImportManagerEnhanced.jsx
+  93:11  warning  The 'handleImport' function makes the dependencies of useCallback Hook (at line 82) change on every render. To fix this, wrap the definition of 'handleImport' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\contexts\ThemeContext.jsx
+  168:5  error  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  193:7  error  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\hooks\useModelMarketplace.js
+   69:8   warning  React Hook useEffect has a missing dependency: 'refreshModels'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  108:72  error    'progress' is not defined                                                                                         no-undef
+
+C:\Users\ieatexp\Desktop\Projects\247s\Urban-Offline\src\utils\component-template.js
+  35:24  error  Unused eslint-disable directive (no problems were reported from 'no-unused-vars')
+
+Ô£û 7 problems (4 errors, 3 warnings)
+  3 errors and 0 warnings potentially fixable with the `--fix` option.
+

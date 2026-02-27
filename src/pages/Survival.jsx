@@ -7,9 +7,9 @@ import {
 } from 'lucide-react';
 import { TriageRouter } from '../services/triage/TriageRouter';
 import { db } from '../services/db';
-import ProtocolButton from '../components/ProtocolButton';
+import ProtocolButton from '../components/features/emergency/ProtocolButton';
 import { getAllScenarios } from '../services/ai/scenarioTemplates';
-import AskAIChip from '../components/AskAIChip';
+import AskAIChip from '../components/shared/AskAIChip';
 
 const Survival = () => {
     const survivalStories = TriageRouter.getStoriesByCategory('survival');

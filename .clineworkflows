@@ -192,3 +192,163 @@
 - All tests pass on physical devices
 - Feature parity between iOS and Android
 - Ready for app store submission
+
+---
+
+## 6. Mobile Dev Loop (NEW)
+
+**Trigger:** Fast iteration on native mobile features
+
+**Steps:**
+1. **Web Preview First** - Test on web for speed:
+   ```bash
+   npm run dev
+   # Open http://localhost:5173
+   # Verify UI layout and logic
+   ```
+2. **Type Check** - Catch errors early:
+   ```bash
+   npx tsc --noEmit
+   ```
+3. **Lint Check** - Ensure code quality:
+   ```bash
+   npm run lint
+   ```
+4. **Build Web Assets** - Generate production build:
+   ```bash
+   npm run build
+   ```
+5. **Sync to Native** - Copy to Capacitor projects:
+   ```bash
+   npx cap sync
+   ```
+6. **Test Android** - Use emulator (Windows-friendly):
+   ```bash
+   npx cap run android --target emulator-5554
+   # Or open Android Studio: npx cap open android
+   ```
+7. **Test iOS** - Use Expo Go (no Mac required):
+   ```bash
+   npx expo start
+   # Scan QR with Expo Go on iPhone
+   ```
+
+**Key Files:**
+- `capacitor.config.json`
+- `capacitor.config.dev.json`
+- `vite.config.js`
+
+**Success Criteria:**
+- Web preview validates UI before native testing
+- Android emulator runs without crashes
+- iOS Expo Go displays identical UI
+- Hot reload works on all platforms
+
+---
+
+## 7. AI Pipeline Test (NEW)
+
+**Trigger:** Validating AI system changes or new model integration
+
+**Steps:**
+1. **Download Test** - Test model download flow:
+   ```javascript
+   // Use AIModelManager to download smallest model
+   await AIModelManager.downloadModel('tinyllama-1.1b', {
+     onProgress: (p) => console.log(`${p.percentage}%`)
+   });
+   ```
+2. **Validate Checksum** - Ensure integrity:
+   ```javascript
+   const valid = await AIModelManager.validateChecksum(modelId);
+   ```
+3. **Load & Inference** - Test generation:
+   ```javascript
+   const engine = await AIModelManager.loadModel(modelId);
+   const response = await engine.generate('What is CPR?');
+   ```
+4. **Test RAG Pipeline** - End-to-end with retrieval:
+   ```javascript
+   const rag = new RAGPipeline();
+   const result = await rag.generate('How to treat burns?');
+   // Verify result.includes citations
+   ```
+5. **Test Streaming** - Verify progressive responses:
+   ```javascript
+   for await (const token of engine.generateStream(prompt)) {
+     // UI should update per token
+   }
+   ```
+6. **Test Citations** - Verify source linking:
+   ```javascript
+   // Response should include [source: 1] format
+   // Citations should map to content chunks
+   ```
+7. **Fallback Test** - Verify graceful degradation:
+   ```javascript
+   // Unload all models
+   // Query should still return fallback template response
+   ```
+
+**Key Files:**
+- `src/services/ai/AIModelManager.js`
+- `src/services/ai/RAGPipeline.js`
+- `src/services/ai/TransformersEngine.js`
+
+**Success Criteria:**
+- Model downloads complete without corruption
+- Inference produces coherent responses
+- RAG retrieves relevant context
+- Citations link to correct sources
+- Fallback works when AI unavailable
+
+---
+
+## 8. Content Sync Pipeline (NEW)
+
+**Trigger:** Updating Wikipedia content or rebuilding content database
+
+**Steps:**
+1. **Fetch Content** - Download latest articles:
+   ```bash
+   npm run fetch-content
+   ```
+2. **Validate Content** - Check article quality:
+   ```bash
+   node scripts/validate-content.js
+   ```
+3. **Generate Embeddings** - Precompute for RAG:
+   ```bash
+   node scripts/generate-embeddings.js
+   ```
+4. **Generate Manifest** - Update content registry:
+   ```bash
+   npm run generate-manifest
+   ```
+5. **Build & Test** - Full integration test:
+   ```bash
+   npm run build
+   npm run preview
+   ```
+6. **Verify Search** - Test content discoverability:
+   - Search for "CPR" → Should return first aid content
+   - Search for "arrest rights" → Should return legal content
+   - Verify FTS5 index working on native
+7. **Bundle Size Check** - Ensure content.db isn't bloated:
+   ```bash
+   ls -lh public/assets/content.db
+   # Should be < 50MB
+   ```
+
+**Key Files:**
+- `scripts/fetch-content.js`
+- `scripts/validate-content.js`
+- `scripts/generate-embeddings.js`
+- `public/assets/content-manifest.json`
+
+**Success Criteria:**
+- Content fetch completes without errors
+- All articles validated for quality
+- Embeddings generated for RAG
+- Search returns relevant results
+- Bundle size within budget

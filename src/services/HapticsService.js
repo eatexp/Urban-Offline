@@ -19,25 +19,25 @@ const log = createLogger('HapticsService');
 const VIBRATION_PATTERNS = {
   // Selection: Short, precise
   selection: [0, 20],
-  
+
   // Light impact: Subtle feedback
   light: [0, 30],
-  
+
   // Medium impact: Standard feedback
   medium: [0, 50],
-  
+
   // Heavy impact: Emphasis
   heavy: [0, 80],
-  
+
   // Success: Positive confirmation
   success: [0, 50, 100, 50],
-  
+
   // Warning: Caution alert
   warning: [0, 100, 50, 100, 50, 100],
-  
+
   // Error: Negative feedback
   error: [0, 150, 50, 150],
-  
+
   // Emergency: Urgent attention
   emergency: [0, 200, 100, 200, 100, 200]
 };
@@ -79,28 +79,28 @@ export const HapticsService = {
       await Haptics.impact({ style: ImpactStyle.Light });
       this._hasNativeHaptics = true;
       this._isSupported = true;
-      
-      log.info('Haptics initialized', { 
+
+      log.info('Haptics initialized', {
         platform: isIOSNative() ? 'iOS' : 'Android',
-        native: true 
+        native: true
       });
-      
+
       return true;
-    } catch (error) {
+    } catch (_error) {
       // Fall back to vibration API
       if ('vibrate' in navigator) {
         this._hasNativeHaptics = false;
         this._isSupported = true;
-        
-        log.info('Haptics initialized', { 
+
+        log.info('Haptics initialized', {
           platform: isIOSNative() ? 'iOS' : 'Android',
           native: false,
           fallback: 'vibration'
         });
-        
+
         return true;
       }
-      
+
       log.debug('Haptics not supported');
       this._isSupported = false;
       return false;

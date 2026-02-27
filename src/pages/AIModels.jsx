@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import ModelMarketplaceEnhanced from '../components/ModelMarketplaceEnhanced';
+import ModelMarketplaceEnhanced from '../components/features/marketplace/ModelMarketplaceEnhanced';
 
 const AIModels = () => {
     return (

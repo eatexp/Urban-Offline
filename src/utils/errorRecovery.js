@@ -13,7 +13,7 @@
  */
 
 import { createLogger } from './logger';
-import { isNativeMobile } from './platform';
+// isNativeMobile available: import { isNativeMobile } from './platform';
 
 const log = createLogger('ErrorRecovery');
 
@@ -35,8 +35,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: true,
                 handler: async () => {
                     // Navigate to storage management
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/settings/storage' } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/settings/storage' }
                     }));
                 }
             },
@@ -53,8 +53,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Delete Large AI Models',
                 primary: false,
                 handler: async () => {
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/ai-models', params: { filter: 'installed' } } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/ai-models', params: { filter: 'installed' } }
                     }));
                 }
             }
@@ -74,8 +74,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Try Smaller Model',
                 primary: true,
                 handler: async () => {
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/ai-models', params: { filter: 'fast' } } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/ai-models', params: { filter: 'fast' } }
                     }));
                 }
             },
@@ -85,8 +85,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: false,
                 handler: async (context) => {
                     if (context?.modelId) {
-                        window.dispatchEvent(new CustomEvent('redownload-model', { 
-                            detail: { modelId: context.modelId } 
+                        window.dispatchEvent(new CustomEvent('redownload-model', {
+                            detail: { modelId: context.modelId }
                         }));
                     }
                 }
@@ -96,8 +96,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Use Offline Content',
                 primary: false,
                 handler: async () => {
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/grokopedia' } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/grokopedia' }
                     }));
                 }
             }
@@ -117,8 +117,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: true,
                 handler: async (context) => {
                     if (context?.modelId) {
-                        window.dispatchEvent(new CustomEvent('resume-download', { 
-                            detail: { modelId: context.modelId } 
+                        window.dispatchEvent(new CustomEvent('resume-download', {
+                            detail: { modelId: context.modelId }
                         }));
                     }
                 }
@@ -129,8 +129,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: false,
                 handler: async (context) => {
                     if (context?.modelId) {
-                        window.dispatchEvent(new CustomEvent('restart-download', { 
-                            detail: { modelId: context.modelId } 
+                        window.dispatchEvent(new CustomEvent('restart-download', {
+                            detail: { modelId: context.modelId }
                         }));
                     }
                 }
@@ -167,8 +167,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Browse Offline Content',
                 primary: false,
                 handler: async () => {
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/library' } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/library' }
                     }));
                 }
             },
@@ -222,8 +222,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Browse Library',
                 primary: true,
                 handler: async () => {
-                    window.dispatchEvent(new CustomEvent('navigate', { 
-                        detail: { path: '/library' } 
+                    window.dispatchEvent(new CustomEvent('navigate', {
+                        detail: { path: '/library' }
                     }));
                 }
             },
@@ -259,8 +259,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: true,
                 handler: async (context) => {
                     if (context?.packId) {
-                        window.dispatchEvent(new CustomEvent('reimport-pack', { 
-                            detail: { packId: context.packId } 
+                        window.dispatchEvent(new CustomEvent('reimport-pack', {
+                            detail: { packId: context.packId }
                         }));
                     }
                 }
@@ -271,8 +271,8 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 primary: false,
                 handler: async (context) => {
                     if (context?.packId) {
-                        window.dispatchEvent(new CustomEvent('delete-pack', { 
-                            detail: { packId: context.packId } 
+                        window.dispatchEvent(new CustomEvent('delete-pack', {
+                            detail: { packId: context.packId }
                         }));
                     }
                 }
@@ -293,13 +293,15 @@ export const ERROR_RECOVERY_STRATEGIES = {
                 label: 'Open Settings',
                 primary: true,
                 handler: async () => {
-                    if (isNativeMobile()) {
-                        const { NativeSettings } = await import('@capacitor/native-settings');
-                        await NativeSettings.open({
-                            optionAndroid: 'application-details',
-                            optionIOS: 'app'
-                        });
-                    }
+                    // TODO: Implement native settings opening using a valid plugin
+                    // if (isNativeMobile()) {
+                    //     const { NativeSettings } = await import('@capacitor/native-settings');
+                    //     await NativeSettings.open({
+                    //         optionAndroid: 'application-details',
+                    //         optionIOS: 'app'
+                    //     });
+                    // }
+                    log.info('Opening settings not yet implemented');
                 }
             },
             {
@@ -422,56 +424,56 @@ export class ErrorRecovery {
         const errorMessage = error.message || '';
 
         // Check for specific error types
-        if (errorName === 'QuotaExceededError' || 
-            errorMessage.includes('quota') || 
+        if (errorName === 'QuotaExceededError' ||
+            errorMessage.includes('quota') ||
             errorMessage.includes('storage')) {
             return 'QuotaExceededError';
         }
 
-        if (errorName === 'NetworkError' || 
-            errorMessage.includes('network') || 
+        if (errorName === 'NetworkError' ||
+            errorMessage.includes('network') ||
             errorMessage.includes('fetch') ||
             errorMessage.includes('offline')) {
             return 'NetworkError';
         }
 
-        if (errorName === 'TimeoutError' || 
+        if (errorName === 'TimeoutError' ||
             errorMessage.includes('timeout') ||
             errorMessage.includes('timed out')) {
             return 'TimeoutError';
         }
 
-        if (errorMessage.includes('model') && 
+        if (errorMessage.includes('model') &&
             (errorMessage.includes('load') || errorMessage.includes('initialize'))) {
             return 'ModelLoadError';
         }
 
-        if (errorMessage.includes('download') && 
+        if (errorMessage.includes('download') &&
             errorMessage.includes('model')) {
             return 'ModelDownloadError';
         }
 
-        if (errorMessage.includes('permission') || 
+        if (errorMessage.includes('permission') ||
             errorMessage.includes('denied')) {
             return 'PermissionDeniedError';
         }
 
-        if (errorMessage.includes('battery') && 
+        if (errorMessage.includes('battery') &&
             errorMessage.includes('low')) {
             return 'BatteryCriticalError';
         }
 
-        if (errorMessage.includes('thermal') || 
+        if (errorMessage.includes('thermal') ||
             errorMessage.includes('throttle')) {
             return 'ThermalThrottlingError';
         }
 
-        if (errorMessage.includes('zim') || 
+        if (errorMessage.includes('zim') ||
             errorMessage.includes('content pack')) {
             return 'ZimReadError';
         }
 
-        if (errorMessage.includes('not found') || 
+        if (errorMessage.includes('not found') ||
             errorMessage.includes('404')) {
             return 'ContentNotFoundError';
         }
@@ -561,7 +563,7 @@ export class ErrorRecovery {
     /**
      * Handle network-related recovery
      */
-    async handleNetworkRecovery(error, context) {
+    async handleNetworkRecovery(_error, _context) {
         // Check if we're actually offline
         if (!navigator.onLine) {
             // Already offline, can't recover
@@ -576,7 +578,7 @@ export class ErrorRecovery {
     /**
      * Handle storage-related recovery
      */
-    async handleStorageRecovery(error, context) {
+    async handleStorageRecovery(_error, _context) {
         // Try to clear some cache
         try {
             if ('caches' in window) {
@@ -589,7 +591,7 @@ export class ErrorRecovery {
                 }
             }
             return true;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }
@@ -597,13 +599,13 @@ export class ErrorRecovery {
     /**
      * Handle AI-related recovery
      */
-    async handleAIRecovery(error, context) {
+    async handleAIRecovery(_error, _context) {
         // Unload current model to free memory
         try {
             const { AIModelManager } = await import('../services/ai/AIModelManager');
             await AIModelManager.unloadModel();
             return true;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }
@@ -611,13 +613,13 @@ export class ErrorRecovery {
     /**
      * Handle content-related recovery
      */
-    async handleContentRecovery(error, context) {
+    async handleContentRecovery(_error, _context) {
         // Try to reload content index
         try {
             const { ZimContentService } = await import('../services/grokopedia/ZimContentService');
             await ZimContentService.rebuildIndex();
             return true;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }
@@ -635,7 +637,7 @@ export class ErrorRecovery {
         };
 
         this.errorHistory.unshift(entry);
-        
+
         // Trim history
         if (this.errorHistory.length > this.maxHistorySize) {
             this.errorHistory = this.errorHistory.slice(0, this.maxHistorySize);
@@ -649,7 +651,7 @@ export class ErrorRecovery {
      */
     getErrorStats() {
         const stats = {};
-        
+
         for (const entry of this.errorHistory) {
             stats[entry.errorType] = (stats[entry.errorType] || 0) + 1;
         }
@@ -703,10 +705,10 @@ export const useErrorRecovery = () => {
 
     const handleError = async (error, context = {}) => {
         const strategy = recovery.getRecoveryStrategy(error, context);
-        
+
         // Try automatic recovery first
         const autoResult = await recovery.attemptRecovery(error, context);
-        
+
         if (autoResult.success) {
             return {
                 recovered: true,

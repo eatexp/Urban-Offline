@@ -1,0 +1,690 @@
+/**
+ * DatasetAIBridge.css — Visual styling for the AI-Dataset bridge
+ *
+ * Features:
+ * - Matrix-style routing visualization
+ * - Animated connection lines
+ * - Pulsing AI hub during generation
+ * - Color-coded dataset nodes
+ *
+ * Compliance: Design tokens, reduced motion support
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * BRIDGE CONTAINER
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.bridge-bridge {
+    --bridge-gap: var(--space-4);
+    --node-height: 64px;
+
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
+}
+
+.bridge-bridge--compact {
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+
+.bridge-bridge__header {
+    margin-bottom: var(--space-5);
+    text-align: center;
+}
+
+.bridge-bridge__title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.bridge-bridge__subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * MATRIX LAYOUT — Three columns: Datasets | Connections | AI
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.bridge-bridge__matrix {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-4);
+    align-items: center;
+    min-height: 300px;
+}
+
+/* ── Datasets Column ──────────────────────────────────────────────── */
+
+.bridge-bridge__datasets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.bridge-bridge__column-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.bridge-bridge__nodes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ── Dataset Node ─────────────────────────────────────────────────── */
+
+.bridge-node {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    transition: all var(--duration-fast) ease;
+    height: var(--node-height);
+}
+
+.bridge-node--active {
+    background: var(--node-bg);
+    border-color: var(--node-color);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--node-color) 10%, transparent);
+}
+
+.bridge-node--disabled {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+}
+
+.bridge-node__icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bridge-node__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bridge-node__name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bridge-node__status {
+    font-size: 0.625rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bridge-node__pulse {
+    animation: bridgePulse 1.5s ease-in-out infinite;
+    color: var(--node-color);
+}
+
+.bridge-node__indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-text-disabled);
+    flex-shrink: 0;
+    transition: all var(--duration-fast) ease;
+}
+
+.bridge-node__indicator--on {
+    background: var(--node-color);
+    box-shadow: 0 0 8px var(--node-color);
+}
+
+/* ── Connections Column ───────────────────────────────────────────── */
+
+.bridge-bridge__connections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 40px;
+    height: 100%;
+    justify-content: space-around;
+    padding: calc(var(--node-height) / 2) 0;
+}
+
+.bridge-line {
+    flex: 1;
+    width: 100%;
+    min-height: 40px;
+}
+
+.bridge-line line {
+    transition: all var(--duration-normal) ease;
+}
+
+.bridge-line--pulse {
+    animation: lineDash 1s linear infinite;
+}
+
+.bridge-line--packet {
+    animation: packetFlow 1s linear infinite;
+}
+
+/* ── AI Hub Column ────────────────────────────────────────────────── */
+
+.bridge-bridge__ai {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bridge-hub {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    transition: all var(--duration-normal) ease;
+}
+
+.bridge-hub--active {
+    background: linear-gradient(135deg,
+            color-mix(in srgb, var(--color-primary-500) 10%, var(--color-bg-secondary)),
+            var(--color-bg-secondary));
+    border-color: var(--color-primary-500);
+    box-shadow:
+        0 0 40px color-mix(in srgb, var(--color-primary-500) 15%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.bridge-hub--generating {
+    animation: hubGlow 2s ease-in-out infinite;
+}
+
+.bridge-hub__core {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bridge-hub__ripple {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bridge-hub__ripple span {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary-500);
+    opacity: 0;
+    animation: ripple 2s ease-out infinite;
+}
+
+.bridge-hub__ripple span:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.bridge-hub__ripple span:nth-child(3) {
+    animation-delay: 1s;
+}
+
+.bridge-hub__icon {
+    color: var(--color-text-muted);
+    z-index: 1;
+}
+
+.bridge-hub--active .bridge-hub__icon {
+    color: var(--color-primary-400);
+}
+
+.bridge-hub__sparkle {
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+.bridge-hub__info {
+    text-align: center;
+}
+
+.bridge-hub__name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-2);
+}
+
+.bridge-hub__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.bridge-hub__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.625rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bridge-hub__badge--ready {
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success);
+}
+
+.bridge-hub__badge--semantic {
+    background: color-mix(in srgb, var(--color-primary-500) 15%, transparent);
+    color: var(--color-primary-400);
+}
+
+.bridge-hub__badge--generating {
+    background: color-mix(in srgb, var(--color-accent-amber) 15%, transparent);
+    color: var(--color-accent-amber);
+}
+
+.bridge-hub__spin {
+    animation: spin 1s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * DETAILS SECTION
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.bridge-bridge__details {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border-primary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ── Context Meter ────────────────────────────────────────────────── */
+
+.bridge-meter {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.bridge-meter__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.bridge-meter__value {
+    margin-left: auto;
+    color: var(--color-text-muted);
+}
+
+.bridge-meter__bar {
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.bridge-meter__fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--duration-normal) ease;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.bridge-meter__tokens {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: right;
+}
+
+/* ── Quick Toggles ────────────────────────────────────────────────── */
+
+.bridge-bridge__toggles h4 {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-3);
+}
+
+.bridge-bridge__toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-2);
+}
+
+.bridge-bridge__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) ease;
+    position: relative;
+}
+
+.bridge-bridge__toggle:hover {
+    border-color: var(--toggle-color);
+    background: var(--toggle-bg);
+}
+
+.bridge-bridge__toggle--on {
+    border-color: var(--toggle-color);
+    background: var(--toggle-bg);
+}
+
+.bridge-bridge__toggle span {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.bridge-bridge__toggle-indicator {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-disabled);
+    transition: all var(--duration-fast) ease;
+}
+
+.bridge-bridge__toggle--on .bridge-bridge__toggle-indicator {
+    background: var(--toggle-color);
+    box-shadow: 0 0 6px var(--toggle-color);
+}
+
+/* ── Info Note ────────────────────────────────────────────────────── */
+
+.bridge-bridge__info {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-primary);
+}
+
+.bridge-bridge__info p {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    line-height: var(--line-height-normal);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * COMPACT VARIANT
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.bridge-bridge--compact .bridge-bridge__status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.bridge-bridge__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text-disabled);
+}
+
+.bridge-bridge__dot--active {
+    background: var(--color-success);
+    box-shadow: 0 0 8px var(--color-success);
+}
+
+.bridge-bridge__badge {
+    margin-left: auto;
+    padding: 2px 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    font-size: 0.625rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * ANIMATIONS
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes bridgePulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+@keyframes lineDash {
+    to { stroke-dashoffset: -12; }
+}
+
+@keyframes packetFlow {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(80px); opacity: 0; }
+}
+
+@keyframes hubGlow {
+    0%, 100% { box-shadow: 0 0 40px color-mix(in srgb, var(--color-primary-500) 15%, transparent); }
+    50% { box-shadow: 0 0 60px color-mix(in srgb, var(--color-primary-500) 25%, transparent); }
+}
+
+@keyframes ripple {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes sparkle {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * RESPONSIVE
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+    .bridge-bridge__matrix {
+        grid-template-columns: 1fr auto 1fr;
+        gap: var(--space-2);
+        min-height: 240px;
+    }
+
+    .bridge-bridge__connections {
+        width: 24px;
+        padding: calc(var(--node-height) / 3) 0;
+    }
+
+    .bridge-line {
+        min-height: 30px;
+    }
+
+    .bridge-node {
+        padding: var(--space-2);
+        height: 56px;
+    }
+
+    .bridge-node__icon-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+
+    .bridge-node__name {
+        font-size: 11px;
+    }
+
+    .bridge-node__status {
+        font-size: 10px;
+    }
+
+    .bridge-bridge__toggle-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .bridge-hub {
+        padding: var(--space-4);
+    }
+
+    .bridge-hub__core {
+        width: 60px;
+        height: 60px;
+    }
+
+    .bridge-hub__name {
+        font-size: 14px;
+    }
+
+    .bridge-hub__badge {
+        padding: 3px 8px;
+        font-size: 9px;
+    }
+}
+
+/* Very small screens - stack vertically with animated connections */
+@media (max-width: 400px) {
+    .bridge-bridge__matrix {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+        min-height: auto;
+    }
+
+    /* Transform connections to horizontal */
+    .bridge-bridge__connections {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 40px;
+        justify-content: center;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+    }
+
+    .bridge-line {
+        flex: 0 0 40px;
+        height: 2px;
+        min-height: auto;
+        transform: rotate(0deg);
+    }
+
+    .bridge-line line {
+        stroke-width: 2;
+    }
+
+    /* Horizontal packet animation */
+    .bridge-line--packet {
+        animation: packetFlowHorizontal 1s linear infinite;
+    }
+
+    @keyframes packetFlowHorizontal {
+        0% { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(40px); opacity: 0; }
+    }
+
+    /* Reduce node height for compact view */
+    .bridge-node {
+        height: 48px;
+        padding: var(--space-2);
+    }
+
+    .bridge-node__icon-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Compact hub */
+    .bridge-hub {
+        padding: var(--space-4);
+    }
+
+    .bridge-hub__core {
+        width: 60px;
+        height: 60px;
+    }
+
+    .bridge-hub__icon svg {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * REDUCED MOTION
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+    .bridge-node__pulse,
+    .bridge-line--pulse,
+    .bridge-line--packet,
+    .bridge-hub--generating,
+    .bridge-hub__ripple span,
+    .bridge-hub__sparkle,
+    .bridge-hub__spin {
+        animation: none !important;
+    }
+
+    .bridge-hub__ripple {
+        display: none;
+    }
+}

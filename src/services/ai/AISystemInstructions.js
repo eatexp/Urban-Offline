@@ -8,9 +8,7 @@
  *             .clinerules §5 - Triage flows use Ink.js (AI never for life-safety decisions)
  */
 
-import { createLogger } from '../../utils/logger';
-
-const log = createLogger('AISystemInstructions');
+// Logger available for debugging: import { createLogger } from '../../utils/logger';
 
 // =============================================================================
 // CORE IDENTITY & PERSONALITY
@@ -19,7 +17,7 @@ const log = createLogger('AISystemInstructions');
 export const AI_IDENTITY = {
     name: 'Urban Assistant',
     role: 'Emergency Preparedness & Survival Guide',
-    
+
     /**
      * Core personality traits that shape all responses
      */
@@ -64,9 +62,9 @@ export const AI_IDENTITY = {
 export const DATASET_INTENT_MAP = {
     // Medical emergencies
     medical: {
-        keywords: ['injury', 'bleeding', 'burn', 'fracture', 'cpr', 'heart attack', 
-                   'stroke', 'choking', 'poisoning', 'allergic reaction', 'unconscious',
-                   'breathing', 'wound', 'shock', 'seizure', 'overdose'],
+        keywords: ['injury', 'bleeding', 'burn', 'fracture', 'cpr', 'heart attack',
+            'stroke', 'choking', 'poisoning', 'allergic reaction', 'unconscious',
+            'breathing', 'wound', 'shock', 'seizure', 'overdose'],
         primaryDataset: 'health',
         secondaryDatasets: ['survival'], // For wilderness medical
         priority: 1,
@@ -77,10 +75,10 @@ export const DATASET_INTENT_MAP = {
 
     // Survival scenarios
     survival: {
-        keywords: ['shelter', 'water', 'fire', 'food', 'navigation', 'lost', 
-                   'wilderness', 'camping', 'disaster', 'evacuation', 'flood',
-                   'storm', 'earthquake', 'power outage', 'cold', 'hypothermia',
-                   'heat', 'dehydration', 'rescue', 'signal'],
+        keywords: ['shelter', 'water', 'fire', 'food', 'navigation', 'lost',
+            'wilderness', 'camping', 'disaster', 'evacuation', 'flood',
+            'storm', 'earthquake', 'power outage', 'cold', 'hypothermia',
+            'heat', 'dehydration', 'rescue', 'signal'],
         primaryDataset: 'survival',
         secondaryDatasets: ['health'], // For survival-related injuries
         priority: 2,
@@ -91,9 +89,9 @@ export const DATASET_INTENT_MAP = {
 
     // Legal rights
     legal: {
-        keywords: ['arrest', 'police', 'rights', 'pace', 'warrant', 'search', 
-                   'detention', 'lawyer', 'solicitor', 'questioning', 'silence',
-                   'protest', 'assembly', 'stop and search', 'terrorism'],
+        keywords: ['arrest', 'police', 'rights', 'pace', 'warrant', 'search',
+            'detention', 'lawyer', 'solicitor', 'questioning', 'silence',
+            'protest', 'assembly', 'stop and search', 'terrorism'],
         primaryDataset: 'law',
         secondaryDatasets: [],
         priority: 3,
@@ -105,7 +103,7 @@ export const DATASET_INTENT_MAP = {
     // General reference
     general: {
         keywords: ['how to', 'what is', 'guide', 'explain', 'information',
-                   'prepare', 'plan', 'checklist', 'kit', 'supplies'],
+            'prepare', 'plan', 'checklist', 'kit', 'supplies'],
         primaryDataset: 'guides',
         secondaryDatasets: ['survival', 'health'],
         priority: 4,
@@ -121,7 +119,7 @@ export const DATASET_INTENT_MAP = {
 export function determineDatasetsForQuery(query, enabledDatasets = []) {
     const normalizedQuery = query.toLowerCase();
     const scores = {};
-    
+
     // Score each intent category
     for (const [intent, config] of Object.entries(DATASET_INTENT_MAP)) {
         let score = 0;
@@ -136,11 +134,11 @@ export function determineDatasetsForQuery(query, enabledDatasets = []) {
         }
         scores[intent] = score;
     }
-    
+
     // Find highest scoring intent
     const bestIntent = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])[0];
-    
+
     if (!bestIntent || bestIntent[1] === 0) {
         // No clear intent - query all enabled datasets
         return {
@@ -149,18 +147,18 @@ export function determineDatasetsForQuery(query, enabledDatasets = []) {
             confidence: 0.3
         };
     }
-    
+
     const intentConfig = DATASET_INTENT_MAP[bestIntent[0]];
     const allRelevantDatasets = [intentConfig.primaryDataset, ...intentConfig.secondaryDatasets];
-    
+
     // Filter to only enabled datasets
-    const availableDatasets = enabledDatasets.filter(d => 
+    const availableDatasets = enabledDatasets.filter(d =>
         allRelevantDatasets.includes(d.id)
     );
-    
+
     // If primary dataset not enabled, warn user
     const primaryEnabled = availableDatasets.some(d => d.id === intentConfig.primaryDataset);
-    
+
     return {
         datasets: availableDatasets.length > 0 ? availableDatasets : enabledDatasets,
         intent: bestIntent[0],
@@ -272,30 +270,30 @@ export const CONTEXT_RULES = {
  */
 export function buildContextModifiers(contextState) {
     const modifiers = [];
-    
+
     // Battery modifier
     if (contextState.battery?.level < 0.1) {
         modifiers.push('CRITICAL: Battery is critically low. Provide the shortest possible answer.');
     } else if (contextState.battery?.level < 0.2) {
         modifiers.push('Battery is low. Be concise.');
     }
-    
+
     // Survival mode modifier
     if (contextState.survivalMode) {
         modifiers.push('SURVIVAL MODE: Use only essential information. No speculative content.');
     }
-    
+
     // Location modifier
     if (contextState.location) {
         modifiers.push(`Location context: ${contextState.location.country || 'Unknown region'}. Reference local emergency numbers when relevant.`);
     }
-    
+
     // Time modifier
     const hour = new Date().getHours();
     if (hour >= 22 || hour < 6) {
         modifiers.push('It is nighttime. Consider visibility and safety in darkness.');
     }
-    
+
     return modifiers.join('\n');
 }
 
@@ -314,7 +312,7 @@ export const CITATION_FORMAT = {
         format: '[N]',
         example: 'CPR should be performed at 100-120 compressions per minute [1].'
     },
-    
+
     /**
      * Full citation format for source list
      */
@@ -322,7 +320,7 @@ export const CITATION_FORMAT = {
         format: '[N] Title (Category)',
         example: '[1] Adult CPR Guidelines (Medical)'
     },
-    
+
     /**
      * Grokopedia link format
      */
@@ -331,7 +329,7 @@ export const CITATION_FORMAT = {
         linkText: 'View full article in Grokopedia',
         action: 'navigate-to-grokopedia'
     },
-    
+
     /**
      * Map reference format
      */
@@ -437,20 +435,20 @@ export function requiresEmergencyEscalation(query, intent) {
         'active shooter', 'terrorist', 'bomb', 'explosion', 'fire',
         'trapped', 'drowning', 'electrocution', 'poisoning', 'overdose'
     ];
-    
+
     const normalizedQuery = query.toLowerCase();
-    
+
     // Check for emergency keywords
-    const hasEmergencyKeyword = emergencyKeywords.some(kw => 
+    const hasEmergencyKeyword = emergencyKeywords.some(kw =>
         normalizedQuery.includes(kw)
     );
-    
+
     // Check if medical intent with severity indicators
-    const medicalEmergency = intent === 'medical' && 
-        (normalizedQuery.includes('not') || 
-         normalizedQuery.includes('severe') ||
-         normalizedQuery.includes('unconscious'));
-    
+    const medicalEmergency = intent === 'medical' &&
+        (normalizedQuery.includes('not') ||
+            normalizedQuery.includes('severe') ||
+            normalizedQuery.includes('unconscious'));
+
     return hasEmergencyKeyword || medicalEmergency;
 }
 
@@ -517,28 +515,28 @@ export const FEATURE_TRIGGERS = {
 export function detectFeatureTriggers(query, response) {
     const triggers = [];
     const normalizedQuery = query.toLowerCase();
-    
+
     // Map trigger
-    if (FEATURE_TRIGGERS.mapSuggestions.patterns.some(p => 
+    if (FEATURE_TRIGGERS.mapSuggestions.patterns.some(p =>
         normalizedQuery.includes(p)
     )) {
         triggers.push('map');
     }
-    
+
     // Grokopedia trigger
-    if (FEATURE_TRIGGERS.grokopediaSuggestions.patterns.some(p => 
+    if (FEATURE_TRIGGERS.grokopediaSuggestions.patterns.some(p =>
         normalizedQuery.includes(p) || response.length > 300
     )) {
         triggers.push('grokopedia');
     }
-    
+
     // Triage trigger
-    if (FEATURE_TRIGGERS.triageSuggestions.patterns.some(p => 
+    if (FEATURE_TRIGGERS.triageSuggestions.patterns.some(p =>
         normalizedQuery.includes(p)
     )) {
         triggers.push('triage');
     }
-    
+
     return triggers;
 }
 
@@ -621,7 +619,7 @@ export function buildSystemPrompt(context) {
         category = 'general',
         enabledDatasets = [],
         contextState = {},
-        userPreferences = {}
+        userPreferences: _userPreferences = {}
     } = context;
 
     // Base identity
@@ -653,7 +651,7 @@ ${AI_IDENTITY.boundaries.join('\n')}
         survival: SYSTEM_PROMPTS?.survival || AI_IDENTITY.greetings.survival,
         legal: SYSTEM_PROMPTS?.legal || AI_IDENTITY.greetings.legal
     };
-    
+
     if (categoryInstructions[category]) {
         prompt += `\n${categoryInstructions[category]}\n`;
     }

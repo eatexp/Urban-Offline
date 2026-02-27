@@ -37,54 +37,60 @@ export const AIModelManager = {
     _abortControllers: new Map(),
     _isInitialized: false,
 
-/**
- * Initialize the model manager
- */
-async init() {
-    if (this._isInitialized) {
-        return this._capabilities;
-    }
-
-    try {
-        // Check device capabilities (includes Windows native detection)
-        // Platform detection is now fail-safe - defaults to web mode on errors
-        const capabilities = await checkAICapability();
-
-        log.info('Device capabilities', {
-            webGPU: capabilities.webGPU,
-            wasmSIMD: capabilities.wasmSIMD,
-            aiAvailable: capabilities.aiAvailable,
-            isWindowsNative: capabilities.isWindowsNative,
-            recommendedModel: capabilities.recommendedModel?.name
-        });
-
-        // Windows Native mode detection
-        if (capabilities.isWindowsNative) {
-            log.info('AI Model Manager initializing in Windows native mode - AI unavailable');
-            // Windows native doesn't support transformers.js - will use fallback search mode
+    /**
+     * Initialize the model manager
+     */
+    async init() {
+        if (this._isInitialized) {
+            return this._capabilities;
         }
 
-        // Get the TransformersEngine singleton
-        // Note: Even on Windows native, we initialize the engine for potential future support
-        this._engine = TransformersEngine.getInstance();
-        this._capabilities = capabilities;
-        this._isInitialized = true;
+        try {
+            // Check device capabilities (includes Windows native detection)
+            // Platform detection is now fail-safe - defaults to web mode on errors
+            const capabilities = await checkAICapability();
 
-        return capabilities;
-    } catch (error) {
-        log.error('Init failed', error);
-        // Graceful fallback: return minimal capabilities that disable AI features
-        this._capabilities = {
-            aiAvailable: false,
-            isWindowsNative: false,
-            webGPU: false,
-            wasmSIMD: false,
-            reason: 'Initialization error: ' + error.message
-        };
-        this._isInitialized = true;
-        return this._capabilities;
-    }
-},
+            log.info('Device capabilities', {
+                webGPU: capabilities.webGPU,
+                wasmSIMD: capabilities.wasmSIMD,
+                aiAvailable: capabilities.aiAvailable,
+                isWindowsNative: capabilities.isWindowsNative,
+                recommendedModel: capabilities.recommendedModel?.name
+            });
+
+            // Windows Native mode detection
+            if (capabilities.isWindowsNative) {
+                log.info('AI Model Manager initializing in Windows native mode - AI unavailable');
+                // Windows native doesn't support transformers.js - will use fallback search mode
+                this._capabilities = {
+                    ...this._capabilities,
+                    aiAvailable: false,
+                    windowsNative: true,
+                    message: 'AI models require WebAssembly which is not available in the Windows desktop app. Please use the web version at urbanoffline.app for AI features.'
+                };
+            }
+
+            // Get the TransformersEngine singleton
+            // Note: Even on Windows native, we initialize the engine for potential future support
+            this._engine = TransformersEngine.getInstance();
+            this._capabilities = capabilities;
+            this._isInitialized = true;
+
+            return capabilities;
+        } catch (error) {
+            log.error('Init failed', error);
+            // Graceful fallback: return minimal capabilities that disable AI features
+            this._capabilities = {
+                aiAvailable: false,
+                isWindowsNative: false,
+                webGPU: false,
+                wasmSIMD: false,
+                reason: 'Initialization error: ' + error.message
+            };
+            this._isInitialized = true;
+            return this._capabilities;
+        }
+    },
 
     /**
      * Get all available models with install status
@@ -316,17 +322,36 @@ async init() {
             if (!skipChecksum && model.checksum) {
                 if (onProgress) onProgress(95, 'Verifying download integrity...');
 
-                // Note: Transformers.js handles caching internally, so we verify the cached files
-                // In a full implementation, we'd need to access the cached files directly
-                // For now, we log that checksum verification would happen here
+                try {
+                    // Verify the downloaded model cache using TransformersEngine
+                    const isValid = await TransformersEngine.verifyModelChecksum(modelId, model.checksum);
 
-                log.info('Checksum verification would occur here', {
-                    modelId,
-                    expectedChecksum: model.checksum
-                });
+                    if (!isValid) {
+                        log.error('Checksum verification failed', {
+                            modelId,
+                            expectedChecksum: model.checksum
+                        });
 
-                // TODO: Implement direct cache file access for checksum verification
-                // This requires accessing the internal transformers.js cache structure
+                        // Delete checkpoint to force fresh download on retry
+                        await DownloadCheckpoint.deleteCheckpoint(model.modelUrl);
+
+                        return {
+                            success: false,
+                            error: 'Download verification failed. The file may be corrupted.',
+                            checksumFailed: true,
+                            canResume: true
+                        };
+                    }
+
+                    log.info('Checksum verification passed', { modelId });
+                } catch (checksumError) {
+                    log.warn('Checksum verification error', {
+                        modelId,
+                        error: checksumError.message
+                    });
+                    // Continue even if verification fails - model may still work
+                    // But mark as not verified
+                }
             }
 
             // Save model metadata
@@ -541,7 +566,68 @@ async init() {
             throw new Error('No model loaded. Call loadModel() first.');
         }
 
+        // Check battery level before generating (per .clinerules §2)
+        const batteryStatus = await this.checkBatteryStatus();
+        if (!batteryStatus.canRunAI) {
+            throw new Error(`AI disabled: ${batteryStatus.reason}`);
+        }
+
         return this._engine.chat(systemPrompt, userMessage, options);
+    },
+
+    /**
+     * Check battery status and determine if AI should be disabled
+     * @returns {Promise<{canRunAI: boolean, level: number, charging: boolean, reason?: string}>}
+     */
+    async checkBatteryStatus() {
+        try {
+            // Check if Battery API is available
+            if ('getBattery' in navigator) {
+                const battery = await navigator.getBattery();
+                const level = battery.level * 100; // Convert to percentage
+                const charging = battery.charging;
+
+                // Disable AI when battery < 20% and not charging (per .clinerules §2)
+                if (level < 20 && !charging) {
+                    log.warn('AI generation blocked - low battery', { level, charging });
+                    return {
+                        canRunAI: false,
+                        level,
+                        charging,
+                        reason: `Battery at ${Math.round(level)}%. Connect charger to use AI.`
+                    };
+                }
+
+                return { canRunAI: true, level, charging };
+            }
+
+            // Battery API not available - assume OK
+            return { canRunAI: true, level: 100, charging: true };
+        } catch (error) {
+            log.warn('Battery check failed', error);
+            // Fail open - allow AI if we can't check battery
+            return { canRunAI: true, level: 100, charging: true };
+        }
+    },
+
+    /**
+     * Get current battery status for UI display
+     * @returns {Promise<{level: number, charging: boolean, lowBattery: boolean}>}
+     */
+    async getBatteryStatus() {
+        try {
+            if ('getBattery' in navigator) {
+                const battery = await navigator.getBattery();
+                const level = battery.level * 100;
+                const charging = battery.charging;
+                const lowBattery = level < 20 && !charging;
+
+                return { level, charging, lowBattery };
+            }
+            return { level: 100, charging: true, lowBattery: false };
+        } catch (_error) {
+            return { level: 100, charging: true, lowBattery: false };
+        }
     },
 
     /**

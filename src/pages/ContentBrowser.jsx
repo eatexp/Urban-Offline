@@ -12,15 +12,104 @@ import { createLogger } from '../utils/logger';
 
 const log = createLogger('ContentBrowser');
 
-// Category icons with design system colors
-const CATEGORY_ICONS = {
-    'emergency': <Zap className="w-5 h-5" style={{ color: 'var(--color-danger)' }} />,
-    'first-aid': <Heart className="w-5 h-5" style={{ color: '#ec4899' }} />,
-    'trauma': <Flame className="w-5 h-5" style={{ color: 'var(--color-warning)' }} />,
-    'poisons': <AlertCircle className="w-5 h-5" style={{ color: 'var(--color-accent-purple)' }} />,
-    'cardiology': <Heart className="w-5 h-5" style={{ color: 'var(--color-danger)' }} />,
-    'respiratory': <Wind className="w-5 h-5" style={{ color: 'var(--color-info)' }} />,
-    'environmental': <Droplet className="w-5 h-5" style={{ color: '#06b6d4' }} />
+// Category styles with enhanced visual design
+const CATEGORY_STYLES = {
+    emergency: {
+        icon: Zap,
+        gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.05) 100%)',
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        shadowColor: 'rgba(239, 68, 68, 0.15)',
+        iconColor: '#ef4444',
+        iconBg: 'rgba(239, 68, 68, 0.15)',
+        textColor: '#fecaca',
+        badgeBg: 'rgba(239, 68, 68, 0.2)',
+        badgeText: '#fecaca',
+        glowColor: 'rgba(239, 68, 68, 0.3)'
+    },
+    'first-aid': {
+        icon: Heart,
+        gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(190, 24, 93, 0.05) 100%)',
+        borderColor: 'rgba(236, 72, 153, 0.3)',
+        shadowColor: 'rgba(236, 72, 153, 0.15)',
+        iconColor: '#ec4899',
+        iconBg: 'rgba(236, 72, 153, 0.15)',
+        textColor: '#fbcfe8',
+        badgeBg: 'rgba(236, 72, 153, 0.2)',
+        badgeText: '#fbcfe8',
+        glowColor: 'rgba(236, 72, 153, 0.3)'
+    },
+    trauma: {
+        icon: Flame,
+        gradient: 'linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(194, 65, 12, 0.05) 100%)',
+        borderColor: 'rgba(249, 115, 22, 0.3)',
+        shadowColor: 'rgba(249, 115, 22, 0.15)',
+        iconColor: '#f97316',
+        iconBg: 'rgba(249, 115, 22, 0.15)',
+        textColor: '#fed7aa',
+        badgeBg: 'rgba(249, 115, 22, 0.2)',
+        badgeText: '#fed7aa',
+        glowColor: 'rgba(249, 115, 22, 0.3)'
+    },
+    poisons: {
+        icon: AlertCircle,
+        gradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(109, 40, 217, 0.05) 100%)',
+        borderColor: 'rgba(139, 92, 246, 0.3)',
+        shadowColor: 'rgba(139, 92, 246, 0.15)',
+        iconColor: '#8b5cf6',
+        iconBg: 'rgba(139, 92, 246, 0.15)',
+        textColor: '#ddd6fe',
+        badgeBg: 'rgba(139, 92, 246, 0.2)',
+        badgeText: '#ddd6fe',
+        glowColor: 'rgba(139, 92, 246, 0.3)'
+    },
+    cardiology: {
+        icon: Heart,
+        gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.05) 100%)',
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        shadowColor: 'rgba(239, 68, 68, 0.15)',
+        iconColor: '#ef4444',
+        iconBg: 'rgba(239, 68, 68, 0.15)',
+        textColor: '#fecaca',
+        badgeBg: 'rgba(239, 68, 68, 0.2)',
+        badgeText: '#fecaca',
+        glowColor: 'rgba(239, 68, 68, 0.3)'
+    },
+    respiratory: {
+        icon: Wind,
+        gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%)',
+        borderColor: 'rgba(59, 130, 246, 0.3)',
+        shadowColor: 'rgba(59, 130, 246, 0.15)',
+        iconColor: '#3b82f6',
+        iconBg: 'rgba(59, 130, 246, 0.15)',
+        textColor: '#bfdbfe',
+        badgeBg: 'rgba(59, 130, 246, 0.2)',
+        badgeText: '#bfdbfe',
+        glowColor: 'rgba(59, 130, 246, 0.3)'
+    },
+    environmental: {
+        icon: Droplet,
+        gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(8, 145, 178, 0.05) 100%)',
+        borderColor: 'rgba(6, 182, 212, 0.3)',
+        shadowColor: 'rgba(6, 182, 212, 0.15)',
+        iconColor: '#06b6d4',
+        iconBg: 'rgba(6, 182, 212, 0.15)',
+        textColor: '#a5f3fc',
+        badgeBg: 'rgba(6, 182, 212, 0.2)',
+        badgeText: '#a5f3fc',
+        glowColor: 'rgba(6, 182, 212, 0.3)'
+    },
+    general: {
+        icon: BookOpen,
+        gradient: 'linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(71, 85, 105, 0.05) 100%)',
+        borderColor: 'rgba(100, 116, 139, 0.3)',
+        shadowColor: 'rgba(100, 116, 139, 0.15)',
+        iconColor: '#64748b',
+        iconBg: 'rgba(100, 116, 139, 0.15)',
+        textColor: '#cbd5e1',
+        badgeBg: 'rgba(100, 116, 139, 0.2)',
+        badgeText: '#cbd5e1',
+        glowColor: 'rgba(100, 116, 139, 0.3)'
+    }
 };
 
 const ContentBrowser = () => {
@@ -301,33 +390,81 @@ const ContentBrowser = () => {
 
             {/* Categories */}
             {!isLoading && !searchResults.length && !selectedCategory && isOnline && (
-                <section className="mb-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
-                    <h2 className="section-header mb-3">Categories</h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        {categories.map((cat, index) => (
-                            <button
-                                key={cat.id}
-                                onClick={() => handleCategorySelect(cat)}
-                                className="card flex items-center gap-3 p-4 text-left transition-all hover:shadow-lg animate-scale-in"
-                                style={{ animationDelay: `${150 + index * 50}ms` }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-500)'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--color-border-primary)'}
-                            >
-                                <div
-                                    className="p-2 rounded-lg"
-                                    style={{ background: 'var(--color-bg-tertiary)' }}
+                <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+                    <h2 className="section-header mb-4">Browse by Category</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        {categories.map((cat, index) => {
+                            const style = CATEGORY_STYLES[cat.id] || CATEGORY_STYLES.general;
+                            const Icon = style.icon;
+                            
+                            return (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => handleCategorySelect(cat)}
+                                    className="relative overflow-hidden rounded-2xl border text-left transition-all group"
+                                    style={{ 
+                                        animationDelay: `${150 + index * 50}ms`,
+                                        background: style.gradient,
+                                        borderColor: style.borderColor,
+                                        boxShadow: `0 4px 20px ${style.shadowColor}`
+                                    }}
                                 >
-                                    {CATEGORY_ICONS[cat.id] || <BookOpen className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />}
-                                </div>
-                                <span
-                                    className="font-medium flex-1"
-                                    style={{ color: 'var(--color-text-primary)' }}
-                                >
-                                    {cat.name}
-                                </span>
-                                <ChevronRight className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-                            </button>
-                        ))}
+                                    {/* Decorative background icon */}
+                                    <div 
+                                        className="absolute top-0 right-0 p-6 opacity-10 transform rotate-12 translate-x-2 -translate-y-2 group-hover:opacity-20 group-hover:rotate-6 transition-all duration-500"
+                                    >
+                                        <Icon className="w-20 h-20" style={{ color: style.iconColor }} />
+                                    </div>
+                                    
+                                    <div className="relative p-5">
+                                        {/* Icon container */}
+                                        <div 
+                                            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                                            style={{ 
+                                                background: style.iconBg,
+                                                border: `1px solid ${style.borderColor}`
+                                            }}
+                                        >
+                                            <Icon className="w-6 h-6" style={{ color: style.iconColor }} />
+                                        </div>
+                                        
+                                        {/* Content */}
+                                        <h3 
+                                            className="font-bold text-lg mb-1"
+                                            style={{ color: style.textColor }}
+                                        >
+                                            {cat.name}
+                                        </h3>
+                                        
+                                        {/* Article count badge */}
+                                        <div className="flex items-center justify-between mt-3">
+                                            <span 
+                                                className="text-xs font-medium px-2.5 py-1 rounded-full"
+                                                style={{ 
+                                                    background: style.badgeBg,
+                                                    color: style.badgeText
+                                                }}
+                                            >
+                                                {cat.articleCount || '100+'} articles
+                                            </span>
+                                            
+                                            <ChevronRight 
+                                                className="w-5 h-5 transition-transform group-hover:translate-x-1" 
+                                                style={{ color: style.iconColor }}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Hover glow effect */}
+                                    <div 
+                                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                        style={{
+                                            background: `radial-gradient(circle at 50% 0%, ${style.glowColor}, transparent 70%)`
+                                        }}
+                                    />
+                                </button>
+                            );
+                        })}
                     </div>
                 </section>
             )}

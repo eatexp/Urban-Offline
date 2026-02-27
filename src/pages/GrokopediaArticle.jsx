@@ -21,6 +21,7 @@ import {
     ChevronRight, Clock, MoreHorizontal, X, Check,
     Brain, ExternalLink
 } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars -- motion is used in JSX as motion.header, motion.div, etc.
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { ZimContentService } from '../services/grokopedia/ZimContentService';
 import { HapticsService, ImpactStyle } from '../services/HapticsService';
@@ -74,7 +75,7 @@ const SelectionToolbar = ({ selection, onAskAI, onClose, position }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            style={{ 
+            style={{
                 top: position.top - 60,
                 left: Math.min(position.left, window.innerWidth - 200)
             }}
@@ -109,7 +110,7 @@ const ArticleContent = ({ content, onLinkClick }) => {
         ?.replace(/on\w+="[^"]*"/g, '') || '';
 
     return (
-        <div 
+        <div
             className="prose prose-invert prose-lg max-w-none
                 prose-headings:text-white prose-headings:font-bold
                 prose-h1:text-3xl prose-h1:mb-6 prose-h1:mt-8
@@ -178,7 +179,7 @@ const GrokopediaArticle = () => {
     const { articleId } = useParams();
     const navigate = useNavigate();
     const articleRef = useRef(null);
-    
+
     // State
     const [article, setArticle] = useState(null);
     const [relatedArticles, setRelatedArticles] = useState([]);
@@ -187,13 +188,14 @@ const GrokopediaArticle = () => {
     const [error, setError] = useState(null);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [showAIButton, setShowAIButton] = useState(false);
-    
+
     // Text selection state
     const [selectedText, setSelectedText] = useState(null);
     const [selectionPosition, setSelectionPosition] = useState({ top: 0, left: 0 });
 
-    // Scroll progress
+    // Scroll progress (used for spring animation on reading progress)
     const { scrollYProgress } = useScroll();
+    // eslint-disable-next-line no-unused-vars -- kept for future animated progress bar
     const scaleX = useSpring(scrollYProgress, {
         stiffness: 100,
         damping: 30,
@@ -205,29 +207,29 @@ const GrokopediaArticle = () => {
         const loadArticle = async () => {
             setLoading(true);
             setError(null);
-            
+
             try {
                 const data = await ZimContentService.getArticle(articleId);
                 if (!data) {
                     setError('Article not found');
                     return;
                 }
-                
+
                 setArticle(data);
-                
+
                 // Load related articles
                 const related = await ZimContentService.getRelatedArticles(articleId, 5);
                 setRelatedArticles(related);
-                
+
                 // Check bookmark status
                 const bookmarks = JSON.parse(localStorage.getItem('grokopedia_bookmarks') || '[]');
                 setIsBookmarked(bookmarks.includes(articleId));
-                
+
                 // Show AI button after delay
                 setTimeout(() => setShowAIButton(true), 1000);
-                
+
                 HapticsService.impact(ImpactStyle.Light);
-                
+
             } catch (err) {
                 log.error('Failed to load article', err);
                 setError('Failed to load article');
@@ -235,7 +237,7 @@ const GrokopediaArticle = () => {
                 setLoading(false);
             }
         };
-        
+
         loadArticle();
     }, [articleId]);
 
@@ -243,14 +245,14 @@ const GrokopediaArticle = () => {
     useEffect(() => {
         const handleScroll = () => {
             if (!articleRef.current) return;
-            
+
             const element = articleRef.current;
             const totalHeight = element.scrollHeight - element.clientHeight;
             const scrolled = element.scrollTop;
             const progress = Math.min(100, Math.max(0, (scrolled / totalHeight) * 100));
-            
+
             setReadingProgress(progress);
-            
+
             // Save progress every 10%
             if (Math.floor(progress) % 10 === 0) {
                 ZimContentService.updateReadingProgress(articleId, progress);
@@ -269,11 +271,11 @@ const GrokopediaArticle = () => {
         const handleSelection = () => {
             const selection = window.getSelection();
             const text = selection.toString().trim();
-            
+
             if (text.length > 0 && text.length < 500) {
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                
+
                 setSelectedText(text);
                 setSelectionPosition({
                     top: rect.top + window.scrollY,
@@ -291,7 +293,7 @@ const GrokopediaArticle = () => {
     // Toggle bookmark
     const toggleBookmark = useCallback(() => {
         const bookmarks = JSON.parse(localStorage.getItem('grokopedia_bookmarks') || '[]');
-        
+
         if (isBookmarked) {
             const updated = bookmarks.filter(id => id !== articleId);
             localStorage.setItem('grokopedia_bookmarks', JSON.stringify(updated));
@@ -314,7 +316,7 @@ const GrokopediaArticle = () => {
     const handleLinkClick = useCallback(async (href, text) => {
         // Try to find article by URL/title
         const linkedArticle = await ZimContentService.getArticleByUrl(text, article?.packId);
-        
+
         if (linkedArticle) {
             navigate(`/grokopedia/article/${linkedArticle.id}`);
         } else {
@@ -390,15 +392,14 @@ const GrokopediaArticle = () => {
                             {article?.title}
                         </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
                         <button
                             onClick={toggleBookmark}
-                            className={`p-2 rounded-xl transition-all ${
-                                isBookmarked 
-                                    ? 'bg-amber-500/20 text-amber-400' 
+                            className={`p-2 rounded-xl transition-all ${isBookmarked
+                                    ? 'bg-amber-500/20 text-amber-400'
                                     : 'hover:bg-white/5 text-slate-400'
-                            }`}
+                                }`}
                         >
                             {isBookmarked ? <Check size={20} /> : <Bookmark size={20} />}
                         </button>
@@ -428,7 +429,7 @@ const GrokopediaArticle = () => {
             </AnimatePresence>
 
             {/* Main Content */}
-            <main 
+            <main
                 ref={articleRef}
                 className="pt-24 pb-32 px-4 overflow-y-auto h-screen scroll-smooth"
             >
@@ -445,11 +446,11 @@ const GrokopediaArticle = () => {
                             <span>•</span>
                             <span>{article?.category || 'Article'}</span>
                         </div>
-                        
+
                         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
                             {article?.title}
                         </h1>
-                        
+
                         {article?.description && (
                             <p className="text-lg text-slate-400 leading-relaxed">
                                 {article.description}
@@ -463,14 +464,14 @@ const GrokopediaArticle = () => {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.1 }}
                     >
-                        <ArticleContent 
+                        <ArticleContent
                             content={article?.content}
                             onLinkClick={handleLinkClick}
                         />
                     </motion.article>
 
                     {/* Related Articles */}
-                    <RelatedArticles 
+                    <RelatedArticles
                         articles={relatedArticles}
                         onSelect={(id) => navigate(`/grokopedia/article/${id}`)}
                     />
@@ -492,7 +493,7 @@ const GrokopediaArticle = () => {
             </main>
 
             {/* AI Floating Button */}
-            <AIFloatingButton 
+            <AIFloatingButton
                 onClick={() => handleAskAI()}
                 isVisible={showAIButton && !selectedText}
             />

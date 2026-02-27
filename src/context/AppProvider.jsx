@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Context + Provider must coexist in this file */
 import React, { createContext, useEffect, useState } from 'react';
 import { initStorage } from '../services/db';
 import { SearchService } from '../services/SearchService';

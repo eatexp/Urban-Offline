@@ -88,3 +88,133 @@ Before marking complete:
 - Test with low storage (quota exceeded scenarios)
 - Test with low battery (AI disable behavior)
 - Run `npm run lint` with zero errors
+
+# --- ADDED CONTEXT: SOLO WINDOWS/EXPO PROTOCOL ---
+
+## The "Blind" Workflow Constraints
+Since I am on Windows targeting iOS (via Expo Go) and Android (Emulator), and you cannot see the screen:
+1.  **Visuals:** Always assume I am previewing on **Web** (`npx expo start --web`) first for speed. If UI is platform-specific, ask me for a **screenshot**. Do not guess pixel values.
+2.  **Debugging:**
+    - If the app crashes on Android, ask for **Logcat** text (`adb logcat *:E`).
+    - If the app crashes on iOS (Expo Go), ask for the **Metro bundler** error stack.
+    - Do not hallucinate fixes for native modules I cannot link on Windows.
+
+## The "Fidelity Ladder"
+When I ask for a feature, assume this execution order to save time:
+1.  **Logic First:** Write pure TS/Business logic.
+2.  **Test First:** Generate a Jest unit test to verify logic *before* touching UI.
+3.  **Web Preview:** Optimize layout for Web first.
+4.  **Native Polish:** Only after Web is perfect do we consider Android Emulator/iOS specific tweaks.
+
+## Interaction Style (High Leverage)
+- **Be Terse:** I am an expert. Do not explain basic React concepts.
+- **Be Skeptical:** If I suggest a complex architecture, challenge it with a simpler alternative (80/20 rule).
+- **Be Protective:** Warn me immediately if a package requires native linking (requires `npx expo run:ios`) as this breaks my Windows workflow.
+
+# --- MCP SERVER USAGE GUIDELINES ---
+
+## Available MCP Servers (USE WHEN BENEFICIAL)
+
+This project has several MCP servers configured. **USE THEM** when they provide value:
+
+### 1. Playwright MCP (@executeautomation/playwright-mcp-server)
+- **USE FOR:** Browser automation, E2E testing, web scraping, UI verification
+- **Commands:** `playwright_navigate`, `playwright_screenshot`, `playwright_click`, `playwright_fill`, `playwright_evaluate`
+- **When:** Testing web features, taking UI screenshots, automating browser interactions
+
+### 2. Puppeteer MCP (@modelcontextprotocol/server-puppeteer)
+- **USE FOR:** Headless browser operations, PDF generation, page manipulation
+- **Commands:** `puppeteer_navigate`, `puppeteer_screenshot`, `puppeteer_click`, `puppeteer_fill`
+- **When:** Similar to Playwright but prefer for simpler headless tasks
+
+### 3. Filesystem MCP (@modelcontextprotocol/server-filesystem)
+- **USE FOR:** File operations outside the project directory
+- **When:** Reading/writing to user documents, desktop, or other allowed paths (`c:\Users\ieatexp\Desktop\Projects\247s`)
+
+### 4. Context7 MCP (@upstash/context7-mcp)
+- **USE FOR:** Querying up-to-date library documentation
+- **Commands:** `resolve-library-id`, `query-docs`
+- **When:** Need accurate, current docs for React, Next.js, or other libraries (not hallucinated info)
+
+### 5. Sequential Thinking MCP (@modelcontextprotocol/server-sequentialthinking)
+- **USE FOR:** Complex problem-solving, multi-step reasoning
+- **When:** Breaking down complex architectural decisions or debugging tricky issues
+
+### 6. GitHub MCP (@modelcontextprotocol/server-github)
+- **USE FOR:** Repository operations, issues, PRs
+- **When:** Creating issues, searching repos, managing project boards
+
+### 7. Brave Search MCP (@modelcontextprotocol/server-brave-search)
+- **USE FOR:** Web search, local business search
+- **When:** Current information not in training data, recent events, or location-based queries
+
+### 8. Browser Tools MCP (@agentdeskai/browser-tools-mcp)
+- **USE FOR:** Browser console logs, network logs, audits
+- **Commands:** `getConsoleLogs`, `getConsoleErrors`, `runAccessibilityAudit`, `runPerformanceAudit`
+- **When:** Debugging browser issues, checking for console errors, auditing performance/accessibility
+
+### 9. Memory MCP (@modelcontextprotocol/server-memory)
+- **USE FOR:** Persistent knowledge graph storage
+- **When:** Storing entities, relations, observations across sessions
+
+## MCP Usage Rules
+- **DO NOT** avoid MCP tools - they extend capabilities beyond base training
+- **DO** verify MCP results are sensible (they can timeout or error)
+- **DO** prefer MCP servers over web search for structured data
+- **DO** use Playwright/Puppeteer for any browser-based verification instead of guessing
+- **DO** use Context7 for library documentation instead of relying on training data
+
+# --- ADDED CONTEXT: WINDOWS & EXPO CONSTRAINTS ---
+
+# ENVIRONMENT & STRATEGY
+- **OS:** Windows 11 (No Mac available).
+- **Target:** iOS (via Expo Go) & Android (via Emulator).
+- **Goal:** Speed & Maintainability for a Solo Dev.
+
+# THE "BLIND" PROTOCOL
+You cannot see the emulator. You must use the terminal to verify your work.
+1. **Before Editing:** Read relevant files to understand context.
+2. **After Editing:**
+   - Run `npx tsc` to catch type errors immediately.
+   - Run `npx eslint` to catch style errors.
+   - If logic is complex, create and run a Jest test to prove it works.
+3. **On Failure:**
+   - Auto-correct based on terminal output. Do not ask for permission to fix syntax errors.
+   - If a runtime crash occurs, ask me to paste the `adb logcat` or Metro logs.
+
+# CRITICAL RESTRICTIONS
+- **NO Native iOS Code:** Never suggest `pod install`, `cd ios`, or opening Xcode workspace.
+- **NO Android Studio GUI:** Do not suggest opening the IDE. Use CLI only (`adb`, `./gradlew`).
+- **NO "Ejecting":** Stay in the Expo Managed Workflow unless mathematically impossible.
+
+# COMMUNICATION
+- Do not announce what you are going to do. Just do it.
+- If you need a visual check, ask: "Please check the Web Preview and provide a screenshot if layout is wrong."
+
+---
+
+# UI/Preview Workflow Rules – Leverage Cursor's Built-in Browser
+
+When working on ANY task involving UI, UX, styling, Tailwind classes, shadcn/ui components, Framer Motion animations, responsiveness, dark/light mode toggles, accessibility visuals, hover/focus states, layout adjustments, or any visual/code change that affects appearance:
+
+1. Always prioritize real-time visual verification using Cursor's built-in browser (also called Simple Browser or Browser Tab/Pane).
+
+   - If the development server isn't running, explicitly remind the user or (if allowed and safe) run the appropriate command: usually `npm run dev`, `yarn dev`, `pnpm dev`, `bun dev` etc. — detect the package manager from package.json/lockfile.
+   - Once running, open the app in Cursor's built-in browser:
+     - Use Command Palette → "Simple Browser: Show" (or "Open Browser", "Browser Tab").
+     - Paste/navigate to the localhost URL shown in the terminal (e.g. http://localhost:3000).
+     - Cmd/Ctrl + click the localhost link in the terminal to auto-open it in the built-in browser if configured that way.
+
+2. Use the live preview constantly during iteration:
+   - After suggesting or applying ANY visual change, immediately reference/check the result in the built-in browser.
+   - Describe current appearance, mismatches, improvements needed, etc., based on the actual live view.
+   - If helpful for discussion/refinement, instruct the user: "Take a screenshot of [the component/area/hover state/etc.] in the built-in browser and share it here" — or describe what you see if you have visual context.
+   - For mobile/responsive checks: use browser dev tools (inspect element → toggle device toolbar) inside the built-in browser.
+
+3. In every relevant response or plan, include steps like:
+   - "First, ensure `npm run dev` is running → Open/Check the preview in Cursor's built-in browser at localhost:3000 → Verify the change visually → Suggest/refine based on live appearance."
+   - When user requests tweaks ("make this prettier", "fix spacing on mobile", "add smooth animation"), start with: "Checking current state in the built-in browser..." and base all suggestions on real observed visuals, not assumptions.
+
+4. Core principle: Never rely solely on code inspection or imagination for visual/styling feedback. Always verify live in Cursor's built-in browser for faster, more accurate, pixel-perfect UI work — this closes the feedback loop dramatically when using Claude Sonnet 4.6 + Cline.
+
+Enforce this behavior in ALL UI-related conversations. Do not skip visual verification steps.

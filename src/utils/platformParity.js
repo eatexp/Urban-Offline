@@ -30,7 +30,7 @@ export const PlatformParity = {
 
     const platform = Capacitor.getPlatform();
     const isNative = Capacitor.isNativePlatform();
-    
+
     let deviceInfo = null;
     let batteryInfo = null;
 
@@ -75,7 +75,7 @@ export const PlatformParity = {
    * Get platform-specific UI configurations
    */
   getUIConfig() {
-    const { isIOS, isAndroid } = this._platformInfo || {};
+    const { isIOS, isAndroid: _isAndroid } = this._platformInfo || {};
 
     return {
       // Touch feedback
@@ -121,8 +121,8 @@ export const PlatformParity = {
    * Get AI model recommendations based on platform
    */
   getAIConfig() {
-    const { deviceInfo, isIOS, isAndroid } = this._platformInfo || {};
-    
+    const { deviceInfo: _deviceInfo, isIOS, isAndroid } = this._platformInfo || {};
+
     // Base configuration
     const config = {
       enabled: true,
@@ -152,24 +152,24 @@ export const PlatformParity = {
    */
   isFeatureAvailable(feature) {
     const { isNative, isIOS, isAndroid } = this._platformInfo || {};
-    
+
     const features = {
       // Storage features
       'persistent-storage': isNative,
       'background-download': isNative,
-      
+
       // UI features
       'haptics': isNative,
       'status-bar-control': isNative,
-      
+
       // AI features
       'local-ai': true, // WebGL available on both
       'webgpu': typeof navigator !== 'undefined' && 'gpu' in navigator,
-      
+
       // Platform-specific
       'ios-specific': isIOS,
       'android-specific': isAndroid,
-      
+
       // Parity features (available on both)
       'share-sheet': isNative,
       'file-picker': isNative,
@@ -201,12 +201,12 @@ export const PlatformParity = {
    */
   getDeviceTier() {
     const { deviceInfo } = this._platformInfo || {};
-    
+
     if (!deviceInfo) return 'standard';
 
     // Memory-based tier detection
     const mem = deviceInfo.memUsed || 0;
-    
+
     if (mem > 6000) return 'advanced'; // 6GB+ RAM
     if (mem > 4000) return 'standard';  // 4GB+ RAM
     return 'essential';                 // <4GB RAM
@@ -217,20 +217,22 @@ export const PlatformParity = {
    */
   async requestPermissions(permissions) {
     const results = {};
-    
+
     for (const permission of permissions) {
       try {
         switch (permission) {
-          case 'storage':
+          case 'storage': {
             // Both platforms handle storage similarly
             results[permission] = true;
             break;
-          case 'notifications':
+          }
+          case 'notifications': {
             // Request notification permission
             const { LocalNotifications } = await import('@capacitor/local-notifications');
             const { display } = await LocalNotifications.requestPermissions();
             results[permission] = display === 'granted';
             break;
+          }
           default:
             results[permission] = true;
         }
