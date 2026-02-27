@@ -121,6 +121,7 @@ const DatasetSettingsModal = ({
                             </div>
                         </div>
                         <button
+                            aria-label="Close"
                             onClick={onClose}
                             className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors"
                         >
