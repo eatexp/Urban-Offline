@@ -1,0 +1,50 @@
+# Ignore directories
+node_modules/
+dist/
+build/
+.git/
+.android/
+ios/
+Obsidian/
+public/wasm/
+public/assets/
+CUsersieatexpDocumentsClineMCP*/
+
+# Ignore build artifacts and logs
+*.log
+*.txt
+*.md
+*.pdf
+*.json
+*.db
+*.db-*
+
+# Ignore test files
+*.test.js
+*.spec.js
+*.test.jsx
+*.spec.jsx
+test-*
+
+# Ignore configuration files
+.eslint*
+.prettier*
+.vscode/
+.husky/
+.tmp/
+.claude/
+.agent/
+
+# Ignore large binary files
+*.zip
+*.tar
+*.gz
+*.7z
+*.zim
+*.onnx
+*.wasm
+
+# Ignore platform-specific directories
+android/
+ios/
+capacitor.config.*.json

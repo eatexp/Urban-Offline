@@ -1,0 +1,18 @@
+rules:
+  - id: security-audit-inheritance
+    pattern: "security"
+    message: "Security audit rules enabled"
+    languages: [generic]
+    severity: INFO
+
+# Include security audit rules
+include:
+  - p/security-audit
+  - p/ci
+
+# Exclude stylistic rules
+exclude:
+  - p/style
+  - p/performance
+  - p/best-practices
+  - p/correctness
