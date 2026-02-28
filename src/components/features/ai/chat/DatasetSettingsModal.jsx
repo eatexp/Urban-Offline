@@ -12,8 +12,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Database, Check, Layers, Activity, Shield, Tent, Heart, Scale, BookOpen, MapPin } from 'lucide-react';
-import { getCategoryConfig } from '../../config/categories';
-import { createLogger } from '../../utils/logger';
+import { getCategoryConfig } from '../../../../config/categories';
+import { createLogger } from '../../../../utils/logger';
 
 // Logger for future debugging - currently unused but kept for consistency
 const _log = createLogger('DatasetSettingsModal');

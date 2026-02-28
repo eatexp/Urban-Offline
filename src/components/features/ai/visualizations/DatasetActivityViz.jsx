@@ -19,7 +19,7 @@ import {
     Zap, Search, Brain, ChevronRight, Sparkles,
     TrendingUp, Clock, BarChart3
 } from 'lucide-react';
-import { HapticsService } from '../../services/HapticsService';
+import { HapticsService } from '../../../../services/HapticsService';
 
 // Dataset configurations with colors
 const DATASET_CONFIG = {

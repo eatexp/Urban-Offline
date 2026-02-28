@@ -19,7 +19,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Send, Loader } from 'lucide-react';
-import { triggerHaptic } from '../utils/haptics';
+import { triggerHaptic } from '../../../utils/haptics';
 import './Composer.css';
 
 // Static constants outside component to prevent re-creation

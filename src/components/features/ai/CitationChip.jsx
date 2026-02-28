@@ -12,8 +12,8 @@
  */
 
 import React from 'react';
-import { getCategoryConfig } from '../config/categories';
-import { triggerHaptic } from '../utils/haptics';
+import { getCategoryConfig } from '../../../config/categories';
+import { triggerHaptic } from '../../../utils/haptics';
 
 const CitationChip = React.memo(({ source, onPreview }) => {
     // Use shared category configuration for consistent styling
