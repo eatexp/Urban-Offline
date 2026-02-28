@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Map as MapIcon, Crosshair, Navigation2, ExternalLink, Globe, Hospital, Train, Building, Landmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { MapCartridgeService } from '../../services/maps/MapCartridgeService';
-import { cartridgePOIQueryEngine } from '../../services/maps/CartridgePOIQueryEngine';
-import TactileSignatureEngine from '../../services/haptics/TactileSignatureEngine.js';
+import { MapCartridgeService } from '../../../../services/maps/MapCartridgeService';
+import { cartridgePOIQueryEngine } from '../../../../services/maps/CartridgePOIQueryEngine';
+import TactileSignatureEngine from '../../../../services/haptics/TactileSignatureEngine.js';
 
 // POI type icon mapping
 const POI_ICONS = {

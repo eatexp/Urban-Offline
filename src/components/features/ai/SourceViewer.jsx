@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, BookOpen, Share2, Type } from 'lucide-react';
 import dompurify from 'dompurify';
-import { db } from '../services/db';
-import '../styles/SourceViewer.css';
+import { db } from '../../../services/db';
+import '../../../styles/SourceViewer.css';
 
 /**
  * SourceViewer - "The Truth Layer"

@@ -282,7 +282,8 @@ export const useSafeArea = () => {
             };
         };
 
-        return updateSafeArea();
+        updateSafeArea();
+        return () => {};
     }, []);
 };
 

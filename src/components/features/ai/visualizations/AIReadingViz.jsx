@@ -19,7 +19,7 @@ import {
     Zap, BookOpen, Scale, Activity, ChevronRight,
     RotateCcw, CheckCircle2, Clock, Database
 } from 'lucide-react';
-import { HapticsService } from '../../services/HapticsService';
+import { HapticsService } from '../../../../services/HapticsService';
 
 // Stage configurations
 const STAGE_CONFIG = {

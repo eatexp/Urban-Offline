@@ -1,3 +1,5 @@
+import { NavLink } from 'react-router-dom';
+import { Home, AlertTriangle, Map, Library, Brain } from 'lucide-react';
 import { HapticsService } from '../../services/HapticsService';
 
 const Navbar = () => {
