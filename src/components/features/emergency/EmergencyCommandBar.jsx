@@ -12,8 +12,8 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Heart, Wind, Droplets, AlertTriangle, ChevronRight, X } from 'lucide-react';
-import { TriageRouter } from '../services/triage/TriageRouter';
-import { TRIAGE_STORIES } from '../config/intentPatterns';
+import { TriageRouter } from '../../../services/triage/TriageRouter';
+import { TRIAGE_STORIES } from '../../../config/intentPatterns';
 
 // TODO: [A11y] EMERGENCY_COMMAND_BAR_ACCESSIBILITY - IMPLEMENTED 2026-02-08
 // Added role="search", aria-live regions, and keyboard shortcut (Ctrl/Cmd+Shift+E)
