@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Book, Search, Library, Clock, ChevronRight, ArrowLeft, X
 } from 'lucide-react';
-import EmptyState from './EmptyState';
+import { EmptyState } from '../../index';
 import { ZimContentService } from '../services/grokopedia/ZimContentService';
 
 
