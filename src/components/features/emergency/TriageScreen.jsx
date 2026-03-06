@@ -213,6 +213,7 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                         style={{ color: 'var(--color-text-muted)' }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        aria-label="Back to previous screen"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -226,6 +227,7 @@ const TriageScreen = ({ storyFile, onClose, urgency = 5 }) => {
                     style={{ color: 'var(--color-text-muted)' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                    aria-label="Restart triage"
                 >
                     <RefreshCw size={18} />
                 </button>
