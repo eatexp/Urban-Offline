@@ -123,6 +123,7 @@ const DatasetSettingsModal = ({
                         <button
                             onClick={onClose}
                             className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                            aria-label="Close settings"
                         >
                             <X className="w-5 h-5 text-[var(--color-text-muted)]" />
                         </button>
@@ -168,12 +169,15 @@ const DatasetSettingsModal = ({
                                     const CategoryIcon = categoryConfig.icon;
 
                                     return (
-                                        <div
+                                        <button
                                             key={dataset.id}
                                             onClick={() => handleToggle(dataset.id)}
-                                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${isEnabled
+                                            role="switch"
+                                            aria-checked={isEnabled}
+                                            aria-label={`Toggle ${dataset.name} dataset`}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isEnabled
                                                 ? 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)]'
-                                                : 'hover:bg-[var(--color-bg-tertiary)]/50'
+                                                : 'border border-transparent hover:bg-[var(--color-bg-tertiary)]/50'
                                                 }`}
                                         >
                                             {/* Icon */}
@@ -211,7 +215,7 @@ const DatasetSettingsModal = ({
                                                 }`}>
                                                 {isEnabled && <Check className="w-4 h-4" />}
                                             </div>
-                                        </div>
+                                        </button>
                                     );
                                 })
                             )}
@@ -224,7 +228,8 @@ const DatasetSettingsModal = ({
                                     <button
                                         key={preset.id}
                                         onClick={() => handlePresetClick(preset.id)}
-                                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-tertiary)] transition-all text-left group"
+                                        aria-label={`Apply ${preset.name} preset`}
+                                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-tertiary)] transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                                     >
                                         <div
                                             className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
