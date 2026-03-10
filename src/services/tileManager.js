@@ -54,7 +54,26 @@ export const tileManager = {
     // Save a tile blob to IndexedDB
     async saveTile(x, y, z, blob) {
         const key = this.getTileKey(x, y, z);
-        await db.put('map_tiles', blob, key);
+        try {
+            await db.put('map_tiles', blob, key);
+        } catch (err) {
+            // Critical Resilience - Check for QuotaExceededError and handle gracefully
+            if (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                log.error('Storage quota exceeded during tile download', err);
+
+                // Dispatch event for UI notification
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('quota-exceeded', {
+                        detail: {
+                            context: 'tile-download',
+                            error: err,
+                            key: key
+                        }
+                    }));
+                }
+            }
+            throw err;
+        }
     },
 
     // Get a tile blob URL from IndexedDB
