@@ -12,8 +12,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Database, Check, Layers, Activity, Shield, Tent, Heart, Scale, BookOpen, MapPin } from 'lucide-react';
-import { getCategoryConfig } from '../../config/categories';
-import { createLogger } from '../../utils/logger';
+import { getCategoryConfig } from '../../../../config/categories';
+import { createLogger } from '../../../../utils/logger';
 
 // Logger for future debugging - currently unused but kept for consistency
 const _log = createLogger('DatasetSettingsModal');
@@ -123,6 +123,7 @@ const DatasetSettingsModal = ({
                         <button
                             onClick={onClose}
                             className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                            aria-label="Close"
                         >
                             <X className="w-5 h-5 text-[var(--color-text-muted)]" />
                         </button>
@@ -168,12 +169,13 @@ const DatasetSettingsModal = ({
                                     const CategoryIcon = categoryConfig.icon;
 
                                     return (
-                                        <div
+                                        <button
                                             key={dataset.id}
                                             onClick={() => handleToggle(dataset.id)}
-                                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${isEnabled
-                                                ? 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)]'
-                                                : 'hover:bg-[var(--color-bg-tertiary)]/50'
+                                            aria-pressed={isEnabled}
+                                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${isEnabled
+                                                ? 'bg-[var(--color-bg-tertiary)] border-[var(--color-border-primary)]'
+                                                : 'hover:bg-[var(--color-bg-tertiary)]/50 border-transparent'
                                                 }`}
                                         >
                                             {/* Icon */}
@@ -211,7 +213,7 @@ const DatasetSettingsModal = ({
                                                 }`}>
                                                 {isEnabled && <Check className="w-4 h-4" />}
                                             </div>
-                                        </div>
+                                        </button>
                                     );
                                 })
                             )}
