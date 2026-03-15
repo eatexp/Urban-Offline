@@ -333,6 +333,7 @@ const GrokopediaClean = () => {
           <button
             onClick={() => setView('library')}
             className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Back to library"
           >
             <ArrowLeft size={20} className="text-slate-600" />
           </button>
@@ -358,6 +359,7 @@ const GrokopediaClean = () => {
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2"
+              aria-label="Clear search"
             >
               <X size={14} className="text-slate-400" />
             </button>
