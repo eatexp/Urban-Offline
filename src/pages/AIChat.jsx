@@ -449,7 +449,7 @@ const AIChat = () => {
                 <header className="px-4 py-3 lg:px-6" style={{ background: 'var(--color-bg-glass)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--color-border-primary)' }}>
                     <div className="flex items-center justify-between max-w-4xl mx-auto">
                         <div className="flex items-center gap-3">
-                            <button onClick={() => setShowHistory(true)} className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors">
+                            <button onClick={() => setShowHistory(true)} aria-label="Show chat history" title="Show chat history" className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors">
                                 <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
                             </button>
                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-primary-500 to-purple-600">
@@ -482,9 +482,9 @@ const AIChat = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={() => navigate('/ai-models')} className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Cpu className="w-5 h-5" /></button>
-                            <button onClick={() => setShowVisualizations(!showVisualizations)} className={`p-2 rounded-lg transition-colors ${showVisualizations ? 'bg-[var(--color-bg-tertiary)] text-primary-400' : 'text-[var(--color-text-muted)]'}`}><Activity className="w-5 h-5" /></button>
-                            <button onClick={() => setShowDatasetSettings(true)} className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Settings className="w-5 h-5" /></button>
+                            <button onClick={() => navigate('/ai-models')} aria-label="Manage AI models" title="Manage AI models" className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Cpu className="w-5 h-5" /></button>
+                            <button onClick={() => setShowVisualizations(!showVisualizations)} aria-label="Toggle AI Visualizations" title="Toggle AI Visualizations" className={`p-2 rounded-lg transition-colors ${showVisualizations ? 'bg-[var(--color-bg-tertiary)] text-primary-400' : 'text-[var(--color-text-muted)]'}`}><Activity className="w-5 h-5" /></button>
+                            <button onClick={() => setShowDatasetSettings(true)} aria-label="Dataset Settings" title="Dataset Settings" className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"><Settings className="w-5 h-5" /></button>
                         </div>
                     </div>
                 </header>
