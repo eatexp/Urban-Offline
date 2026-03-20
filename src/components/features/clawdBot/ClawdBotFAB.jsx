@@ -129,6 +129,7 @@ const ClawdBotFAB = () => {
                 onClick={dismissProactive}
                 className="absolute top-1 right-1 p-1 rounded-full transition-colors"
                 style={{ color: 'var(--color-text-muted)' }}
+                aria-label="Dismiss suggestion"
               >
                 <X size={14} />
               </button>
