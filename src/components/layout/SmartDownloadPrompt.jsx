@@ -201,6 +201,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
 
     return (
         <div
+            role="region"
+            aria-label="AI Model Download Prompt"
             className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up"
             style={{ maxWidth: '400px', margin: '0 auto' }}
         >
@@ -223,6 +225,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         <span className="font-semibold text-white">Enhance Your Assistant</span>
                     </div>
                     <button
+                        aria-label="Dismiss prompt"
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
@@ -291,6 +294,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                     {Object.values(TRANSFORMERS_MODELS).map(model => (
                                         <button
                                             key={model.id}
+                                            aria-pressed={selectedModel === model.id}
                                             onClick={() => setSelectedModel(model.id)}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
@@ -379,6 +383,10 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 </span>
                             </div>
                             <div
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
                             >
