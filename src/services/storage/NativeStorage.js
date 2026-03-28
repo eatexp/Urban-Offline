@@ -229,18 +229,25 @@ export const clear = async (storeName) => {
     // 1. Large Content -> Filesystem
     if (DATA_STORES.includes(storeName)) {
         try {
-            const result = await Filesystem.readdir({
+            // Optimization: Delete directory recursively (O(1) bridge call) instead of iterating files (O(N))
+            await Filesystem.rmdir({
                 path: storeName,
-                directory: STORAGE_DIR
+                directory: STORAGE_DIR,
+                recursive: true
             });
-            await Promise.all(result.files.map(file =>
-                Filesystem.deleteFile({
-                    path: `${storeName}/${file.name || file}`,
-                    directory: STORAGE_DIR
-                }).catch(() => { }) // Ignore individual file delete failures
-            ));
         } catch (_e) {
             // Directory doesn't exist - ignore
+        }
+
+        try {
+            // Recreate the directory so subsequent writes succeed and state is consistent (empty dir)
+            await Filesystem.mkdir({
+                path: storeName,
+                directory: STORAGE_DIR,
+                recursive: true
+            });
+        } catch (e) {
+            log.warn(`Failed to recreate directory ${storeName} after clear`, e);
         }
     }
 
