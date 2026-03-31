@@ -192,8 +192,26 @@ export const tileManager = {
                 const blob = await response.blob();
 
                 if (blob.type.startsWith('image/')) {
-                    await this.saveTile(tile.x, tile.y, tile.z, blob);
-                    return { saved: true };
+                    try {
+                        await this.saveTile(tile.x, tile.y, tile.z, blob);
+                        return { saved: true };
+                    } catch (err) {
+                        if (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.message?.includes('quota')) {
+                            log.error('Storage quota exceeded during tile download', err);
+                            // Notify user via event
+                            if (typeof window !== 'undefined') {
+                                window.dispatchEvent(new CustomEvent('storage-quota-warning', {
+                                    detail: {
+                                        error: err.message,
+                                        context: 'tile-download',
+                                        tile: { x: tile.x, y: tile.y, z: tile.z }
+                                    }
+                                }));
+                            }
+                            // Rethrow to allow DataManager to handle region eviction/cleanup
+                        }
+                        throw err;
+                    }
                 } else {
                     log.warn(`Invalid tile format: ${blob.type}`);
                     return { invalid: true };
@@ -213,18 +231,34 @@ export const tileManager = {
             const quotaError = failures.find(f =>
                 f.reason?.name === 'QuotaExceededError' ||
                 f.reason?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-                f.reason?.message === 'STORAGE_QUOTA_EXCEEDED'
+                f.reason?.message === 'STORAGE_QUOTA_EXCEEDED' ||
+                f.reason?.message?.includes('quota')
             );
 
             if (quotaError) {
                 log.error('Storage quota exceeded during tile download');
+
+                // Trigger cleanup or notify user
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('storage-cleanup-triggered', {
+                        detail: {
+                            reason: 'quota-exceeded',
+                            region: region.name,
+                            timestamp: new Date().toISOString()
+                        }
+                    }));
+                }
+
                 try {
+                    log.info(`Cleaning up partial download for region: ${region.name}`);
                     await this.deleteRegionTiles(region);
                 } catch (cleanupErr) {
                     log.error('Failed to cleanup tiles after quota exceeded', cleanupErr);
                 }
                 const error = new Error('STORAGE_QUOTA_EXCEEDED');
                 error.name = 'QuotaExceededError';
+                // Throwing this error allows dataManager.installRegion to catch it
+                // and trigger the handleQuotaExceeded eviction strategy (deleting older regions)
                 throw error;
             }
 
