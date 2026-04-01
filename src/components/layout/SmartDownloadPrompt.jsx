@@ -381,6 +381,10 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             <div
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
                             >
                                 <div
                                     className="h-full rounded-full transition-all duration-300"
