@@ -206,6 +206,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
         >
             <div
                 className="rounded-2xl overflow-hidden shadow-2xl"
+                role="region"
+                aria-label="AI Model Download Prompt"
                 style={{
                     background: 'var(--color-bg-secondary)',
                     border: '1px solid var(--color-border-primary)'
@@ -226,6 +228,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss download prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -292,6 +295,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                         <button
                                             key={model.id}
                                             onClick={() => setSelectedModel(model.id)}
+                                            aria-pressed={selectedModel === model.id}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
                                                 background: selectedModel === model.id
@@ -380,6 +384,11 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                             </div>
                             <div
                                 className="h-2 rounded-full overflow-hidden"
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label="Download progress"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
                             >
                                 <div
