@@ -203,6 +203,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
         <div
             className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up"
             style={{ maxWidth: '400px', margin: '0 auto' }}
+            role="region"
+            aria-label="AI Model Download Prompt"
         >
             <div
                 className="rounded-2xl overflow-hidden shadow-2xl"
@@ -226,6 +228,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss download prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -293,6 +296,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                             key={model.id}
                                             onClick={() => setSelectedModel(model.id)}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
+                                            aria-pressed={selectedModel === model.id}
                                             style={{
                                                 background: selectedModel === model.id
                                                     ? 'var(--color-primary-900)'
