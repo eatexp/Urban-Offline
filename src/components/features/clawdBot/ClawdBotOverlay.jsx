@@ -199,6 +199,8 @@ const ClawdBotOverlay = ({ isOpen, onClose, onNavigate }) => {
             onClick={onClose}
             className="p-2 rounded-lg transition-colors"
             style={{ color: 'var(--color-text-muted)' }}
+            aria-label="Close"
+            title="Close"
           >
             <X className="w-6 h-6" />
           </button>
@@ -279,6 +281,8 @@ const ClawdBotOverlay = ({ isOpen, onClose, onNavigate }) => {
                 color: inputValue.trim() && !isProcessing ? 'white' : 'var(--color-text-muted)',
                 opacity: inputValue.trim() && !isProcessing ? 1 : 0.5
               }}
+              aria-label="Send message"
+              title="Send message"
             >
               <Send className="w-5 h-5" />
             </button>
