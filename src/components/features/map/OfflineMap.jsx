@@ -356,15 +356,16 @@ const OfflineMap = () => {
                 <button
                     onClick={handleLocate}
                     className="w-12 h-12 flex items-center justify-center bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full text-cyan-500 shadow-lg active:scale-95 transition-all"
+                    aria-label="Locate me"
                 >
                     <Navigation2 size={20} className={userLocation ? "fill-current" : ""} />
                 </button>
 
                 <div className="flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full overflow-hidden shadow-lg">
-                    <button onClick={() => handleZoom(1)} className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 transition-colors">
+                    <button onClick={() => handleZoom(1)} className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 transition-colors" aria-label="Zoom in">
                         <Plus size={20} />
                     </button>
-                    <button onClick={() => handleZoom(-1)} className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 transition-colors">
+                    <button onClick={() => handleZoom(-1)} className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 transition-colors" aria-label="Zoom out">
                         <Minus size={20} />
                     </button>
                 </div>
