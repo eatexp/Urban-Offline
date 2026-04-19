@@ -373,7 +373,7 @@ export default function DownloadCard({
                 </button>
               )}
               {onDelete && (
-                <button className="dl-card-btn danger" onClick={onDelete}>
+                <button aria-label="Delete" title="Delete" className="dl-card-btn danger" onClick={onDelete}>
                   <Trash2 size={14} />
                 </button>
               )}
@@ -387,7 +387,7 @@ export default function DownloadCard({
                 Active
               </button>
               {onDelete && (
-                <button className="dl-card-btn danger" onClick={onDelete}>
+                <button aria-label="Delete" title="Delete" className="dl-card-btn danger" onClick={onDelete}>
                   <Trash2 size={14} />
                 </button>
               )}
