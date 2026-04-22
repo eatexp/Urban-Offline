@@ -332,8 +332,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Allergies */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
+                <label htmlFor="allergies-input" className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
                 <input
+                    id="allergies-input"
                     type="text"
                     placeholder="e.g., NSAIDs, penicillin (comma-separated)"
                     value={(medical.allergies || []).join(', ')}
@@ -347,8 +348,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Conditions */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
+                <label htmlFor="conditions-input" className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
                 <input
+                    id="conditions-input"
                     type="text"
                     placeholder="e.g., Diabetes, Asthma (comma-separated)"
                     value={(medical.conditions || []).join(', ')}
@@ -362,8 +364,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Blood Type */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
+                <label htmlFor="blood-type-select" className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
                 <select
+                    id="blood-type-select"
                     value={medical.bloodType || ''}
                     onChange={(e) => setMedical({ ...medical, bloodType: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -469,8 +472,9 @@ const ResourcesTab = ({ resources, setResources }) => {
                 <h3 className="font-semibold text-sm">Water</h3>
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <label className="block text-xs text-slate-600 mb-1">Bottled (liters)</label>
+                        <label htmlFor="water-bottled-input" className="block text-xs text-slate-600 mb-1">Bottled (liters)</label>
                         <input
+                            id="water-bottled-input"
                             type="number"
                             min="0"
                             value={resources.water?.bottled || 0}
@@ -482,8 +486,9 @@ const ResourcesTab = ({ resources, setResources }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-600 mb-1">Stored (liters)</label>
+                        <label htmlFor="water-stored-input" className="block text-xs text-slate-600 mb-1">Stored (liters)</label>
                         <input
+                            id="water-stored-input"
                             type="number"
                             min="0"
                             value={resources.water?.stored || 0}
@@ -499,8 +504,9 @@ const ResourcesTab = ({ resources, setResources }) => {
 
             {/* Food */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Food Supply (days)</label>
+                <label htmlFor="food-supply-input" className="block text-sm font-medium text-slate-700 mb-1">Food Supply (days)</label>
                 <input
+                    id="food-supply-input"
                     type="number"
                     min="0"
                     value={resources.food?.daysSupply || 0}
@@ -514,8 +520,9 @@ const ResourcesTab = ({ resources, setResources }) => {
 
             {/* Cash */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Cash on Hand (£)</label>
+                <label htmlFor="cash-input" className="block text-sm font-medium text-slate-700 mb-1">Cash on Hand (£)</label>
                 <input
+                    id="cash-input"
                     type="number"
                     min="0"
                     value={resources.cash || 0}
