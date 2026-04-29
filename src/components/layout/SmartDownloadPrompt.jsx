@@ -205,6 +205,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
             style={{ maxWidth: '400px', margin: '0 auto' }}
         >
             <div
+                role="region"
+                aria-label="AI Model Download Prompt"
                 className="rounded-2xl overflow-hidden shadow-2xl"
                 style={{
                     background: 'var(--color-bg-secondary)',
@@ -226,6 +228,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
@@ -292,6 +295,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                         <button
                                             key={model.id}
                                             onClick={() => setSelectedModel(model.id)}
+                                            aria-pressed={selectedModel === model.id}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
                                                 background: selectedModel === model.id
@@ -379,6 +383,10 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 </span>
                             </div>
                             <div
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
                             >
