@@ -1,0 +1,3 @@
+## 2025-02-18 - Added Accessibility to SmartDownloadPrompt
+**Learning:** The `SmartDownloadPrompt` container lacked a semantic role indicating it was a distinct region, and the close button was missing an explicit accessible name. The model selection buttons did not expose their pressed state, and the progress bar did not expose the standard progressbar attributes (`role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`).
+**Action:** Next time when encountering a custom progress bar or interactive list in a modal prompt, verify all elements present their state (e.g. `aria-pressed`) and have specific roles (like `role="region"` or `role="progressbar"`) to screen readers, instead of relying on generic div tags.
