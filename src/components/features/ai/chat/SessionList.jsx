@@ -49,6 +49,14 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                                     : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10 text-gray-400'
                                 }`}
                             onClick={() => onSelect(session.id)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    onSelect(session.id);
+                                }
+                            }}
                         >
                             <div className="flex items-center gap-3 min-w-0">
                                 <MessageSquare className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-primary-400' : 'text-gray-600'
@@ -70,6 +78,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                                     onDelete(session.id);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 hover:text-red-400 transition-all"
+                                aria-label="Delete Mission Log"
                                 title="Delete Mission Log"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -97,6 +106,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                 <button
                     onClick={onNew}
                     className="p-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
+                    aria-label="New Mission"
                     title="New Mission"
                 >
                     <Plus className="w-4 h-4" />
