@@ -1,0 +1,3 @@
+## 2024-05-30 - Accessible Progress Bars and Modals
+**Learning:** Progress bars created with custom `div`s need explicit ARIA roles and values for screen readers to understand them. Additionally, using `aria-pressed` on standard buttons for selection lists is a great pattern for maintaining Tab navigation while indicating state, compared to complex radio button roles.
+**Action:** Always add `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` to custom progress bars, and prefer `aria-pressed` on standard buttons for simple selection lists to preserve accessibility and tab flow.
