@@ -226,6 +226,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                         onClick={handleDismiss}
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
+                        aria-label="Dismiss prompt"
                     >
                         <X size={18} className="text-white/80" />
                     </button>
