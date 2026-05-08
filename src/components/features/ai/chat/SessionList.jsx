@@ -71,6 +71,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 hover:text-red-400 transition-all"
                                 title="Delete Mission Log"
+                                aria-label={`Delete session ${session.title || 'Untitled Mission'}`}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
