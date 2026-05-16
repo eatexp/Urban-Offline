@@ -26,11 +26,6 @@ const ContextSettings = ({ onClose }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
 
-    // Load context on mount
-    useEffect(() => {
-        loadContext();
-    }, []);
-
     const loadContext = async () => {
         try {
             const context = await userContextManager.getAll();
@@ -42,6 +37,11 @@ const ContextSettings = ({ onClose }) => {
             log.error('Failed to load context', error);
         }
     };
+
+    // Load context on mount
+    useEffect(() => {
+        loadContext();
+    }, []);
 
     const saveContext = async () => {
         try {
@@ -113,7 +113,7 @@ const ContextSettings = ({ onClose }) => {
                         {saveMessage && (
                             <span className="text-sm text-green-600">{saveMessage}</span>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" aria-label="Close settings">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -289,6 +289,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                     <button
                         onClick={addItem}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        aria-label="Add item"
                     >
                         <Plus className="w-4 h-4" />
                     </button>
@@ -309,6 +310,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                         <button
                             onClick={() => removeItem(item.id)}
                             className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            aria-label="Remove item"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
