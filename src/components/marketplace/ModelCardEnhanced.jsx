@@ -586,6 +586,7 @@ const ModelCardEnhanced = ({
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => setShowDeleteConfirm(false)}
+                                            aria-label="Cancel deletion"
                                             className="px-3 py-3.5 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-all"
                                         >
                                             <X size={18} />
@@ -597,6 +598,7 @@ const ModelCardEnhanced = ({
                                         whileTap={{ scale: 0.95 }}
                                         onClick={handleDeleteClick}
                                         disabled={isActive}
+                                        aria-label="Delete model"
                                         className="px-4 py-3.5 rounded-xl bg-white/5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <Trash2 size={20} />
