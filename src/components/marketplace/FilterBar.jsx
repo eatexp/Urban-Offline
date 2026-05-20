@@ -73,6 +73,7 @@ const FilterBar = ({
                 <select
                     value={sortBy}
                     onChange={(e) => onSortChange(e.target.value)}
+                    aria-label="Sort models"
                     className="w-full sm:w-auto appearance-none bg-black/20 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-sm text-slate-300 focus:outline-none focus:border-white/20 transition-colors cursor-pointer hover:bg-white/5"
                 >
                     <option value="compatibility">Sort by Compatibility</option>
