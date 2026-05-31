@@ -4,11 +4,11 @@ import { PMTiles, Protocol } from 'pmtiles';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Satellite, Download, Radio, Navigation2, Plus, Minus } from 'lucide-react';
-import ContextManager from '../../services/context/ContextManager';
-import { resolveSectorCached, resolveCartridgeForSector } from '../../services/maps/SectorResolver';
-import { CapacitorPMTilesSource } from '../../services/maps/CapacitorPMTilesSource';
-import { MAP_CONFIG, getMapStyle } from '../../services/maps/MapService';
-import { HapticsService, ImpactStyle } from '../../services/HapticsService';
+import ContextManager from '../../../services/context/ContextManager';
+import { resolveSectorCached, resolveCartridgeForSector } from '../../../services/maps/SectorResolver';
+import { CapacitorPMTilesSource } from '../../../services/maps/CapacitorPMTilesSource';
+import { MAP_CONFIG, getMapStyle } from '../../../services/maps/MapService';
+import { HapticsService, ImpactStyle } from '../../../services/HapticsService';
 
 // Constants
 const LOCAL_FILENAME = 'london.pmtiles';
@@ -356,15 +356,17 @@ const OfflineMap = () => {
                 <button
                     onClick={handleLocate}
                     className="w-12 h-12 flex items-center justify-center bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full text-cyan-500 shadow-lg active:scale-95 transition-all"
+                    aria-label="Find my location"
+                    title="Find my location"
                 >
                     <Navigation2 size={20} className={userLocation ? "fill-current" : ""} />
                 </button>
 
                 <div className="flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full overflow-hidden shadow-lg">
-                    <button onClick={() => handleZoom(1)} className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 transition-colors">
+                    <button onClick={() => handleZoom(1)} className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 transition-colors" aria-label="Zoom in" title="Zoom in">
                         <Plus size={20} />
                     </button>
-                    <button onClick={() => handleZoom(-1)} className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 transition-colors">
+                    <button onClick={() => handleZoom(-1)} className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 transition-colors" aria-label="Zoom out" title="Zoom out">
                         <Minus size={20} />
                     </button>
                 </div>
