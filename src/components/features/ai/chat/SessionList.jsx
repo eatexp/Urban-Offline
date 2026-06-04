@@ -71,6 +71,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 hover:text-red-400 transition-all"
                                 title="Delete Mission Log"
+                                aria-label="Delete Mission Log"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -98,6 +99,7 @@ const SessionList = ({ sessions, activeSessionId, onSelect, onDelete, onNew }) =
                     onClick={onNew}
                     className="p-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
                     title="New Mission"
+                    aria-label="New Mission"
                 >
                     <Plus className="w-4 h-4" />
                 </button>
