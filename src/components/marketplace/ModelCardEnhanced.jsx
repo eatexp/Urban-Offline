@@ -558,6 +558,7 @@ const ModelCardEnhanced = ({
                                                 : 'bg-white/5 text-white border border-white/10 hover:bg-white/10 hover:border-white/20'
                                         }
                                     `}
+                                    title={isActive ? "Model is currently active" : isIncompatible ? "Model is not compatible with your device" : "Use this model"}
                                 >
                                     {isActive ? (
                                         <>
@@ -587,6 +588,8 @@ const ModelCardEnhanced = ({
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => setShowDeleteConfirm(false)}
                                             className="px-3 py-3.5 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-all"
+                                            aria-label="Cancel deletion"
+                                            title="Cancel"
                                         >
                                             <X size={18} />
                                         </motion.button>
@@ -598,6 +601,8 @@ const ModelCardEnhanced = ({
                                         onClick={handleDeleteClick}
                                         disabled={isActive}
                                         className="px-4 py-3.5 rounded-xl bg-white/5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        aria-label="Delete model"
+                                        title={isActive ? "Cannot delete active model" : "Delete model"}
                                     >
                                         <Trash2 size={20} />
                                     </motion.button>
@@ -616,6 +621,7 @@ const ModelCardEnhanced = ({
                                         : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30'
                                     }
                                 `}
+                                title={isIncompatible && !allowAnyDownload ? "This model is not compatible with your device" : `Download ${model.name}`}
                             >
                                 <Download size={18} />
                                 {isIncompatible && !allowAnyDownload ? 'Not Compatible' : `Download (${model.sizeDisplay})`}
