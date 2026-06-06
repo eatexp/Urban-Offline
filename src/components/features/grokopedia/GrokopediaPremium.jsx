@@ -552,6 +552,8 @@ const GrokopediaPremium = () => {
           />
           {searchQuery && (
             <button
+              aria-label="Clear search"
+              title="Clear search"
               onClick={async () => {
                 await HapticsService.impact('light');
                 setSearchQuery('');
