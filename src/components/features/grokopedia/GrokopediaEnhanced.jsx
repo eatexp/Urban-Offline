@@ -504,6 +504,8 @@ const GrokopediaEnhanced = () => {
                     />
                     {searchQuery && (
                         <button
+                            aria-label="Clear search"
+                            title="Clear search"
                             onClick={() => setSearchQuery('')}
                             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/5 hover:bg-white/10"
                         >
