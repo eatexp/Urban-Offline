@@ -113,7 +113,7 @@ const ContextSettings = ({ onClose }) => {
                         {saveMessage && (
                             <span className="text-sm text-green-600">{saveMessage}</span>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" aria-label="Close">
                             <X className="w-5 h-5" />
                         </button>
                     </div>

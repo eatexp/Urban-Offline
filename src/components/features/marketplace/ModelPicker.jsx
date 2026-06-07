@@ -536,7 +536,7 @@ const ModelPicker = ({ onClose, onModelChange }) => {
                     </p>
                 </div>
                 {onClose && (
-                    <button onClick={onClose} className="btn btn-ghost">
+                    <button onClick={onClose} className="btn btn-ghost" aria-label="Close model picker">
                         <X size={20} />
                     </button>
                 )}
