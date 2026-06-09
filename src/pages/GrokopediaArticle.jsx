@@ -84,6 +84,7 @@ const SelectionToolbar = ({ selection, onAskAI, onClose, position }) => {
             <button
                 onClick={onAskAI}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-all text-sm font-medium"
+                title="Ask AI about selected text"
             >
                 <Sparkles size={14} />
                 Ask AI
@@ -92,6 +93,8 @@ const SelectionToolbar = ({ selection, onAskAI, onClose, position }) => {
             <button
                 onClick={onClose}
                 className="p-2 rounded-lg hover:bg-white/5 text-slate-400 transition-all"
+                aria-label="Close"
+                title="Close"
             >
                 <X size={16} />
             </button>
@@ -385,6 +388,8 @@ const GrokopediaArticle = () => {
                         <button
                             onClick={() => navigate(-1)}
                             className="p-2 -ml-2 rounded-xl hover:bg-white/5 transition-all"
+                            aria-label="Go back"
+                            title="Go back"
                         >
                             <ArrowLeft size={20} className="text-slate-400" />
                         </button>
@@ -400,12 +405,16 @@ const GrokopediaArticle = () => {
                                     ? 'bg-amber-500/20 text-amber-400'
                                     : 'hover:bg-white/5 text-slate-400'
                                 }`}
+                            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+                            title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
                         >
                             {isBookmarked ? <Check size={20} /> : <Bookmark size={20} />}
                         </button>
                         <button
                             onClick={handleShare}
                             className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all"
+                            aria-label="Share article"
+                            title="Share article"
                         >
                             <Share2 size={20} />
                         </button>
