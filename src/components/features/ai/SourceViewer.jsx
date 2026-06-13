@@ -131,6 +131,7 @@ const SourceViewer = ({ source, isOpen, onClose }) => {
                             className="action-btn"
                             onClick={() => setFontSize(prev => prev === 16 ? 20 : (prev === 20 ? 14 : 16))}
                             title="Toggle Text Size"
+                            aria-label="Toggle Text Size"
                         >
                             <Type size={18} />
                         </button>
@@ -140,6 +141,7 @@ const SourceViewer = ({ source, isOpen, onClose }) => {
                                 navigator.clipboard.writeText(source?.fullContent || source?.content || '');
                             }}
                             title="Copy Content"
+                            aria-label="Copy Content"
                         >
                             <Share2 size={18} />
                         </button>
