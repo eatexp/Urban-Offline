@@ -1,0 +1,1 @@
+## 2026-06-16 - Programmatic Label Associations\n**Learning:** Form inputs and standard UI controls in this codebase (like ContextSettings.jsx) frequently lack programmatic association with their text labels.\n**Action:** Always ensure `<label>` elements use the `htmlFor` attribute pointing to the input's `id` to improve screen reader support and increase clickable target area.

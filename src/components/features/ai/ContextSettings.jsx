@@ -332,8 +332,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Allergies */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
+                <label htmlFor="medical-allergies" className="block text-sm font-medium text-slate-700 mb-1">Allergies</label>
                 <input
+                    id="medical-allergies"
                     type="text"
                     placeholder="e.g., NSAIDs, penicillin (comma-separated)"
                     value={(medical.allergies || []).join(', ')}
@@ -347,8 +348,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Conditions */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
+                <label htmlFor="medical-conditions" className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions</label>
                 <input
+                    id="medical-conditions"
                     type="text"
                     placeholder="e.g., Diabetes, Asthma (comma-separated)"
                     value={(medical.conditions || []).join(', ')}
@@ -362,8 +364,9 @@ const MedicalTab = ({ medical, setMedical }) => {
 
             {/* Blood Type */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
+                <label htmlFor="medical-blood-type" className="block text-sm font-medium text-slate-700 mb-1">Blood Type</label>
                 <select
+                    id="medical-blood-type"
                     value={medical.bloodType || ''}
                     onChange={(e) => setMedical({ ...medical, bloodType: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
