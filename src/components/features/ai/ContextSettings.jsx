@@ -113,7 +113,7 @@ const ContextSettings = ({ onClose }) => {
                         {saveMessage && (
                             <span className="text-sm text-green-600">{saveMessage}</span>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button onClick={onClose} aria-label="Close context settings" className="p-2 hover:bg-slate-100 rounded-lg">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -288,6 +288,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                     </select>
                     <button
                         onClick={addItem}
+                        aria-label="Add inventory item"
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         <Plus className="w-4 h-4" />
@@ -308,6 +309,7 @@ const InventoryTab = ({ inventory, setInventory }) => {
                         </div>
                         <button
                             onClick={() => removeItem(item.id)}
+                            aria-label={`Remove inventory item: ${item.name}`}
                             className="p-1 text-red-600 hover:bg-red-50 rounded"
                         >
                             <Trash2 className="w-4 h-4" />
