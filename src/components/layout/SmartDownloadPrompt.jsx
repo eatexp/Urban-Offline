@@ -201,6 +201,8 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
 
     return (
         <div
+            role="region"
+            aria-label="AI Model Download Prompt"
             className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up"
             style={{ maxWidth: '400px', margin: '0 auto' }}
         >
@@ -224,6 +226,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                     </div>
                     <button
                         onClick={handleDismiss}
+                        aria-label="Dismiss download prompt"
                         className="p-1 rounded-full hover:bg-white/20 transition-colors"
                         disabled={isDownloading}
                     >
@@ -292,6 +295,7 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                         <button
                                             key={model.id}
                                             onClick={() => setSelectedModel(model.id)}
+                                            aria-pressed={selectedModel === model.id}
                                             className="w-full flex items-center justify-between p-3 rounded-lg transition-all"
                                             style={{
                                                 background: selectedModel === model.id
@@ -379,6 +383,10 @@ const SmartDownloadPrompt = ({ onDownload, onDismiss, forceShow = false }) => {
                                 </span>
                             </div>
                             <div
+                                role="progressbar"
+                                aria-valuenow={downloadProgress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{ background: 'var(--color-bg-tertiary)' }}
                             >
