@@ -197,8 +197,10 @@ const ClawdBotOverlay = ({ isOpen, onClose, onNavigate }) => {
           
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
+            className="p-2 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
             style={{ color: 'var(--color-text-muted)' }}
+            aria-label="Close clawdBot"
+            title="Close clawdBot"
           >
             <X className="w-6 h-6" />
           </button>
@@ -271,7 +273,7 @@ const ClawdBotOverlay = ({ isOpen, onClose, onNavigate }) => {
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isProcessing}
-              className="p-3 rounded-xl transition-all"
+              className="p-3 rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
               style={{
                 background: inputValue.trim() && !isProcessing
                   ? 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))'
@@ -279,6 +281,8 @@ const ClawdBotOverlay = ({ isOpen, onClose, onNavigate }) => {
                 color: inputValue.trim() && !isProcessing ? 'white' : 'var(--color-text-muted)',
                 opacity: inputValue.trim() && !isProcessing ? 1 : 0.5
               }}
+              aria-label="Send message"
+              title="Send message"
             >
               <Send className="w-5 h-5" />
             </button>
