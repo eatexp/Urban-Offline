@@ -113,7 +113,12 @@ const ContextSettings = ({ onClose }) => {
                         {saveMessage && (
                             <span className="text-sm text-green-600">{saveMessage}</span>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-100 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+                            aria-label="Close settings"
+                            title="Close settings"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -288,7 +293,9 @@ const InventoryTab = ({ inventory, setInventory }) => {
                     </select>
                     <button
                         onClick={addItem}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:outline-none"
+                        aria-label="Add inventory item"
+                        title="Add inventory item"
                     >
                         <Plus className="w-4 h-4" />
                     </button>
@@ -308,7 +315,9 @@ const InventoryTab = ({ inventory, setInventory }) => {
                         </div>
                         <button
                             onClick={() => removeItem(item.id)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            className="p-1 text-red-600 hover:bg-red-50 rounded focus-visible:ring-2 focus-visible:ring-red-500 focus:outline-none"
+                            aria-label={`Remove inventory item: ${item.name}`}
+                            title={`Remove ${item.name}`}
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
