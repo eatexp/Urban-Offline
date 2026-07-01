@@ -355,16 +355,28 @@ const OfflineMap = () => {
             <div className="absolute bottom-6 right-6 flex flex-col gap-4 z-10 print:hidden">
                 <button
                     onClick={handleLocate}
-                    className="w-12 h-12 flex items-center justify-center bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full text-cyan-500 shadow-lg active:scale-95 transition-all"
+                    className="w-12 h-12 flex items-center justify-center bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full text-cyan-500 shadow-lg active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    aria-label="Locate me"
+                    title="Locate me"
                 >
                     <Navigation2 size={20} className={userLocation ? "fill-current" : ""} />
                 </button>
 
                 <div className="flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full overflow-hidden shadow-lg">
-                    <button onClick={() => handleZoom(1)} className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 transition-colors">
+                    <button
+                        onClick={() => handleZoom(1)}
+                        className="w-12 h-12 flex items-center justify-center text-slate-400 border-b border-slate-800 active:bg-slate-800 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 z-10"
+                        aria-label="Zoom in"
+                        title="Zoom in"
+                    >
                         <Plus size={20} />
                     </button>
-                    <button onClick={() => handleZoom(-1)} className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 transition-colors">
+                    <button
+                        onClick={() => handleZoom(-1)}
+                        className="w-12 h-12 flex items-center justify-center text-slate-400 active:bg-slate-800 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 z-10"
+                        aria-label="Zoom out"
+                        title="Zoom out"
+                    >
                         <Minus size={20} />
                     </button>
                 </div>
